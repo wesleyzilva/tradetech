@@ -1,0 +1,195 @@
+{ 
+  Robo: FORCA_SEMAFORO_CORES_SOM
+  Descricao: Coloracao por forca F=MA com degradê visivel e confirmacao multi-timeframe (Contexto+Direcao+Gatilho).
+             Entradas somente quando os 3 TFs estao alinhados.
+  Versao: 9.0
+
+  Esquema de cores (simplificado):
+    Branco           = sem sinal (forca abaixo do threshold ou doji)
+    Verde  (degrade) = forca positiva >= ForcaMinimaEntrada  (inclui reversoes de alta)
+    Vermelho(degrade)= forca negativa >= ForcaMinimaEntrada  (inclui reversoes de baixa)
+    Intensidade do degrade proporcional a magnitude da forca (55..100)
+
+  Tripletas validas (somente multiplos inteiros exatos — regra matematica):
+
+    TF Gatilho | Tripleta  | iJanelaDir        | iJanelaCtx        | Backtest (01/01-01/04/2026)
+    -----------|-----------|-------------------|-------------------|----------------------------
+    15min      | 60/30/15  | 2 (2x15=30min)    | 4 (4x15=60min)    | +R$8.058  FL=1.25  OK
+    5min       | 30/15/5   | 3 (3x5 =15min)    | 6 (6x5 =30min)    | +R$6.336  FL=1.11  OK
+    5min       | 15/10/5   | 2 (2x5 =10min)    | 3 (3x5 =15min)    | falta backtest
+
+  Tripletas invalidas (multiplicador nao-inteiro — EVITAR):
+    30/15/10 -> 15/10 = 1.5x (nao e inteiro) -> substituir por 30/20/10 ou usar 30/15/5
+}
+
+input
+  VolumeMinimo(2000);
+  PeriodoMediaVolume(20);
+  ForcaMinimaEntrada(55);   // gatilho único de compra/venda e início do degradê
+  ForcaMaximaCor(100);      // máximo usado no degradê
+  UsarFiltroVolume(true);   // exige Volume >= VolumeMinimo para operar
+  HabilitarOperacoes(true); // permite bloquear entradas sem perder coloração
+  PermitirReversao(true);   // se true, fecha posição contrária antes de inverter
+  MostrarAlertas(true);              // habilita alertas sonoros
+  UsarSegundoCheckpointAlerta(true); // se true, alerta só dispara acima do limiar abaixo
+  ForcaMinimaAlerta(70);             // segundo checkpoint para alertar compra/venda
+  // --- Multi-TF (somente multiplos inteiros) ---
+  // Tripleta 60/30/15 (15min): iJanelaDir=2, iJanelaCtx=4
+  // Tripleta 30/15/5  (5min) : iJanelaDir=3, iJanelaCtx=6
+  // Tripleta 15/10/5  (5min) : iJanelaDir=2, iJanelaCtx=3
+  iJanelaDir(2);             // multiplicador para TF de direcao
+  iJanelaCtx(4);             // multiplicador para TF de contexto
+  // --- Saídas ---
+  StopHorario_H(17);                 // hora do stop horário (fechamento forçado)
+  StopHorario_M(45);                 // minuto do stop horário
+  UsarStopCandleContra(true);        // fecha se candle forte na direção contrária
+  ForcaStopContra(55);               // limiar de força contrária para fechar posição
+  MaxBarrasEmPosicao(0);             // 0 = desativado; N = fecha após N barras
+
+var
+  fCorpo, fRange, fVolMedia, fMassa, fAceleracao, fForca : float;
+  fForcaAbs, fEscalaCor : float;
+  fCorpoAnterior : float;
+  r, g, b : integer;
+  iBarrasEmPosicao : integer;
+  bDeveOperar : boolean;
+  fMediaDir, fMediaCtx : float;
+  bContextoAlta, bContextoBaixa : boolean;
+  bDirecaoAlta, bDirecaoBaixa : boolean;
+
+begin
+  // --- Cálculos de Base ---
+  fCorpo := Close - Open;
+  fRange := High - Low;
+  if fRange <= 0 then fRange := 0.0001;
+
+  fVolMedia := Media(PeriodoMediaVolume, Volume);
+  if fVolMedia <= 0 then fVolMedia := 1;
+
+  // --- Cálculo da Força ---
+  fMassa := fCorpo / fRange;
+  fAceleracao := Volume / fVolMedia;
+  fForca := fMassa * fAceleracao * 100;
+  
+  // Limites de segurança
+  if fForca > 100 then fForca := 100;
+  if fForca < -100 then fForca := -100;
+
+  // --- Multi-TF: Contexto e Direcao ---
+  fMediaDir := Media(iJanelaDir, Close);
+  fMediaCtx := Media(iJanelaCtx, Close);
+  bContextoAlta  := (Close > fMediaCtx) and (fMediaCtx > fMediaCtx[iJanelaCtx]);
+  bContextoBaixa := (Close < fMediaCtx) and (fMediaCtx < fMediaCtx[iJanelaCtx]);
+  bDirecaoAlta   := (Close > fMediaDir) and (fMediaDir > fMediaDir[iJanelaDir]);
+  bDirecaoBaixa  := (Close < fMediaDir) and (fMediaDir < fMediaDir[iJanelaDir]);
+
+  // --- LÓGICA DE CORES (apenas Verde/Vermelho degradê) ---
+  // Branco = sem sinal (força abaixo do threshold ou corpo muito pequeno)
+  r := 255; g := 255; b := 255;
+  fForcaAbs := abs(fForca);
+  fCorpoAnterior := Close[1] - Open[1];
+
+  // Escala 0..1 proporcional à magnitude da força (ForcaMinimaEntrada..ForcaMaximaCor)
+  if ForcaMaximaCor <= ForcaMinimaEntrada then
+    fEscalaCor := 1
+  else
+    fEscalaCor := (fForcaAbs - ForcaMinimaEntrada) / (ForcaMaximaCor - ForcaMinimaEntrada);
+  if fEscalaCor < 0 then fEscalaCor := 0;
+  if fEscalaCor > 1 then fEscalaCor := 1;
+  fEscalaCor := fEscalaCor * fEscalaCor; // curva quadratica — realca diferenca de intensidade
+
+  // Verde degradê: força positiva >= limiar (inclui reversoes de alta)
+  if (fForca >= ForcaMinimaEntrada) then
+  begin
+    g := 110 + Round(fEscalaCor * 145); // 110 a 255
+    r := 110 - Round(fEscalaCor * 110); // 110 a 0
+    b := 110 - Round(fEscalaCor * 110); // 110 a 0
+    if g > 255 then g := 255;
+    if r < 0   then r := 0;
+    if b < 0   then b := 0;
+  end
+  // Vermelho degradê: força negativa >= limiar (inclui reversoes de baixa)
+  else if (fForca <= -ForcaMinimaEntrada) then
+  begin
+    r := 110 + Round(fEscalaCor * 145); // 110 a 255
+    g := 110 - Round(fEscalaCor * 110); // 110 a 0
+    b := 110 - Round(fEscalaCor * 110); // 110 a 0
+    if r > 255 then r := 255;
+    if g < 0   then g := 0;
+    if b < 0   then b := 0;
+  end;
+  // Senao permanece branco (sem sinal)
+
+  PaintBar(RGB(r, g, b));
+
+  // --- SAÍDAS ---
+
+  // Stop horário: fecha tudo e bloqueia novas entradas
+  if Time() >= (StopHorario_H * 10000 + StopHorario_M * 100) then
+  begin
+    if IsBought or IsSold then ClosePosition;
+    bDeveOperar := false;
+  end
+  else
+    bDeveOperar := true;
+
+  // Controle de barras em posição
+  if IsBought or IsSold then
+    iBarrasEmPosicao := iBarrasEmPosicao + 1
+  else
+    iBarrasEmPosicao := 0;
+
+  if (MaxBarrasEmPosicao > 0) and (iBarrasEmPosicao >= MaxBarrasEmPosicao) then
+  begin
+    if IsBought or IsSold then ClosePosition;
+    iBarrasEmPosicao := 0;
+    bDeveOperar := false;
+  end;
+
+  // Stop por candle contra: fecha se força forte na direção oposta
+  if UsarStopCandleContra then
+  begin
+    if IsBought and (fForca <= -ForcaStopContra) then
+    begin
+      ClosePosition;
+      iBarrasEmPosicao := 0;
+    end;
+    if IsSold and (fForca >= ForcaStopContra) then
+    begin
+      ClosePosition;
+      iBarrasEmPosicao := 0;
+    end;
+  end;
+
+  // --- ENTRADAS ---
+  if HabilitarOperacoes and bDeveOperar then
+  begin
+    // COMPRA (requer: Contexto TF1 + Direcao TF2 + Gatilho TF3)
+    if (fForca >= ForcaMinimaEntrada) and bContextoAlta and bDirecaoAlta
+      and ((not UsarFiltroVolume) or (Volume >= VolumeMinimo)) then
+    begin
+      if PermitirReversao and IsSold then ClosePosition;
+      if (not IsBought) and (not IsSold) then
+      begin
+        BuyAtMarket;
+        iBarrasEmPosicao := 0;
+        if MostrarAlertas and ((not UsarSegundoCheckpointAlerta) or (fForcaAbs >= ForcaMinimaAlerta)) then
+          Alert(RGB(0, 200, 0));
+      end;
+    end;
+
+    // VENDA (requer: Contexto TF1 + Direcao TF2 + Gatilho TF3)
+    if (fForca <= -ForcaMinimaEntrada) and bContextoBaixa and bDirecaoBaixa
+      and ((not UsarFiltroVolume) or (Volume >= VolumeMinimo)) then
+    begin
+      if PermitirReversao and IsBought then ClosePosition;
+      if (not IsBought) and (not IsSold) then
+      begin
+        SellShortAtMarket;
+        iBarrasEmPosicao := 0;
+        if MostrarAlertas and ((not UsarSegundoCheckpointAlerta) or (fForcaAbs >= ForcaMinimaAlerta)) then
+          Alert(RGB(200, 0, 0));
+      end;
+    end;
+  end;
+end;
