@@ -8,7 +8,7 @@
   <img src="https://img.shields.io/badge/Market-WIN%20%7C%20WDO%20B3-1B2A4A?style=for-the-badge"/>
   <img src="https://img.shields.io/badge/Approach-Price%20Action%20%2B%20Physics-FF6B35?style=for-the-badge"/>
   <img src="https://img.shields.io/badge/Timeframe-Intraday-27AE60?style=for-the-badge"/>
-  <img src="https://img.shields.io/badge/Language-Python%20%7C%20NTSL-3776AB?style=for-the-badge"/>
+  <img src="https://img.shields.io/badge/Language-Python%20%7C%20NTSL%20%7C%20NTFL-3776AB?style=for-the-badge"/>
   <img src="https://img.shields.io/badge/Status-Active%20Research-F39C12?style=for-the-badge"/>
 </p>
 
@@ -97,15 +97,18 @@ Indicators under research and custom implementation:
 
 ---
 
-### 5. Algorithmic Robots — Neologica Profit (NTSL)
+### 5. Algorithmic Robots — Neologica Profit (NTSL / NTFL)
 
-Robots developed and backtested on Neologica Profit platform targeting WIN B3:
+Robots and indicators developed on Neologica Profit platform targeting WIN B3:
 
-| Robot | Strategy | Status |
+- **NTSL** (Neologica Trading System Language) — strategy and robot source code (`.ntsl`)
+- **NTFL** (Neologica Trading Framework Language) — advanced framework for complex indicator composition
+
+| Robot | Strategy | Language | Status |
 |-------|----------|--------|
-| `abr_ROM_V1` | Breakout with RGB force colour system | ✅ Backtested |
-| `IFR_reversal` | RSI reversal at structure support/resistance | 🔄 In development |
-| `VWAP_pullback` | Pullback to VWAP in trending session | 🔄 In development |
+| `abr_ROM_V1` | Breakout with RGB force colour system | NTSL | ✅ Backtested |
+| `IFR_reversal` | RSI reversal at structure support/resistance | NTSL | 🔄 In development |
+| `VWAP_pullback` | Pullback to VWAP in trending session | NTSL | 🔄 In development |
 
 ---
 
@@ -159,6 +162,7 @@ TradeTech (this repository)
 
 ![Python](https://img.shields.io/badge/Python-3776AB?style=flat-square&logo=python&logoColor=white)
 ![Neologica NTSL](https://img.shields.io/badge/Neologica-NTSL-1B2A4A?style=flat-square)
+![Neologica NTFL](https://img.shields.io/badge/Neologica-NTFL-2C3E50?style=flat-square)
 ![Jupyter](https://img.shields.io/badge/Jupyter-F37626?style=flat-square&logo=jupyter&logoColor=white)
 ![B3 WIN](https://img.shields.io/badge/B3-WIN%20%7C%20WDO-003087?style=flat-square)
 
