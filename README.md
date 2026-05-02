@@ -106,9 +106,13 @@ Robots and indicators developed on Neologica Profit platform targeting WIN B3:
 
 | Robot | Strategy | Language | Status |
 |-------|----------|--------|
-| `abr_ROM_V1` | Breakout with RGB force colour system | NTSL | ✅ Backtested |
-| `IFR_reversal` | RSI reversal at structure support/resistance | NTSL | 🔄 In development |
-| `VWAP_pullback` | Pullback to VWAP in trending session | NTSL | 🔄 In development |
+| `FORCA_SEMAFORO_CORES_SOM` | F=MA rainbow semaphore, 6 colours | NTSL | ✅ v9.0 |
+| `FORCA_SEMAFORO_V10` | 2-tone (forte+exaustão), dynamic SL, break-even | NTSL | ✅ Backtested |
+| `FORCA_WDO_V11` | WDO-calibrated: SL=20, TP=60, RR=3, 4 colours | NTSL | ✅ Calibrated |
+| `FORCA_WIN_V11` | WIN-calibrated: SL=822, TP=2466, RR=3, 4 colours | NTSL | ✅ Calibrated |
+| `SCALPER_ZONA_V1` | Zone S/R + Force (F≥55) confirmation, RR=2 | NTSL | 🔄 In testing |
+| `IFR_reversal` | RSI reversal at structure support/resistance | NTSL | 🔲 Planned |
+| `VWAP_pullback` | Pullback to VWAP in trending session | NTSL | 🔲 Planned |
 
 ---
 
@@ -116,12 +120,23 @@ Robots and indicators developed on Neologica Profit platform targeting WIN B3:
 
 ```
 tradetech/
-├── teoria/              Theory notes — Dow, Price Action, indicators
-├── indicadores/         Custom indicator logic and formulas
-├── robos/               NTSL robot source code
-├── backtest/            Backtest results, parameters, performance logs
-├── anotacoes/           Session review notes — what worked, what failed
-└── referencias/         External papers, books, and resources
+├── robos/                         NTSL/NTFL robot and indicator source code
+│   ├── FORCA_SEMAFORO_CORES_SOM   v9.0 — original rainbow semaphore (WDO/WIN)
+│   ├── FORCA_SEMAFORO_V10         v10  — 2 tones, dynamic SL, break-even
+│   ├── FORCA_WDO_V11              v11  — WDO-calibrated (SL=20, TP=60, RR3)
+│   ├── FORCA_WIN_V11              v11  — WIN-calibrated (SL=822, TP=2466, RR3)
+│   └── SCALPER_ZONA_V1            v1   — Zone S/R + Force confirmation scalper
+├── DadosCandlesBacktest/          Raw CSVs (WIN/WDO 2012–2026, multi-TF)
+│   ├── detector_areas.py          Detects S/R zones from candle data
+│   ├── analise_forca_sl.py        Full statistical analysis (zone dist., SL grid)
+│   ├── tabela_cenarios.py         Entry sequence comparison (verde/fúcsia)
+│   ├── instructions.md            Agent spec for zone detection
+│   └── DadosCandlesBacktest.md    Dataset documentation
+├── teoria/                        Theory notes — Dow, Price Action, indicators
+├── indicadores/                   Custom indicator logic and formulas
+├── anotacoes/                     Session review notes — what worked, what failed
+├── referencias/                   External papers, books, and resources
+└── rodar_analise.bat              Run all analysis scripts (Task Scheduler ready)
 ```
 
 ---
