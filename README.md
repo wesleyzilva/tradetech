@@ -104,8 +104,18 @@ Robots and indicators developed on Neologica Profit platform targeting WIN B3:
 - **NTSL** (Neologica Trading System Language) — strategy and robot source code (`.ntsl`)
 - **NTFL** (Neologica Trading Framework Language) — advanced framework for complex indicator composition
 
+**Indicadores visuais (NTFL — sem ordens, apenas visualização):**
+
+| Indicator | Description | Language | Status |
+|-----------|-------------|----------|--------|
+| `INDICADOR_FORCA_V1` | F=MA 4-colour paintbar + F histogram sub-panel + S/R zone highlight | NTFL | ✅ v1.0 |
+
+> Use NTFL no gráfico para leitura + NTSL separado para execução. O indicador e o robô compartilham a mesma fórmula F=M×A.
+
+**Robôs de execução (NTSL — gerenciam ordens automaticamente):**
+
 | Robot | Strategy | Language | Status |
-|-------|----------|--------|
+|-------|----------|----------|--------|
 | `FORCA_SEMAFORO_CORES_SOM` | F=MA rainbow semaphore, 6 colours | NTSL | ✅ v9.0 |
 | `FORCA_SEMAFORO_V10` | 2-tone (forte+exaustão), dynamic SL, break-even | NTSL | ✅ Backtested |
 | `FORCA_WDO_V11` | WDO-calibrated: SL=20, TP=60, RR=3, 4 colours | NTSL | ✅ Calibrated |

@@ -1,0 +1,186 @@
+{ 
+  Indicador : INDICADOR_FORCA_V1
+  Tipo      : NTFL (indicador visual — sem ordens, apenas visualizacao)
+  Versao    : 1.0
+  Base      : FORCA_WDO_V11 / FORCA_WIN_V11 (mesma formula F=MxA)
+
+  === OBJETIVO ===
+  Indicador visual puro para uso no grafico junto com os robos NTSL.
+  Permite analisar o fluxo de forca sem acionar ordens.
+
+  === COMO USAR ===
+  1. Aplique este indicador (NTFL) no grafico para visualizacao
+  2. Aplique o robo NTSL (FORCA_WDO_V11 ou FORCA_WIN_V11) separado para execucao
+  Assim voce tem:
+    - Cores nas barras + histograma de F no sub-painel (indicador)
+    - Ordens automaticas gerenciadas pelo robot
+
+  === SAIDAS DO INDICADOR ===
+  Plot 1 (sub-painel): valor de fForca como histograma colorido
+    - Barra acima de zero: compradora
+    - Barra abaixo de zero: vendedora
+    - Cor = mesmo esquema 4 tons do V11
+  Plot 2 (sub-painel): linha de zero para referencia
+  Plot 3 (sub-painel): linha threshold ForcaMinimaForte (default +70 e -70)
+  Plot 4 (sub-painel): linha threshold ForcaExaustao   (default +85 e -85)
+  PaintBar: coloracao das barras no grafico principal (mesmo esquema V11)
+
+  === ESQUEMA DE CORES (identico ao V11) ===
+    Branco              = F 0-70              sem sinal
+    Verde  RGB(0,180,0) = F [70,85)           forte compra
+    Fucsia RGB(255,0,180)= F >= 85            exaustao compra
+    Verm   RGB(200,0,0) = F (-85,-70]         forte venda
+    Laranja RGB(255,140,0)= F <= -85          exaustao venda
+
+  === ZONAS S/R (faixa de fundo no grafico) ===
+  Destaca visualmente quando o Close esta numa zona high/low recente (JanelaZona candles).
+  PaintBar muda para amarelo quando na zona sem forca (aguardar confirmacao).
+}
+
+input
+  // === FORCA ===
+  ForcaMinimaForte(70.0);         // limiar forte (verde/verm)
+  ForcaExaustao(85.0);            // limiar exaustao (fucsia/laranja)
+  PeriodoMediaVolume(20);         // periodo media de volume para normalizacao
+
+  // === ZONA S/R ===
+  JanelaZona(3);                  // candles atras para detectar high/low da zona
+  ZonaPontos(20.0);               // amplitude da zona em pontos
+                                  //   WDO 15min: 20 | WDO 5min: 12
+                                  //   WIN 15min: 822| WIN 5min: 342
+  ToleranciaZona(5.0);            // tolerancia de toque (pontos)
+                                  //   WDO: 5 | WIN: 200
+  MostrarZona(true);              // false = desativa coloracao de zona no grafico
+
+  // === ALERTAS ===
+  MostrarAlertas(true);           // alerta sonoro em F >= ForcaMinimaForte
+
+var
+  // Forca
+  fCorpo, fRange, fVolMedia : float;
+  fMassa, fAceleracao, fForca : float;
+  fForcaAbs : float;
+
+  // Zona S/R
+  fMaxZona, fMinZona : float;
+  fTopoZona, fBaseZona : float;
+  bZonaResistencia, bZonaSuporte : boolean;
+  i : integer;
+
+  // Cores PaintBar
+  r, g, b : integer;
+  rPlot, gPlot, bPlot : integer;
+
+begin
+  // ─── F = M x A ────────────────────────────────────────────────
+  fCorpo := Close - Open;
+  fRange := High - Low;
+  if fRange <= 0 then fRange := 0.0001;
+  fVolMedia := Media(PeriodoMediaVolume, Volume);
+  if fVolMedia <= 0 then fVolMedia := 1;
+
+  fMassa      := fCorpo / fRange;
+  fAceleracao := Volume / fVolMedia;
+  fForca      := fMassa * fAceleracao * 100;
+  if fForca >  100 then fForca :=  100;
+  if fForca < -100 then fForca := -100;
+  fForcaAbs := abs(fForca);
+
+  // ─── Zona S/R (JanelaZona candles atras) ─────────────────────
+  fMaxZona := High[1];
+  fMinZona := Low[1];
+  for i := 1 to JanelaZona do
+  begin
+    if High[i] > fMaxZona then fMaxZona := High[i];
+    if Low[i]  < fMinZona then fMinZona := Low[i];
+  end;
+  fTopoZona := fMaxZona + ZonaPontos;
+  fBaseZona := fMinZona - ZonaPontos;
+  bZonaResistencia := (Close >= fMaxZona - ToleranciaZona) and (Close <= fTopoZona);
+  bZonaSuporte     := (Close <= fMinZona + ToleranciaZona) and (Close >= fBaseZona);
+
+  // ─── PaintBar — esquema 4 tons + zona amarela ─────────────────
+  // Prioridade: forca > zona sem forca > sem sinal (branco)
+  r := 255; g := 255; b := 255;  // default: branco
+
+  if fForca >= ForcaExaustao then
+  begin
+    // Fucsia: exaustao compradora
+    r := 255; g := 0; b := 180;
+  end
+  else if fForca >= ForcaMinimaForte then
+  begin
+    // Verde escuro: forte compra
+    r := 0; g := 180; b := 0;
+  end
+  else if fForca <= -ForcaExaustao then
+  begin
+    // Laranja: exaustao vendedora
+    r := 255; g := 140; b := 0;
+  end
+  else if fForca <= -ForcaMinimaForte then
+  begin
+    // Vermelho escuro: forte venda
+    r := 200; g := 0; b := 0;
+  end
+  else if MostrarZona and (bZonaSuporte or bZonaResistencia) then
+  begin
+    // Amarelo: zona ativa sem forca — aguardar confirmacao
+    r := 255; g := 215; b := 0;
+  end;
+
+  PaintBar(RGB(r, g, b));
+
+  // ─── Plot 1: histograma de F (sub-painel) ─────────────────────
+  // Cor do histograma = mesmo esquema de cores da barra principal
+  rPlot := r; gPlot := g; bPlot := b;
+
+  // Garante que o branco (sem sinal) no histograma apareca como cinza legivel
+  if (r = 255) and (g = 255) and (b = 255) then
+  begin
+    rPlot := 160; gPlot := 160; bPlot := 160;
+  end;
+
+  Plot(fForca);                          // Plot1: valor F (-100 a +100)
+  SetPlotColor(1, RGB(rPlot, gPlot, bPlot));
+  SetPlotStyle(1, 2);                    // 2 = histograma (barras verticais)
+  SetPlotWidth(1, 2);
+
+  // ─── Plot 2: linha zero ───────────────────────────────────────
+  Plot2(0);
+  SetPlotColor(2, RGB(100, 100, 100));   // cinza
+  SetPlotStyle(2, 1);                    // 1 = linha solida
+  SetPlotWidth(2, 1);
+
+  // ─── Plot 3: threshold ForcaMinimaForte (+70 e -70) ──────────
+  // Plota a linha positiva; para negativa, plotar em indicador separado
+  // ou usar Plot3/Plot4 para ambos os lados
+  Plot3(ForcaMinimaForte);
+  SetPlotColor(3, RGB(0, 180, 0));       // verde — nivel forte compra
+  SetPlotStyle(3, 2);                    // linha tracejada
+  SetPlotWidth(3, 1);
+
+  Plot4(-ForcaMinimaForte);
+  SetPlotColor(4, RGB(200, 0, 0));       // vermelho — nivel forte venda
+  SetPlotStyle(4, 2);
+  SetPlotWidth(4, 1);
+
+  // ─── Plot 5: threshold ForcaExaustao (+85 e -85) ─────────────
+  Plot5(ForcaExaustao);
+  SetPlotColor(5, RGB(255, 0, 180));     // fucsia — nivel exaustao compra
+  SetPlotStyle(5, 2);
+  SetPlotWidth(5, 1);
+
+  Plot6(-ForcaExaustao);
+  SetPlotColor(6, RGB(255, 140, 0));     // laranja — nivel exaustao venda
+  SetPlotStyle(6, 2);
+  SetPlotWidth(6, 1);
+
+  // ─── Alertas (opcional — nao abre ordens) ─────────────────────
+  if MostrarAlertas then
+  begin
+    if fForca >= ForcaMinimaForte then Alert(RGB(0, 200, 0));
+    if fForca <= -ForcaMinimaForte then Alert(RGB(200, 0, 0));
+  end;
+
+end;
