@@ -1,0 +1,11 @@
+{
+  "settings": {
+    "x_pontos": 100,
+    "sl_minimo": 0.5,
+    "sg_minimo": 0.8
+  },
+  "zones_15": [
+    {
+      "datetime": "2025-08-25 12:00:00",
+      "price_range": [
+        
