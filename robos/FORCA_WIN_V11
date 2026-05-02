@@ -1,6 +1,7 @@
 { 
   Robo  : FORCA_WIN_V11
-  Ativo : WIN (mini-índice)
+  Tipo  : NTSL (estrategia/robo executavel — usa BuyAtMarket/SellShortAtMarket)
+  Ativo : WIN (mini-indice)
   Versao: 11.0
   Base  : FORCA_SEMAFORO_V10
 

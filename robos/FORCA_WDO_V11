@@ -1,6 +1,7 @@
 { 
   Robo  : FORCA_WDO_V11
-  Ativo : WDO (mini-dólar)
+  Tipo  : NTSL (estrategia/robo executavel — usa BuyAtMarket/SellShortAtMarket)
+  Ativo : WDO (mini-dolar)
   Versao: 11.0
   Base  : FORCA_SEMAFORO_V10
 

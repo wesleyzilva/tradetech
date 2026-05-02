@@ -1,5 +1,6 @@
 { 
-  Robo: FORCA_SEMAFORO_V10
+  Robo : FORCA_SEMAFORO_V10
+  Tipo : NTSL (estrategia/robo executavel — usa BuyAtMarket/SellShortAtMarket)
   Versao: 10.0
   Baseado em: FORCA_SEMAFORO_CORES_SOM v9.0
 

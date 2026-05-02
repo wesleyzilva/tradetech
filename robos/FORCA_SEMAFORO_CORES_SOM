@@ -1,5 +1,6 @@
 { 
-  Robo: FORCA_SEMAFORO_CORES_SOM
+  Robo : FORCA_SEMAFORO_CORES_SOM
+  Tipo : NTSL (estrategia/robo executavel — usa BuyAtMarket/SellShortAtMarket)
   Descricao: Coloracao por forca F=MA com degradê visivel e confirmacao multi-timeframe (Contexto+Direcao+Gatilho).
              Entradas somente quando os 3 TFs estao alinhados.
   Versao: 9.0
