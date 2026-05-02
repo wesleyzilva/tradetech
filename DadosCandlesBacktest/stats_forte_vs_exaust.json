@@ -1,0 +1,110 @@
+{
+  "WDO_15min_forte": {
+    "modo": "forte",
+    "n": 1563,
+    "wins": 628,
+    "losses": 935,
+    "winrate": 40.2,
+    "pnl_pts": 18980.0,
+    "rr": 3.0
+  },
+  "WDO_15min_exaust": {
+    "modo": "exaust",
+    "n": 5158,
+    "wins": 2030,
+    "losses": 3128,
+    "winrate": 39.4,
+    "pnl_pts": 59240.0,
+    "rr": 3.0
+  },
+  "WDO_15min_ambos": {
+    "modo": "ambos",
+    "n": 6721,
+    "wins": 2658,
+    "losses": 4063,
+    "winrate": 39.5,
+    "pnl_pts": 78220.0,
+    "rr": 3.0
+  },
+  "WDO_5min_forte": {
+    "modo": "forte",
+    "n": 1564,
+    "wins": 650,
+    "losses": 914,
+    "winrate": 41.6,
+    "pnl_pts": 12432.0,
+    "rr": 3.0
+  },
+  "WDO_5min_exaust": {
+    "modo": "exaust",
+    "n": 4450,
+    "wins": 1798,
+    "losses": 2652,
+    "winrate": 40.4,
+    "pnl_pts": 32904.0,
+    "rr": 3.0
+  },
+  "WDO_5min_ambos": {
+    "modo": "ambos",
+    "n": 6014,
+    "wins": 2448,
+    "losses": 3566,
+    "winrate": 40.7,
+    "pnl_pts": 45336.0,
+    "rr": 3.0
+  },
+  "WIN_15min_forte": {
+    "modo": "forte",
+    "n": 1796,
+    "wins": 740,
+    "losses": 1056,
+    "winrate": 41.2,
+    "pnl_pts": 956808.0,
+    "rr": 3.0
+  },
+  "WIN_15min_exaust": {
+    "modo": "exaust",
+    "n": 4735,
+    "wins": 2114,
+    "losses": 2621,
+    "winrate": 44.6,
+    "pnl_pts": 3058662.0,
+    "rr": 3.0
+  },
+  "WIN_15min_ambos": {
+    "modo": "ambos",
+    "n": 6531,
+    "wins": 2854,
+    "losses": 3677,
+    "winrate": 43.7,
+    "pnl_pts": 4015470.0,
+    "rr": 3.0
+  },
+  "WIN_5min_forte": {
+    "modo": "forte",
+    "n": 1665,
+    "wins": 647,
+    "losses": 1018,
+    "winrate": 38.9,
+    "pnl_pts": 315666.0,
+    "rr": 3.0
+  },
+  "WIN_5min_exaust": {
+    "modo": "exaust",
+    "n": 4174,
+    "wins": 1594,
+    "losses": 2580,
+    "winrate": 38.2,
+    "pnl_pts": 753084.0,
+    "rr": 3.0
+  },
+  "WIN_5min_ambos": {
+    "modo": "ambos",
+    "n": 5839,
+    "wins": 2241,
+    "losses": 3598,
+    "winrate": 38.4,
+    "pnl_pts": 1068750.0,
+    "rr": 3.0
+  }
+}

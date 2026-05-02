@@ -1,0 +1,237 @@
+{ 
+  Robo  : FORCA_WDO_V11
+  Ativo : WDO (mini-dólar)
+  Versao: 11.0
+  Base  : FORCA_SEMAFORO_V10
+
+  === CALIBRACAO ESTATISTICA (47.786 candles WDO 15min | 2012-2026) ===
+
+  Distribuicao de forca:
+    0-30  (branco)  : 48.4% candles — Win@1c 46.3%  avg -0.19pts  SEM SINAL
+    30-55 (cinza)   : 23.0% candles — Win@1c 45.7%  avg -0.29pts  SEM SINAL
+    55-70 (fraco)   :  7.4% candles — Win@1c 44.5%  avg -0.48pts  PIOR ZONA
+    70-85 (forte)   :  5.1% candles — Win@1c 46.7%  avg -0.12pts  BOM
+    85-100(exaust)  : 16.0% candles — Win@1c 47.9%  avg +0.14pts  MELHOR
+
+  Backtest SL=20pts TP=60pts (RR 3.0) com MTF 60/30/15:
+    Modo FORTE  (F 70-85) : n=1563  win=40.2%  PnL=+18.980pts
+    Modo EXAUST (F 85-100): n=5158  win=39.4%  PnL=+59.240pts  ← MAIS FREQUENTE
+    Modo AMBOS  (F >= 70) : n=6721  win=39.5%  PnL=+78.220pts  ← MELHOR TOTAL
+
+  Range medio 15min: 13.3pts  |  5min: 6.1pts
+  SL ideal 15min: 20pts (1.5x range)  |  SL 5min: 12pts (2x range)
+  TP ideal: RR 3.0  (60pts no 15min, 36pts no 5min)
+  Contratos sugeridos (1% de R$10k, SL=20, ponto=R$10): 5
+
+  Tripletas validas:
+    15min: 60/30/15 -> iJanelaDir=2, iJanelaCtx=4
+     5min: 30/15/5  -> iJanelaDir=3, iJanelaCtx=6
+
+  ESQUEMA DE CORES:
+    Branco          = F 0-30 ou F 30-55     — sem sinal
+    Verde escuro    = F >= 70 (forte alta)  — entrada prioritaria
+    Verm escuro     = F <= -70 (forte baixa)— entrada prioritaria
+    Fucsia/Magenta  = F >= 85 (exaust alta) — forte continuacao
+    Laranja         = F <= -85 (exaust baix)— forte continuacao
+    (zona fraca 55-70 NAO opera — pior zona estatisticamente)
+
+  ALERTAS: somente forte (70-85) e exaustao (>=85)
+}
+
+input
+  // === FORCA ===
+  ForcaMinimaForte(70.0);        // limiar tom forte — entrada + alerta
+  ForcaExaustao(85.0);           // limiar exaustao — cor destacada + alerta
+  PeriodoMediaVolume(20);
+  UsarFiltroVolume(true);
+  VolumeMinimo(2000);
+
+  // === MULTI-TF (tripleta WDO) ===
+  // 15min: iJanelaDir=2 iJanelaCtx=4  (tripleta 60/30/15)
+  //  5min: iJanelaDir=3 iJanelaCtx=6  (tripleta 30/15/5)
+  iJanelaDir(2);
+  iJanelaCtx(4);
+
+  // === STOP/ALVO (calibrados em WDO 15min) ===
+  // SL dinamico = max(StopMinimo, range_candle * FatorRangeSL)
+  StopMinimo(20.0);              // 20pts = P80 de adversidade @1c no 15min
+  FatorRangeSL(1.5);             // 1.5 x range medio = ~20pts no 15min
+  TakeProfit(60.0);              // RR 3.0 — melhor resultado historico
+  UsarBreakEven(true);
+  BreakEvenRatio(0.5);           // move SL p/ entrada apos 50% do TP
+
+  // === GERENCIAMENTO DE RISCO ===
+  CapitalReais(10000.0);
+  RiscoPorcentagem(1.0);         // 1% do capital por trade = R$100
+  PontoValorReais(10.0);         // WDO mini = R$10 por ponto
+  MaxContratos(10);
+
+  // === SAIDAS ===
+  StopHorario_H(17);
+  StopHorario_M(45);
+  UsarStopCandleContra(true);
+  ForcaStopContra(85.0);         // fecha so em exaustao contraria (mais conservador)
+  PermitirReversao(true);
+  MaxBarrasEmPosicao(0);
+
+  // === ALERTAS (somente forte + exaustao) ===
+  MostrarAlertas(true);
+
+var
+  fCorpo, fRange, fVolMedia : float;
+  fMassa, fAceleracao, fForca, fForcaAbs : float;
+  fMediaDir, fMediaCtx : float;
+  bCtxAlta, bCtxBaixa, bDirAlta, bDirBaixa : boolean;
+  r, g, b : integer;
+  iBarras : integer;
+  bDeveOperar, bBreakEven : boolean;
+  fEntrada, fSL : float;
+  iQtd : integer;
+
+begin
+  // ─── Calculos base ────────────────────────────────────────────
+  fCorpo := Close - Open;
+  fRange := High - Low;
+  if fRange <= 0 then fRange := 0.0001;
+  fVolMedia := Media(PeriodoMediaVolume, Volume);
+  if fVolMedia <= 0 then fVolMedia := 1;
+
+  // ─── F = M x A ────────────────────────────────────────────────
+  fMassa      := fCorpo / fRange;
+  fAceleracao := Volume / fVolMedia;
+  fForca      := fMassa * fAceleracao * 100;
+  if fForca >  100 then fForca :=  100;
+  if fForca < -100 then fForca := -100;
+  fForcaAbs := abs(fForca);
+
+  // ─── Multi-TF ─────────────────────────────────────────────────
+  fMediaDir := Media(iJanelaDir, Close);
+  fMediaCtx := Media(iJanelaCtx, Close);
+  bCtxAlta  := (Close > fMediaCtx) and (fMediaCtx > fMediaCtx[iJanelaCtx]);
+  bCtxBaixa := (Close < fMediaCtx) and (fMediaCtx < fMediaCtx[iJanelaCtx]);
+  bDirAlta  := (Close > fMediaDir) and (fMediaDir > fMediaDir[iJanelaDir]);
+  bDirBaixa := (Close < fMediaDir) and (fMediaDir < fMediaDir[iJanelaDir]);
+
+  // ─── CORES WDO ────────────────────────────────────────────────
+  // Branco  = sem sinal (F 0-55, incluindo zona fraca 55-70)
+  // Verde escuro (0,180,0)     = forte compra  F [70,85)
+  // Fucsia  (255,0,180)        = exaust compra F >= 85
+  // Verm escuro (200,0,0)      = forte venda   F (-85,-70]
+  // Laranja (255,140,0)        = exaust venda  F <= -85
+  r := 255; g := 255; b := 255;
+
+  if fForca >= ForcaExaustao then
+  begin
+    // Fucsia: exaustao compradora
+    r := 255; g := 0; b := 180;
+  end
+  else if fForca >= ForcaMinimaForte then
+  begin
+    // Verde escuro: forte compradora
+    r := 0; g := 180; b := 0;
+  end
+  else if fForca <= -ForcaExaustao then
+  begin
+    // Laranja: exaustao vendedora
+    r := 255; g := 140; b := 0;
+  end
+  else if fForca <= -ForcaMinimaForte then
+  begin
+    // Vermelho escuro: forte vendedora
+    r := 200; g := 0; b := 0;
+  end;
+  // F absoluto < 70: permanece branco (0-30 ruido, 30-55 cinza descartado, 55-70 fraco descartado)
+
+  PaintBar(RGB(r, g, b));
+
+  // ─── Sizing por risco ─────────────────────────────────────────
+  fSL := StopMinimo;
+  if (fRange * FatorRangeSL) > fSL then fSL := fRange * FatorRangeSL;
+
+  if (fSL > 0) and (PontoValorReais > 0) then
+    iQtd := Trunc(CapitalReais * (RiscoPorcentagem / 100) / (fSL * PontoValorReais))
+  else
+    iQtd := 1;
+  if iQtd < 1 then iQtd := 1;
+  if iQtd > MaxContratos then iQtd := MaxContratos;
+
+  // ─── Stop horario ─────────────────────────────────────────────
+  if Time() >= (StopHorario_H * 10000 + StopHorario_M * 100) then
+  begin
+    if IsBought or IsSold then ClosePosition;
+    bDeveOperar := false;
+  end
+  else
+    bDeveOperar := true;
+
+  // ─── Controle barras em posicao ───────────────────────────────
+  if IsBought or IsSold then
+    iBarras := iBarras + 1
+  else begin
+    iBarras := 0;
+    bBreakEven := false;
+  end;
+
+  if (MaxBarrasEmPosicao > 0) and (iBarras >= MaxBarrasEmPosicao) then
+  begin
+    if IsBought or IsSold then ClosePosition;
+    iBarras := 0; bDeveOperar := false;
+  end;
+
+  // ─── Stop candle contra (exaustao contraria) ──────────────────
+  if UsarStopCandleContra then
+  begin
+    if IsBought  and (fForca <= -ForcaStopContra) then begin ClosePosition; iBarras := 0; end;
+    if IsSold    and (fForca >= ForcaStopContra)  then begin ClosePosition; iBarras := 0; end;
+  end;
+
+  // ─── Break-even ───────────────────────────────────────────────
+  if UsarBreakEven then
+  begin
+    if IsBought and (not bBreakEven) then
+      if (Close - fEntrada) >= (TakeProfit * BreakEvenRatio) then bBreakEven := true;
+    if IsSold and (not bBreakEven) then
+      if (fEntrada - Close) >= (TakeProfit * BreakEvenRatio) then bBreakEven := true;
+    if bBreakEven then
+    begin
+      if IsBought  and (Close <= fEntrada) then begin ClosePosition; iBarras := 0; end;
+      if IsSold    and (Close >= fEntrada) then begin ClosePosition; iBarras := 0; end;
+    end;
+  end;
+
+  // ─── ENTRADAS (operar forte + exaustao combinados) ────────────
+  // Justificativa: ambos juntos = melhor PnL total (+78.220pts vs +59.240 so exaust)
+  if HabilitarOperacoes and bDeveOperar then
+  begin
+    // COMPRA: F >= 70 + MTF alinhado
+    if (fForca >= ForcaMinimaForte)
+      and bCtxAlta and bDirAlta
+      and ((not UsarFiltroVolume) or (Volume >= VolumeMinimo)) then
+    begin
+      if PermitirReversao and IsSold then ClosePosition;
+      if (not IsBought) and (not IsSold) then
+      begin
+        BuyAtMarket;
+        fEntrada := Close;
+        iBarras  := 0; bBreakEven := false;
+        if MostrarAlertas then Alert(RGB(0, 200, 0));
+      end;
+    end;
+
+    // VENDA: F <= -70 + MTF alinhado
+    if (fForca <= -ForcaMinimaForte)
+      and bCtxBaixa and bDirBaixa
+      and ((not UsarFiltroVolume) or (Volume >= VolumeMinimo)) then
+    begin
+      if PermitirReversao and IsBought then ClosePosition;
+      if (not IsBought) and (not IsSold) then
+      begin
+        SellShortAtMarket;
+        fEntrada := Close;
+        iBarras  := 0; bBreakEven := false;
+        if MostrarAlertas then Alert(RGB(200, 0, 0));
+      end;
+    end;
+  end;
+
+end;
