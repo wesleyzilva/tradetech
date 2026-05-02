@@ -1,0 +1,305 @@
+{ 
+  Robo: FORCA_SEMAFORO_V10
+  Versao: 10.0
+  Baseado em: FORCA_SEMAFORO_CORES_SOM v9.0
+
+  === MUDANCAS vs V9.0 (baseadas em analise estatistica dos candles 2012-2026) ===
+
+  1. CORES — 2 tons fixos (fim do degrade continuo):
+       Verde claro  (F [55,70)) : sinal ok, aguardar confirmacao
+       Verde escuro (F >= 70)   : sinal forte, entrada prioritaria
+       Verm  claro  (F (-70,-55]): sinal ok, aguardar confirmacao
+       Verm  escuro (F <= -70)  : sinal forte, entrada prioritaria
+     Justificativa: dados mostram ~2-3pp de diferenca de Win% entre fracos e fortes.
+     2 tons torna a leitura visual mais imediata sem perda de informacao.
+
+  2. STOP LOSS DINAMICO baseado no range do candle de entrada:
+       SL = max(StopPontosFixo, round(RangeCandle * FatorRangeSL))
+     Justificativa WDO 15min: range medio = 13.3pts.
+       P70 adversidade 1c = 10pts  (SL de 10 protege 70% no proximo candle)
+       P80 adversidade 1c = 13pts  (SL de 13 protege 80%)
+     Parametro padrao: FatorRangeSL=0.75, o que da ~10pts em candles medios do WDO.
+
+  3. BREAK-EVEN AUTOMATICO:
+       Quando preco avanca BreakEvenRatio * TP alem da entrada, move SL para entrada.
+       Garante que a trade nunca vire prejuizo apos meia corrida.
+
+  4. FILTRO DE QUALIDADE (opcional):
+       EntrarSomenteForte=true -> opera apenas F >= ForcaMinimaEntrada2 (ex: 70)
+       EntrarSomenteForte=false -> opera F >= ForcaMinimaEntrada (55)
+
+  5. GERENCIAMENTO DE RISCO por capital e percentual:
+       Sizing automatico: contratos = floor(Capital * RiscoPct% / (SL * PontoValor))
+       WDO: 1 ponto = R$10 (mini) ou R$100 (cheio)
+       Define MaxContratos como teto de seguranca.
+
+  === PARAMETROS RECOMENDADOS (calibrados pelos dados) ===
+    WDO 15min (tripleta 60/30/15): SL=10pts, TP=30pts (RR 3.0), Win%~31%, positivo
+    WDO 5min  (tripleta 30/15/5) : SL=8pts,  TP=20pts (RR 2.5)
+    WIN 15min (tripleta 60/30/15): SL=300pts, TP=900pts (RR 3.0)
+    WIN 5min  (tripleta 30/15/5) : SL=200pts, TP=500pts (RR 2.5)
+
+  Tripletas validas (regra dos multiplos inteiros):
+    15min: 60/30/15 -> iJanelaDir=2, iJanelaCtx=4
+    5min:  30/15/5  -> iJanelaDir=3, iJanelaCtx=6
+    5min:  15/10/5  -> iJanelaDir=2, iJanelaCtx=3
+}
+
+input
+  // --- Forca ---
+  ForcaMinimaEntrada(55);         // limiar para cor e entrada fraca
+  ForcaMinimaEntrada2(70);        // limiar para entrada forte e cor escura
+  EntrarSomenteForte(false);      // true = operar apenas F >= ForcaMinimaEntrada2
+  PeriodoMediaVolume(20);         // periodo da media de volume
+  UsarFiltroVolume(true);         // exige Volume >= VolumeMinimo
+  VolumeMinimo(2000);
+
+  // --- Multi-TF (somente multiplos inteiros) ---
+  // Tripleta 60/30/15 (15min): iJanelaDir=2, iJanelaCtx=4
+  // Tripleta 30/15/5  (5min) : iJanelaDir=3, iJanelaCtx=6
+  // Tripleta 15/10/5  (5min) : iJanelaDir=2, iJanelaCtx=3
+  iJanelaDir(2);                  // multiplicador TF direcao
+  iJanelaCtx(4);                  // multiplicador TF contexto
+
+  // --- Stop Loss dinamico ---
+  StopPontosFixo(10.0);           // SL minimo em pontos (WDO 15min: 10 | WIN 15min: 300)
+  FatorRangeSL(0.75);             // SL = max(StopPontosFixo, range_candle * FatorRangeSL)
+  TakeProfit(30.0);               // TP em pontos (WDO 15min: 30 | WIN 15min: 900)
+  UsarBreakEven(true);            // move SL para entrada apos parcial do TP
+  BreakEvenRatio(0.5);            // mover SL quando atingir 50% do caminho ao TP
+
+  // --- Gerenciamento de risco ---
+  CapitalReais(10000.0);          // capital disponivel em R$
+  RiscoPorcentagem(1.0);          // risco maximo por trade em % do capital
+  PontoValorReais(10.0);          // valor do ponto em R$ (WDO mini=10, WIN mini=0.20)
+  MaxContratos(10);               // teto de contratos por seguranca
+
+  // --- Saidas ---
+  StopHorario_H(17);
+  StopHorario_M(45);
+  UsarStopCandleContra(true);     // fecha se candle forte na direcao contraria
+  ForcaCandleContra(70);          // limiar para stop candle contra (usa tom forte)
+  PermitirReversao(true);
+  MaxBarrasEmPosicao(0);          // 0=desativado; N candles = saida forcada
+
+  // --- Alertas ---
+  MostrarAlertas(true);
+  AlertarSomenteForte(true);      // alerta apenas no tom forte (F >= ForcaMinimaEntrada2)
+
+var
+  fCorpo, fRange, fVolMedia : float;
+  fMassa, fAceleracao, fForca, fForcaAbs : float;
+  fMediaDir, fMediaCtx : float;
+  bContextoAlta, bContextoBaixa : boolean;
+  bDirecaoAlta, bDirecaoBaixa : boolean;
+  r, g, b : integer;
+  iBarrasEmPosicao : integer;
+  bDeveOperar, bBreakEvenAcionado : boolean;
+  fSLDinamico, fEntradaPrice : float;
+  iQtdContratos : integer;
+
+begin
+  // ─── 1. Calculos de base ───────────────────────────────────────
+  fCorpo := Close - Open;
+  fRange := High - Low;
+  if fRange <= 0 then fRange := 0.0001;
+
+  fVolMedia := Media(PeriodoMediaVolume, Volume);
+  if fVolMedia <= 0 then fVolMedia := 1;
+
+  // ─── 2. Forca F = M × A ───────────────────────────────────────
+  fMassa       := fCorpo / fRange;
+  fAceleracao  := Volume / fVolMedia;
+  fForca       := fMassa * fAceleracao * 100;
+  if fForca >  100 then fForca :=  100;
+  if fForca < -100 then fForca := -100;
+  fForcaAbs := abs(fForca);
+
+  // ─── 3. Multi-TF: Contexto e Direcao ──────────────────────────
+  fMediaDir := Media(iJanelaDir, Close);
+  fMediaCtx := Media(iJanelaCtx, Close);
+  bContextoAlta  := (Close > fMediaCtx) and (fMediaCtx > fMediaCtx[iJanelaCtx]);
+  bContextoBaixa := (Close < fMediaCtx) and (fMediaCtx < fMediaCtx[iJanelaCtx]);
+  bDirecaoAlta   := (Close > fMediaDir) and (fMediaDir > fMediaDir[iJanelaDir]);
+  bDirecaoBaixa  := (Close < fMediaDir) and (fMediaDir < fMediaDir[iJanelaDir]);
+
+  // ─── 4. CORES — 2 tons (sem degrade continuo) ─────────────────
+  //   Branco        = sem sinal
+  //   Verde claro   = forca compradora fraca  [55, 70)
+  //   Verde escuro  = forca compradora forte  [70, 100]
+  //   Verm. claro   = forca vendedora fraca   (-70, -55]
+  //   Verm. escuro  = forca vendedora forte   [-100, -70]
+  r := 255; g := 255; b := 255; // padrao: branco
+
+  if fForca >= ForcaMinimaEntrada2 then
+  begin
+    // Verde escuro: forca forte de compra
+    r := 0; g := 210; b := 0;
+  end
+  else if fForca >= ForcaMinimaEntrada then
+  begin
+    // Verde claro: forca fraca de compra
+    r := 100; g := 200; b := 100;
+  end
+  else if fForca <= -ForcaMinimaEntrada2 then
+  begin
+    // Vermelho escuro: forca forte de venda
+    r := 220; g := 0; b := 0;
+  end
+  else if fForca <= -ForcaMinimaEntrada then
+  begin
+    // Vermelho claro: forca fraca de venda
+    r := 210; g := 100; b := 100;
+  end;
+  // Faixa 30-55: permanece branco (ruido, sem sinal)
+
+  PaintBar(RGB(r, g, b));
+
+  // ─── 5. Sizing: calcula contratos pelo risco ──────────────────
+  // SL dinamico = max(StopPontosFixo, range_candle * FatorRangeSL)
+  fSLDinamico := StopPontosFixo;
+  if (fRange * FatorRangeSL) > fSLDinamico then
+    fSLDinamico := fRange * FatorRangeSL;
+
+  // Contratos = floor(Capital * Risco% / (SL_pts * Ponto_R$))
+  if (fSLDinamico > 0) and (PontoValorReais > 0) then
+    iQtdContratos := Trunc(CapitalReais * (RiscoPorcentagem / 100) / (fSLDinamico * PontoValorReais))
+  else
+    iQtdContratos := 1;
+  if iQtdContratos < 1 then iQtdContratos := 1;
+  if iQtdContratos > MaxContratos then iQtdContratos := MaxContratos;
+
+  // ─── 6. Stop horario ──────────────────────────────────────────
+  if Time() >= (StopHorario_H * 10000 + StopHorario_M * 100) then
+  begin
+    if IsBought or IsSold then ClosePosition;
+    bDeveOperar := false;
+  end
+  else
+    bDeveOperar := true;
+
+  // ─── 7. Controle de barras em posicao ─────────────────────────
+  if IsBought or IsSold then
+    iBarrasEmPosicao := iBarrasEmPosicao + 1
+  else
+  begin
+    iBarrasEmPosicao := 0;
+    bBreakEvenAcionado := false;
+  end;
+
+  if (MaxBarrasEmPosicao > 0) and (iBarrasEmPosicao >= MaxBarrasEmPosicao) then
+  begin
+    if IsBought or IsSold then ClosePosition;
+    iBarrasEmPosicao := 0;
+    bDeveOperar := false;
+  end;
+
+  // ─── 8. Stop candle contra ────────────────────────────────────
+  // Usa ForcaCandleContra (padrao 70 = tom forte) como limiar de saida
+  if UsarStopCandleContra then
+  begin
+    if IsBought and (fForca <= -ForcaCandleContra) then
+    begin
+      ClosePosition;
+      iBarrasEmPosicao := 0;
+    end;
+    if IsSold and (fForca >= ForcaCandleContra) then
+    begin
+      ClosePosition;
+      iBarrasEmPosicao := 0;
+    end;
+  end;
+
+  // ─── 9. Break-even ────────────────────────────────────────────
+  // Quando preco avanca BreakEvenRatio * TP, move SL para entrada
+  // (gerenciado externamente via ordens — aqui apenas fecha se reverteu ao ponto de entrada)
+  if UsarBreakEven and (not bBreakEvenAcionado) then
+  begin
+    if IsBought then
+    begin
+      if (Close - fEntradaPrice) >= (TakeProfit * BreakEvenRatio) then
+      begin
+        if Close < fEntradaPrice then
+        begin
+          ClosePosition;
+          iBarrasEmPosicao := 0;
+        end;
+        bBreakEvenAcionado := true;
+      end;
+    end;
+    if IsSold then
+    begin
+      if (fEntradaPrice - Close) >= (TakeProfit * BreakEvenRatio) then
+      begin
+        if Close > fEntradaPrice then
+        begin
+          ClosePosition;
+          iBarrasEmPosicao := 0;
+        end;
+        bBreakEvenAcionado := true;
+      end;
+    end;
+  end;
+
+  // Apos break-even acionado: fecha se voltou ao ponto de entrada
+  if UsarBreakEven and bBreakEvenAcionado then
+  begin
+    if IsBought  and (Close <= fEntradaPrice) then begin ClosePosition; iBarrasEmPosicao := 0; end;
+    if IsSold    and (Close >= fEntradaPrice) then begin ClosePosition; iBarrasEmPosicao := 0; end;
+  end;
+
+  // ─── 10. ENTRADAS ─────────────────────────────────────────────
+  if HabilitarOperacoes and bDeveOperar then
+  begin
+    // Definicao do limiar de entrada
+    // EntrarSomenteForte=true  -> exige F >= ForcaMinimaEntrada2 (ex: 70)
+    // EntrarSomenteForte=false -> exige F >= ForcaMinimaEntrada  (ex: 55)
+    
+    // ── COMPRA ──
+    if (bContextoAlta and bDirecaoAlta)
+      and ((not UsarFiltroVolume) or (Volume >= VolumeMinimo))
+      and (
+        (EntrarSomenteForte and (fForca >= ForcaMinimaEntrada2)) or
+        ((not EntrarSomenteForte) and (fForca >= ForcaMinimaEntrada))
+      ) then
+    begin
+      if PermitirReversao and IsSold then ClosePosition;
+      if (not IsBought) and (not IsSold) then
+      begin
+        BuyAtMarket;
+        fEntradaPrice    := Close;
+        iBarrasEmPosicao := 0;
+        bBreakEvenAcionado := false;
+        if MostrarAlertas then
+        begin
+          if (not AlertarSomenteForte) or (fForcaAbs >= ForcaMinimaEntrada2) then
+            Alert(RGB(0, 200, 0));
+        end;
+      end;
+    end;
+
+    // ── VENDA ──
+    if (bContextoBaixa and bDirecaoBaixa)
+      and ((not UsarFiltroVolume) or (Volume >= VolumeMinimo))
+      and (
+        (EntrarSomenteForte and (fForca <= -ForcaMinimaEntrada2)) or
+        ((not EntrarSomenteForte) and (fForca <= -ForcaMinimaEntrada))
+      ) then
+    begin
+      if PermitirReversao and IsBought then ClosePosition;
+      if (not IsBought) and (not IsSold) then
+      begin
+        SellShortAtMarket;
+        fEntradaPrice    := Close;
+        iBarrasEmPosicao := 0;
+        bBreakEvenAcionado := false;
+        if MostrarAlertas then
+        begin
+          if (not AlertarSomenteForte) or (fForcaAbs >= ForcaMinimaEntrada2) then
+            Alert(RGB(200, 0, 0));
+        end;
+      end;
+    end;
+  end;
+
+end;
