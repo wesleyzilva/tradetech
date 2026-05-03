@@ -86,6 +86,7 @@ input
   // --- Alertas ---
   MostrarAlertas(true);
   AlertarSomenteForte(true);      // alerta apenas no tom forte (F >= ForcaMinimaEntrada2)
+  HabilitarOperacoes(true);       // false = coloracao ativa mas sem envio de ordens
 
 var
   fCorpo, fRange, fVolMedia : float;
