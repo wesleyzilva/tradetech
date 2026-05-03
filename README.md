@@ -119,15 +119,14 @@ Robots and indicators developed on Neologica Profit platform targeting WIN B3:
 
 **Robôs de execução (NTSL — gerenciam ordens automaticamente):**
 
-| Robot | Strategy | Language | Status |
-|-------|----------|----------|--------|
-| `FORCA_SEMAFORO_CORES_SOM` | F=MA rainbow semaphore, 6 colours | NTSL | ✅ v9.0 |
-| `FORCA_SEMAFORO_V10` | 2-tone (forte+exaustão), dynamic SL, break-even | NTSL | ✅ Backtested |
-| `FORCA_WDO_V11` | WDO-calibrated: SL=20, TP=60, RR=3, 4 colours | NTSL | ✅ Calibrated |
-| `FORCA_WIN_V11` | WIN-calibrated: SL=822, TP=2466, RR=3, 4 colours | NTSL | ✅ Calibrated |
-| `SCALPER_ZONA_V1` | Zone S/R + Force (F≥55) confirmation, RR=2 | NTSL | 🔄 In testing |
-| `IFR_reversal` | RSI reversal at structure support/resistance | NTSL | 🔲 Planned |
-| `VWAP_pullback` | Pullback to VWAP in trending session | NTSL | 🔲 Planned |
+| Robot | Asset | TF | SL | TP | RR | Break-even | Status |
+|-------|-------|----|----|----|----|------------|--------|
+| `FORCA_SEMAFORO_CORES_SOM` | WDO/WIN | qualquer | fixo | configurável | configurável | ❌ | ✅ v9.0 — referência, não modificar |
+| `FORCA_SEMAFORO_V10` | qualquer | qualquer | dinâmico `max(fixo, range×0.75)` | configurável | configurável | ✅ `ratio=0.5` | ✅ v10 |
+| `FORCA_WDO_V11` | **WDO** | **15min** `60/30/15` | dinâmico `max(20, range×1.5)` | **60 pts** | **3.0** | ✅ `ratio=0.5` | ✅ v11 calibrado |
+| `FORCA_WDO_V11` | **WDO** | **5min** `30/15/5` | dinâmico `max(12, range×2.0)` | **36 pts** | **3.0** | ✅ `ratio=0.5` | ✅ v11 calibrado |
+| `FORCA_WIN_V11` | **WIN** | **15min** `60/30/15` | dinâmico `max(822, range×2.0)` | **2466 pts** | **3.0** | ✅ `ratio=0.5` | ✅ v11 calibrado |
+| `FORCA_WIN_V11` | **WIN** | **5min** `30/15/5` | dinâmico `max(342, range×2.0)` | **1026 pts** | **3.0** | ✅ `ratio=0.5` | ✅ v11 calibrado |
 
 ---
 
@@ -135,33 +134,40 @@ Robots and indicators developed on Neologica Profit platform targeting WIN B3:
 
 All robots share the same core formula **F = M × A**. What differs is **when to enter**, **how much to risk**, and **which asset they are calibrated for**.
 
-| Robot | Asset | Entry filter | Colours | SL logic | RR | Special |
-|-------|-------|-------------|---------|----------|----|--------|
-| `FORCA_SEMAFORO_CORES_SOM` | WDO/WIN | F ≥ threshold (rainbow) | 6-colour gradient | fixed | configurable | **Reference only — do not modify** |
-| `FORCA_SEMAFORO_V10` | Any (generic) | F ≥ 55 (fraco) or F ≥ 70 (forte) | 2-tone: verde claro+escuro / verm claro+escuro | dynamic: max(fixo, range×0.75) | configurable | `EntrarSomenteForte` toggle — adaptable to any asset |
-| `FORCA_WDO_V11` | **WDO only** | F ≥ 70 (zona fraca descartada) | Verde / Cyan / Verm / Fúcsia | dynamic: max(20, range×1.5) | **3.0** | Calibrated on 47,786 candles 2012–2026 |
-| `FORCA_WIN_V11` | **WIN only** | F ≥ 70 (zona fraca descartada) | Verde / Cyan / Verm / Fúcsia | dynamic: max(822, range×2.0) | **3.0** | Best backtest: exaustão 44.6% win, RR3 |
-| `SCALPER_ZONA_V1` | WDO/WIN | F ≥ 55 **inside S/R zone only** | Verde / Fúcsia / Amarelo (zona) | dynamic: max(zona, range×1.2) | **2.0** | Quality > quantity; max 8 candles held |
-| `INDICADOR_FORCA_V1` | Visual only | — | 7 cores + amarelo + gold volume | — | — | Companion visual for all NTSL robots |
+| Robot | Asset | Entry filter | Break-even | RR | Observação |
+|-------|-------|-------------|------------|-----|------------|
+| `FORCA_SEMAFORO_CORES_SOM` | WDO/WIN | F ≥ 55 degradê | ❌ não tem | config | Referência visual — **não modificar** |
+| `FORCA_SEMAFORO_V10` | qualquer | F ≥ 55 ou F ≥ 70 (toggle) | ✅ `BreakEvenRatio=0.5` | config | Genérico — configure por ativo/TF |
+| `FORCA_WDO_V11` | WDO | F ≥ 70 (fraco descartado) | ✅ `BreakEvenRatio=0.5` | **3.0** | 47.786 candles · win 39.5% |
+| `FORCA_WIN_V11` | WIN | F ≥ 70 (fraco descartado) | ✅ `BreakEvenRatio=0.5` | **3.0** | Exaustão: win 44.6% · melhor robot |
+| `INDICADOR_FORCA_V1` | visual | — | — | — | 7 cores + zona S/R + gold volume |
+
+> **Break-even (`BreakEvenRatio=0.5`):** quando o preço percorre 50% do caminho ao TP, o SL é movido automaticamente para o preço de entrada. O trade nunca vira prejuízo após essa marca.
 
 ### Key decision: which robot to use?
 
 ```
-Manual trading / learning phase
-  └─► INDICADOR_FORCA_V1 (visual only) — understand the colour system first
+Análise visual / aprendizado
+  └─► INDICADOR_FORCA_V1 — entender o sistema de cores sem enviar ordens
 
-Generic or custom asset
-  └─► FORCA_SEMAFORO_V10 — configure SL/TP/thresholds per asset
+Qualquer ativo ou TF personalizado
+  └─► FORCA_SEMAFORO_V10 — configure SL/TP/thresholds por ativo
+      Tripletas testadas: 60/30/15 · 30/15/5 · 15/10/5
 
-WDO (mini-dollar) — automated execution
-  └─► FORCA_WDO_V11 — pre-calibrated, SL=20pts, TP=60pts
+WDO (mini-dólar) — execução automática
+  └─► FORCA_WDO_V11
+        15min (tripleta 60/30/15): iJanelaDir=2 · iJanelaCtx=4 · SL=20 · TP=60
+         5min (tripleta 30/15/5) : iJanelaDir=3 · iJanelaCtx=6 · SL=12 · TP=36
+        10min (tripleta 60/30/10): iJanelaDir=3 · iJanelaCtx=6 · ajustar SL
 
-WIN (mini-index) — automated execution
-  └─► FORCA_WIN_V11 — pre-calibrated, SL=822pts, TP=2466pts
-
-Conservative / zone-based
-  └─► SCALPER_ZONA_V1 — fewer trades, higher confidence, shorter hold
+WIN (mini-índice) — execução automática
+  └─► FORCA_WIN_V11
+        15min (tripleta 60/30/15): iJanelaDir=2 · iJanelaCtx=4 · SL=822  · TP=2466
+         5min (tripleta 30/15/5) : iJanelaDir=3 · iJanelaCtx=6 · SL=342  · TP=1026
+        10min (tripleta 60/30/10): iJanelaDir=3 · iJanelaCtx=6 · ajustar SL
 ```
+
+> **Tripleta 60/30/10 (10min):** multiplicadores `iJanelaDir=3` (3×10=30min) e `iJanelaCtx=6` (6×10=60min) — matematicamente válida. SL sugerido: WDO ~22pts (2.2×range médio 10min ~10pts) · WIN ~880pts.
 
 ### Colour consistency rule
 
@@ -181,10 +187,9 @@ SEMÁFORO_V10 uses its own 2-tone scheme (verde claro/escuro, verm claro/escuro)
 tradetech/
 ├── robos/                         NTSL/NTFL robot and indicator source code
 │   ├── FORCA_SEMAFORO_CORES_SOM   v9.0 — original rainbow semaphore (WDO/WIN)
-│   ├── FORCA_SEMAFORO_V10         v10  — 2 tones, dynamic SL, break-even
-│   ├── FORCA_WDO_V11              v11  — WDO-calibrated (SL=20, TP=60, RR3)
-│   ├── FORCA_WIN_V11              v11  — WIN-calibrated (SL=822, TP=2466, RR3)
-│   └── SCALPER_ZONA_V1            v1   — Zone S/R + Force confirmation scalper
+│   ├── FORCA_SEMAFORO_V10         v10  — genérico, SL dinâmico, break-even, qualquer TF
+│   ├── FORCA_WDO_V11              v11  — WDO · SL=20(15min)/12(5min) · TP RR3 · BE=0.5
+│   └── FORCA_WIN_V11              v11  — WIN · SL=822(15min)/342(5min) · TP RR3 · BE=0.5
 ├── DadosCandlesBacktest/          Raw CSVs (WIN/WDO 2012–2026, multi-TF)
 │   ├── detector_areas.py          Detects S/R zones from candle data
 │   ├── analise_forca_sl.py        Full statistical analysis (zone dist., SL grid)
@@ -344,24 +349,42 @@ Each robot has its own `.md` file in `robos/`:
 | `INDICADOR_FORCA_V1` | [INDICADOR_FORCA_V1.md](robos/INDICADOR_FORCA_V1.md) | Visual indicator — 7 colours, doji, volume gold |
 | `FORCA_WDO_V11` | [FORCA_WDO_V11.md](robos/FORCA_WDO_V11.md) | WDO-calibrated robot — SL=20, TP=60, RR3 |
 | `FORCA_WIN_V11` | [FORCA_WIN_V11.md](robos/FORCA_WIN_V11.md) | WIN-calibrated robot — SL=822, TP=2466, RR3 |
-| `FORCA_SEMAFORO_V10` | [FORCA_SEMAFORO_V10.md](robos/FORCA_SEMAFORO_V10.md) | 2-tone semaphore, dynamic SL, break-even |
-| `SCALPER_ZONA_V1` | [SCALPER_ZONA_V1.md](robos/SCALPER_ZONA_V1.md) | Zone S/R + force confirmation scalper |
-| `FORCA_SEMAFORO_CORES_SOM` | [FORCA_SEMAFORO_CORES_SOM.md](robos/FORCA_SEMAFORO_CORES_SOM.md) | Reference robot — v9 rainbow semaphore |
+| `FORCA_SEMAFORO_V10` | [FORCA_SEMAFORO_V10.md](robos/FORCA_SEMAFORO_V10.md) | Genérico — 2 tons, SL dinâmico, break-even, qualquer ativo/TF |
+| `FORCA_SEMAFORO_CORES_SOM` | [FORCA_SEMAFORO_CORES_SOM.md](robos/FORCA_SEMAFORO_CORES_SOM.md) | Referência — v9 degradê, **não modificar** |
 
 ---
 
 ## Methodology
 
-**Entry criteria (minimum confluence required):**
-1. Trend alignment on 3 timeframes (15m · 60m · daily)
-2. Price at a significant structure level (support, resistance, VWAP)
-3. Force score ≥ +60% or ≤ -60% on the trigger candle
-4. Volume ≥ 1.2× average at entry bar
+**Entry criteria (confluence obrigatória):**
+1. Bias diário (1D) alinhado com a direção da operação — manual, antes de abrir o Profit
+2. Contexto (TF maior: 60min) na mesma direção — `bCtxAlta` ou `bCtxBaixa` true
+3. Direção (TF médio: 30min) confirmada — `bDirAlta` ou `bDirBaixa` true
+4. Gatilho (TF de execução: 10min ou 15min) com F ≥ 70 (forte) ou F ≥ 85 (exaustão)
+5. Volume ≥ mínimo configurado no robot (`VolumeMinimo`)
 
-**Risk management:**
-- Maximum risk per trade: 1–2% of capital (see sizing table above)
-- Stop placement: dynamic — SL = max(StopMinimo, range × FatorRangeSL)
-- Daily loss limit: 3% → session ends
+> Os itens 2, 3, 4 e 5 são verificados automaticamente pelo robot a cada candle fechado.
+> O item 1 (bias 1D) é avaliação manual prévia à sessão.
+
+**Timeframes em uso (tela operacional):**
+
+| TF | Papel | Configuração no robot |
+|----|-------|-----------------------|
+| 1D | Bias diário — manual | Não entra no robot; define se aceita só LONG ou só SHORT |
+| 60min | Contexto institucional | `iJanelaCtx = 6` (em gráfico 10min) ou `iJanelaCtx = 4` (em 15min) |
+| 30min | Direção confirmada | `iJanelaDir = 3` (em gráfico 10min) ou `iJanelaDir = 2` (em 15min) |
+| 20min | Confirmação visual auxiliar | Não é parâmetro do robot — use visualmente entre 10min e 30min |
+| 15min | Gatilho (tripleta 60/30/15) | TF de execução do gráfico |
+| 10min | Gatilho (tripleta 60/30/10) | TF de execução do gráfico |
+| 5min | Gatilho (tripleta 30/15/5) | TF de execução — mais operações, SL menor |
+
+**Gerenciamento de risco:**
+- Risco máximo por trade: 1–2% do capital (ver tabela de sizing acima)
+- SL dinâmico: `max(StopMinimo, range_candle × FatorRangeSL)`
+- Break-even automático: `BreakEvenRatio=0.5` — SL vai para entrada após 50% do TP percorrido
+- Stop candle contra: fecha posição se exaustão contrária (F ≥ 85) aparecer
+- Stop horário: 17h45 — fecha tudo antes do fechamento do mercado
+- Limite diário: 3% de drawdown → encerrar sessão manualmente
 
 ---
 
