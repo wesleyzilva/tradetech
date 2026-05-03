@@ -151,6 +151,123 @@ tradetech/
 
 ---
 
+## Market Calibration — 2026 Data
+
+Calibrated on **47,786 candles (WDO) and 47,787 candles (WIN)** · full historical series 2012–2026.
+
+### Current Range Reference (15 min)
+
+| Asset | Avg Range 15min | Avg Range 5min | Typical Range 2026 |
+|-------|-----------------|----------------|---------------------|
+| **WDO** (mini-dollar) | 13.3 pts | 6.1 pts | **15–20 pts** (higher BRL volatility in 2026) |
+| **WIN** (mini-index) | 411 pts | 171 pts | **430–520 pts** (elevated equity volatility) |
+
+> ⚠️ 2026 context: Brazilian fiscal/political uncertainty has pushed ranges **15–30% above** the historical average. **Adjust your SL upward** when the market is in a high-volatility regime — the SL must always be ≥ 1.5× current average range (WDO) or ≥ 2× (WIN) to avoid noise-based stops.
+
+### SL Sizing — Do NOT go below these floors
+
+| Asset | Timeframe | Minimum SL | Rationale |
+|-------|-----------|------------|-----------|
+| WDO | 15 min | **20 pts** | 1.5× avg range — protects P80 adverse move in next candle |
+| WDO | 5 min | **12 pts** | 2× avg range (5min range = 6.1 pts) |
+| WIN | 15 min | **822 pts** | 2× avg range |
+| WIN | 5 min | **342 pts** | 2× avg range (5min range = 171 pts) |
+
+> **Never reduce SL below these values** to "get more contracts". A smaller SL on the same timeframe just means more premature stops and a worse win rate. The solution to small capital is a **shorter timeframe** or **larger capital**, not a tighter SL.
+
+### Sizing Table — Realistic Contracts per Capital
+
+| Capital | Risk | Asset | TF | SL | Risk/contract | Contracts |
+|---------|------|-------|----|----|---------------|-----------|
+| R$ 10k | 1% = R$100 | **WIN** | **5 min** | 342 pts × R$0.20 = **R$68** | R$68 | **1 contract** ✅ |
+| R$ 10k | 2% = R$200 | **WDO** | **5 min** | 12 pts × R$10 = R$120 | R$120 | **1 contract** ✅ |
+| R$ 10k | 1% = R$100 | WDO | 15 min | 20 pts × R$10 = R$200 | R$200 | 0 contracts ❌ |
+| R$ 10k | 2% = R$200 | WDO | 15 min | 20 pts × R$10 = R$200 | R$200 | **1 contract** ✅ |
+| R$ 20k | 1% = R$200 | WDO | 15 min | 20 pts × R$10 = R$200 | R$200 | **1 contract** ✅ |
+| R$ 20k | 1% = R$200 | WIN | 15 min | 822 pts × R$0.20 = R$164 | R$164 | **1 contract** ✅ |
+
+**Best starting point with R$10k:** WIN 5min (1 contract, ~0.7% actual risk) or WDO 5min at 2% tolerance.
+
+---
+
+## Operating Guide — Entry Timing and Candle Management
+
+### "The candle is almost closing with a signal — what do I do?"
+
+**Always wait for the candle to fully close before entering.**
+
+| Scenario | Action |
+|----------|--------|
+| Signal appears in the last 10–15 seconds of a candle | Let the candle close. Enter at the **next candle's open**. |
+| Signal appears mid-candle (first 30%) at extreme force (F > 80) | Entry mid-candle is acceptable — force at extremes rarely reverses before close. |
+| You are operating manually | Confirm the close, then place a market order on the new bar. |
+| Robot is active | No action needed — Profit robots always act on **bar close** events automatically. |
+
+**Why wait?** In the last seconds of a candle, two things can happen: (1) the candle partially reverses — reducing body/range ratio and dropping the force score — invalidating the signal, (2) other traders exit or enter aggressively at the close, creating momentary slippage. Entry on the next candle's open gives you a confirmed, settled signal.
+
+---
+
+### "How do I manage a trade on candles larger than 10 minutes?"
+
+**Never try to exit within the signal candle on 15min or 30min timeframes.** The strategy uses point-based SL/TP, not time-based exits.
+
+| Timeframe | Entry | Manage | Exit |
+|-----------|-------|--------|------|
+| 15 min | Enter at **next candle's open** after signal close | Monitor SL (dynamic) and TP in points | Exit at TP hit, SL hit, or opposite-direction force candle |
+| 30 min | Same — enter next candle open | Break-even activates after 50% TP distance | Same exit rules |
+| 60 min+ | Same — these are swing intraday setups | MaxBarrasEmPosicao = 4–6 recommended | Set a harder daily stop time (e.g., 16h) |
+
+**Key protection mechanisms (automated):**
+1. **Break-even** (`BreakEvenRatio = 0.5`): after price moves 50% toward TP, SL moves to entry price → trade becomes risk-free.
+2. **Stop candle contra** (`UsarStopCandleContra`): if an opposite-direction force candle at F ≥ 85 appears, position closes immediately — regardless of SL/TP.
+3. **Stop horário** (17:45 default): all positions closed before market close.
+
+> On larger candles you have **more time to analyse** but the same point-based logic applies. The robot handles all of this. Manually: watch for an opposite-colour extreme (fuchsia/orange against your long, or cyan/green against your short) as your exit trigger.
+
+---
+
+## Manual Trading Guide — How to Read the Colours
+
+### INDICADOR_FORCA_V1 — 7-colour paintbar (use this to trade manually)
+
+| Colour | Force | What it means | Manual action |
+|--------|-------|----------------|---------------|
+| ⬛ **Black/White** | Doji (corpo < 15% range) | Market indecision — body too small to trust | **Skip — do not trade this bar** |
+| ⬜ **White** | F = –40% to +40% | No directional force | **Skip** |
+| 🩶 **Grey** | F = +40 to +59 (buying) or –40 to –59 (selling) | Weak force — possible early signal | **Watch only — do not enter** |
+| 🟢 **Green** | F = +60 to +79 | Strong buying force | **Watch for entry if MTF aligned** |
+| 🟦 **Cyan** | F > +80 | Buying exhaustion — momentum at extreme | **Enter long — highest priority; risk of reversal watch** |
+| 🔴 **Red** | F = –60 to –79 | Strong selling force | **Watch for entry (short) if MTF aligned** |
+| 🩷 **Fuchsia** | F < –80 | Selling exhaustion — momentum at extreme | **Enter short — highest priority** |
+| 🟡 **Yellow** | Price in S/R zone, F < threshold | Zone touched, no force yet | **Wait for force confirmation — do not enter** |
+| 🟡 **Gold bar (Plot 9)** | Volume > 1.5× average | Institutional activity — volume expressed | **Confirms any signal on the same candle** |
+
+### Multi-Timeframe Alignment Check (mandatory before entry)
+
+Before any entry, verify:
+1. **Context TF (largest):** is the EMA slope pointing in your direction?
+2. **Direction TF (middle):** same direction as Context?
+3. **Trigger TF (current):** force candle in the same direction?
+
+All three aligned = **enter**. Only 2 aligned = **skip or reduce size by 50%**.
+
+---
+
+## Robot Documentation (individual files)
+
+Each robot has its own `.md` file in `robos/`:
+
+| Robot | Documentation | Purpose |
+|-------|--------------|---------|
+| `INDICADOR_FORCA_V1` | [INDICADOR_FORCA_V1.md](robos/INDICADOR_FORCA_V1.md) | Visual indicator — 7 colours, doji, volume gold |
+| `FORCA_WDO_V11` | [FORCA_WDO_V11.md](robos/FORCA_WDO_V11.md) | WDO-calibrated robot — SL=20, TP=60, RR3 |
+| `FORCA_WIN_V11` | [FORCA_WIN_V11.md](robos/FORCA_WIN_V11.md) | WIN-calibrated robot — SL=822, TP=2466, RR3 |
+| `FORCA_SEMAFORO_V10` | [FORCA_SEMAFORO_V10.md](robos/FORCA_SEMAFORO_V10.md) | 2-tone semaphore, dynamic SL, break-even |
+| `SCALPER_ZONA_V1` | [SCALPER_ZONA_V1.md](robos/SCALPER_ZONA_V1.md) | Zone S/R + force confirmation scalper |
+| `FORCA_SEMAFORO_CORES_SOM` | [FORCA_SEMAFORO_CORES_SOM.md](robos/FORCA_SEMAFORO_CORES_SOM.md) | Reference robot — v9 rainbow semaphore |
+
+---
+
 ## Methodology
 
 **Entry criteria (minimum confluence required):**
@@ -160,8 +277,8 @@ tradetech/
 4. Volume ≥ 1.2× average at entry bar
 
 **Risk management:**
-- Maximum risk per trade: 1% of capital
-- Stop placement: below/above nearest structure with ATR buffer
+- Maximum risk per trade: 1–2% of capital (see sizing table above)
+- Stop placement: dynamic — SL = max(StopMinimo, range × FatorRangeSL)
 - Daily loss limit: 3% → session ends
 
 ---
