@@ -53,9 +53,9 @@ Robot de força calibrado especificamente para o **WIN (mini-índice Bovespa)**.
 |-----|-------|----------------|-------------|
 | ⬜ **Branco** | F < 55 (abs) | Sem sinal | Skip |
 | 🟢 **Verde escuro** | F ≥ 70 (alta) | Força compradora forte | **Entrada LONG prioritária** |
-| � **Cyan** | F ≥ 85 (exaustão alta) | Momentum comprador extremo | **Entrada LONG — máxima prioridade** |
+| 🟩 **Verde claro** | F ≥ 85 (exaustão alta) | Momentum comprador extremo | **Entrada LONG — máxima prioridade** |
 | 🔴 **Vermelho escuro** | F ≤ –70 (baixa) | Força vendedora forte | **Entrada SHORT prioritária** |
-| 🩷 **Fúcsia** | F ≤ –85 (exaustão baixa) | Momentum vendedor extremo | **Entrada SHORT — máxima prioridade** |
+| 🟥 **Vermelho claro** | F ≤ –85 (exaustão baixa) | Momentum vendedor extremo | **Entrada SHORT — máxima prioridade** |
 
 > 🟠 **Laranja** não é cor de candle — é o sinal de **volume expresso** (Plot9 gold/laranja quando volume > 1.5× média, plotado no sub-painel do INDICADOR_FORCA_V1).
 
@@ -120,13 +120,13 @@ A cada candle fechado:
 
 ### Pré-requisitos antes de entrar
 1. ✅ O candle de sinal **fechou** completamente
-2. ✅ Cor **verde escuro, fúcsia, vermelho escuro ou laranja** (F ≥ 70 abs)
+2. ✅ Cor **verde escuro, verde claro, vermelho escuro ou vermelho claro** (F ≥ 70 abs)
 3. ✅ EMA 30min e EMA 60min na **mesma direção** do sinal
-4. ✅ Volume acima da média (fúcsia/laranja = prioridade máxima no WIN)
+4. ✅ Volume acima da média (verde claro/vermelho claro = prioridade máxima no WIN)
 
 ### Entrada
 - **Mercado na abertura do candle seguinte** ao de sinal
-- **Cyan ou fúcsia** (F ≥ 85 compra / F ≤ –85 venda): prioridade máxima no WIN — win% 44.6%
+- **Verde claro ou vermelho claro** (F ≥ 85 compra / F ≤ –85 venda): prioridade máxima no WIN — win% 44.6%
 
 ### Stop Loss e Alvo
 - SL mínimo: **822 pts** no 15min · **342 pts** no 5min
@@ -134,8 +134,8 @@ A cada candle fechado:
 - Break-even manual: ao atingir metade do TP, mover SL para entrada
 
 ### Saída antecipada
-- Candle **fúcsia** (exaustão vendedora) contra sua posição LONG → fechar
-- Candle **cyan** (exaustão compradora) contra sua posição SHORT → fechar
+- Candle **vermelho claro** (exaustão vendedora) contra sua posição LONG → fechar
+- Candle **verde claro** (exaustão compradora) contra sua posição SHORT → fechar
 - Horário limite: **17:45**
 
 ### Candle quase fechando com sinal
@@ -145,7 +145,7 @@ A cada candle fechado:
 ### Gerenciamento em candles grandes (15min e 30min)
 > Não tente sair dentro do candle de sinal. A estratégia é baseada em SL/TP em pontos.  
 > O break-even automaticamente protege a posição após metade do caminho ao TP.  
-> Se surgir um candle fúcsia ou laranja contrário, essa é sua saída antecipada.
+> Se surgir um candle vermelho claro ou verde claro contrário, essa é sua saída antecipada.
 
 ---
 
