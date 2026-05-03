@@ -53,9 +53,11 @@ Robot de força calibrado especificamente para o **WIN (mini-índice Bovespa)**.
 |-----|-------|----------------|-------------|
 | ⬜ **Branco** | F < 55 (abs) | Sem sinal | Skip |
 | 🟢 **Verde escuro** | F ≥ 70 (alta) | Força compradora forte | **Entrada LONG prioritária** |
+| � **Cyan** | F ≥ 85 (exaustão alta) | Momentum comprador extremo | **Entrada LONG — máxima prioridade** |
 | 🔴 **Vermelho escuro** | F ≤ –70 (baixa) | Força vendedora forte | **Entrada SHORT prioritária** |
-| 🩷 **Fúcsia/Magenta** | F ≥ 85 (exaustão alta) | Momentum comprador extremo | **Entrada LONG — máxima prioridade** |
-| 🟠 **Laranja** | F ≤ –85 (exaustão baixa) | Momentum vendedor extremo | **Entrada SHORT — máxima prioridade** |
+| 🩷 **Fúcsia** | F ≤ –85 (exaustão baixa) | Momentum vendedor extremo | **Entrada SHORT — máxima prioridade** |
+
+> 🟠 **Laranja** não é cor de candle — é o sinal de **volume expresso** (Plot9 gold/laranja quando volume > 1.5× média, plotado no sub-painel do INDICADOR_FORCA_V1).
 
 ---
 
@@ -124,7 +126,7 @@ A cada candle fechado:
 
 ### Entrada
 - **Mercado na abertura do candle seguinte** ao de sinal
-- **Fúcsia ou laranja** (F ≥ 85): prioridade máxima no WIN — win% 44.6%
+- **Cyan ou fúcsia** (F ≥ 85 compra / F ≤ –85 venda): prioridade máxima no WIN — win% 44.6%
 
 ### Stop Loss e Alvo
 - SL mínimo: **822 pts** no 15min · **342 pts** no 5min
@@ -132,8 +134,8 @@ A cada candle fechado:
 - Break-even manual: ao atingir metade do TP, mover SL para entrada
 
 ### Saída antecipada
-- Candle **laranja** (exaustão) contra sua posição LONG → fechar
-- Candle **fúcsia** (exaustão) contra sua posição SHORT → fechar
+- Candle **fúcsia** (exaustão vendedora) contra sua posição LONG → fechar
+- Candle **cyan** (exaustão compradora) contra sua posição SHORT → fechar
 - Horário limite: **17:45**
 
 ### Candle quase fechando com sinal
