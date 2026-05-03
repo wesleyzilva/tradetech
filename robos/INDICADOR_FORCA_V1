@@ -38,9 +38,12 @@
 }
 
 input
-  // === FORCA ===
-  ForcaMinimaForte(70.0);         // limiar forte (verde/verm)
-  ForcaExaustao(85.0);            // limiar exaustao (fucsia/laranja)
+  // === FORCA — 7 cores (cyan/green/grey/white/grey/red/fuchsia) ===
+  ForcaFraca(40.0);               // inicio zona fraca (+40/-40) → cinza
+  ForcaForte(60.0);               // inicio zona forte (+60/-60) → verde/vermelho
+  ForcaExaustao(80.0);            // inicio exaustao  (+80/-80) → cyan/fucsia
+  LimiarDoji(0.15);               // corpo/range < 15% = doji → branco (indecisao)
+  RatioVolumeExpresso(1.5);       // volume > 1.5x media → sinal dourado
   PeriodoMediaVolume(20);         // periodo media de volume para normalizacao
 
   // === ZONA S/R ===
@@ -99,35 +102,51 @@ begin
   bZonaResistencia := (Close >= fMaxZona - ToleranciaZona) and (Close <= fTopoZona);
   bZonaSuporte     := (Close <= fMinZona + ToleranciaZona) and (Close >= fBaseZona);
 
-  // ─── PaintBar — esquema 4 tons + zona amarela ─────────────────
-  // Prioridade: forca > zona sem forca > sem sinal (branco)
-  r := 255; g := 255; b := 255;  // default: branco
+  // ─── PaintBar — esquema 7 cores + doji branco + zona amarela ─────────────────
+  // Prioridade: doji > forca > zona sem forca > neutro (branco)
+  r := 255; g := 255; b := 255;  // default: branco (neutro ou doji)
 
-  if fForca >= ForcaExaustao then
+  // Doji: corpo < LimiarDoji * range → sem direcao → manter branco
+  if (fRange > 0) and (abs(fCorpo) / fRange >= LimiarDoji) then
   begin
-    // Fucsia: exaustao compradora
-    r := 255; g := 0; b := 180;
-  end
-  else if fForca >= ForcaMinimaForte then
-  begin
-    // Verde escuro: forte compra
-    r := 0; g := 180; b := 0;
-  end
-  else if fForca <= -ForcaExaustao then
-  begin
-    // Laranja: exaustao vendedora
-    r := 255; g := 140; b := 0;
-  end
-  else if fForca <= -ForcaMinimaForte then
-  begin
-    // Vermelho escuro: forte venda
-    r := 200; g := 0; b := 0;
-  end
-  else if MostrarZona and (bZonaSuporte or bZonaResistencia) then
-  begin
-    // Amarelo: zona ativa sem forca — aguardar confirmacao
-    r := 255; g := 215; b := 0;
+    if fForca >= ForcaExaustao then
+    begin
+      // Cyan: exaustao compradora > +80%
+      r := 0; g := 220; b := 220;
+    end
+    else if fForca >= ForcaForte then
+    begin
+      // Verde: zona forte compradora +60% a +79%
+      r := 0; g := 200; b := 0;
+    end
+    else if fForca >= ForcaFraca then
+    begin
+      // Cinza: zona fraca compradora +40% a +59%
+      r := 130; g := 130; b := 130;
+    end
+    else if fForca <= -ForcaExaustao then
+    begin
+      // Fucsia: exaustao vendedora < -80%
+      r := 255; g := 0; b := 180;
+    end
+    else if fForca <= -ForcaForte then
+    begin
+      // Vermelho: zona forte vendedora -60% a -79%
+      r := 200; g := 0; b := 0;
+    end
+    else if fForca <= -ForcaFraca then
+    begin
+      // Cinza: zona fraca vendedora -40% a -59%
+      r := 130; g := 130; b := 130;
+    end
+    else if MostrarZona and (bZonaSuporte or bZonaResistencia) then
+    begin
+      // Amarelo: zona S/R ativa sem forca — aguardar confirmacao
+      r := 255; g := 215; b := 0;
+    end;
+    // -40% a +40% sem zona → branco (sem forca direcional)
   end;
+  // fRange <= 0 ou doji → branco ja definido
 
   PaintBar(RGB(r, g, b));
 
@@ -155,32 +174,55 @@ begin
   // ─── Plot 3: threshold ForcaMinimaForte (+70 e -70) ──────────
   // Plota a linha positiva; para negativa, plotar em indicador separado
   // ou usar Plot3/Plot4 para ambos os lados
-  Plot3(ForcaMinimaForte);
-  SetPlotColor(3, RGB(0, 180, 0));       // verde — nivel forte compra
-  SetPlotStyle(3, 2);                    // linha tracejada
+  // Plot 3-4: limiar ForcaFraca (+40 e -40) — cinza
+  Plot3(ForcaFraca);
+  SetPlotColor(3, RGB(130, 130, 130));
+  SetPlotStyle(3, 2);
   SetPlotWidth(3, 1);
 
-  Plot4(-ForcaMinimaForte);
-  SetPlotColor(4, RGB(200, 0, 0));       // vermelho — nivel forte venda
+  Plot4(-ForcaFraca);
+  SetPlotColor(4, RGB(130, 130, 130));
   SetPlotStyle(4, 2);
   SetPlotWidth(4, 1);
 
-  // ─── Plot 5: threshold ForcaExaustao (+85 e -85) ─────────────
-  Plot5(ForcaExaustao);
-  SetPlotColor(5, RGB(255, 0, 180));     // fucsia — nivel exaustao compra
+  // Plot 5-6: limiar ForcaForte (+60 e -60) — verde/vermelho
+  Plot5(ForcaForte);
+  SetPlotColor(5, RGB(0, 200, 0));
   SetPlotStyle(5, 2);
   SetPlotWidth(5, 1);
 
-  Plot6(-ForcaExaustao);
-  SetPlotColor(6, RGB(255, 140, 0));     // laranja — nivel exaustao venda
+  Plot6(-ForcaForte);
+  SetPlotColor(6, RGB(200, 0, 0));
   SetPlotStyle(6, 2);
   SetPlotWidth(6, 1);
+
+  // Plot 7-8: limiar ForcaExaustao (+80 e -80) — cyan/fucsia
+  Plot7(ForcaExaustao);
+  SetPlotColor(7, RGB(0, 220, 220));
+  SetPlotStyle(7, 2);
+  SetPlotWidth(7, 1);
+
+  Plot8(-ForcaExaustao);
+  SetPlotColor(8, RGB(255, 0, 180));
+  SetPlotStyle(8, 2);
+  SetPlotWidth(8, 1);
+
+  // Plot 9: sinal dourado — volume expresso (Volume > RatioVolumeExpresso x media)
+  if Volume > (fVolMedia * RatioVolumeExpresso) then
+  begin
+    Plot9(ForcaExaustao + 8);
+    SetPlotColor(9, RGB(255, 215, 0));   // ouro
+    SetPlotStyle(9, 2);
+    SetPlotWidth(9, 3);
+  end
+  else
+    Plot9(0);
 
   // ─── Alertas (opcional — nao abre ordens) ─────────────────────
   if MostrarAlertas then
   begin
-    if fForca >= ForcaMinimaForte then Alert(RGB(0, 200, 0));
-    if fForca <= -ForcaMinimaForte then Alert(RGB(200, 0, 0));
+    if fForca >= ForcaForte then Alert(RGB(0, 200, 0));
+    if fForca <= -ForcaForte then Alert(RGB(200, 0, 0));
   end;
 
 end;

@@ -168,7 +168,7 @@ begin
   if (fRange * FatorRangeSL) > fSL then fSL := fRange * FatorRangeSL;
 
   if (fSL > 0) and (PontoValorReais > 0) then
-    iQtd := Trunc(CapitalReais * (RiscoPorcentagem / 100) / (fSL * PontoValorReais))
+    iQtd := CapitalReais * (RiscoPorcentagem / 100) / (fSL * PontoValorReais)  // NTSL truncates float→integer
   else
     iQtd := 1;
   if iQtd < 1 then iQtd := 1;

@@ -164,7 +164,7 @@ begin
 
   // Contratos = floor(Capital * Risco% / (SL_pts * Ponto_R$))
   if (fSLDinamico > 0) and (PontoValorReais > 0) then
-    iQtdContratos := Trunc(CapitalReais * (RiscoPorcentagem / 100) / (fSLDinamico * PontoValorReais))
+    iQtdContratos := CapitalReais * (RiscoPorcentagem / 100) / (fSLDinamico * PontoValorReais)  // NTSL truncates float→integer
   else
     iQtdContratos := 1;
   if iQtdContratos < 1 then iQtdContratos := 1;
