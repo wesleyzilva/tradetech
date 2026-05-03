@@ -28,12 +28,12 @@
     15min: 60/30/15 -> iJanelaDir=2, iJanelaCtx=4
      5min: 30/15/5  -> iJanelaDir=3, iJanelaCtx=6
 
-  ESQUEMA DE CORES:
-    Branco          = F 0-30 ou F 30-55     — sem sinal
-    Verde escuro    = F >= 70 (forte alta)  — entrada prioritaria
-    Verm escuro     = F <= -70 (forte baixa)— entrada prioritaria
-    Fucsia/Magenta  = F >= 85 (exaust alta) — forte continuacao
-    Laranja         = F <= -85 (exaust baix)— forte continuacao
+  ESQUEMA DE CORES (identico ao INDICADOR_FORCA_V1):
+    Branco          = F 0-55             — sem sinal
+    Verde escuro    = F >= 70            — forte compra
+    Cyan            = F >= 85            — exaustao compradora
+    Verm escuro     = F <= -70           — forte venda
+    Fucsia          = F <= -85           — exaustao vendedora
     (zona fraca 55-70 NAO opera — pior zona estatisticamente)
 
   ALERTAS: somente forte (70-85) e exaustao (>=85)
@@ -114,18 +114,18 @@ begin
   bDirAlta  := (Close > fMediaDir) and (fMediaDir > fMediaDir[iJanelaDir]);
   bDirBaixa := (Close < fMediaDir) and (fMediaDir < fMediaDir[iJanelaDir]);
 
-  // ─── CORES WDO ────────────────────────────────────────────────
+  // ─── CORES WDO (identico ao INDICADOR_FORCA_V1) ───────────────
   // Branco  = sem sinal (F 0-55, incluindo zona fraca 55-70)
   // Verde escuro (0,180,0)     = forte compra  F [70,85)
-  // Fucsia  (255,0,180)        = exaust compra F >= 85
+  // Cyan    (0,220,220)        = exaust compra F >= 85
   // Verm escuro (200,0,0)      = forte venda   F (-85,-70]
-  // Laranja (255,140,0)        = exaust venda  F <= -85
+  // Fucsia  (255,0,180)        = exaust venda  F <= -85
   r := 255; g := 255; b := 255;
 
   if fForca >= ForcaExaustao then
   begin
-    // Fucsia: exaustao compradora
-    r := 255; g := 0; b := 180;
+    // Cyan: exaustao compradora
+    r := 0; g := 220; b := 220;
   end
   else if fForca >= ForcaMinimaForte then
   begin
@@ -134,8 +134,8 @@ begin
   end
   else if fForca <= -ForcaExaustao then
   begin
-    // Laranja: exaustao vendedora
-    r := 255; g := 140; b := 0;
+    // Fucsia: exaustao vendedora
+    r := 255; g := 0; b := 180;
   end
   else if fForca <= -ForcaMinimaForte then
   begin

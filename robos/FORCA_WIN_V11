@@ -34,12 +34,12 @@
     15min: 60/30/15 -> iJanelaDir=2, iJanelaCtx=4
      5min: 30/15/5  -> iJanelaDir=3, iJanelaCtx=6
 
-  ESQUEMA DE CORES (identico ao WDO para consistencia visual):
+  ESQUEMA DE CORES (identico ao INDICADOR_FORCA_V1):
     Branco          = F 0-55            — sem sinal
     Verde escuro    = F >= 70           — forte compra
-    Fucsia/Magenta  = F >= 85           — exaustao compra
+    Cyan            = F >= 85           — exaustao compradora
     Verm escuro     = F <= -70          — forte venda
-    Laranja         = F <= -85          — exaustao venda
+    Fucsia          = F <= -85          — exaustao vendedora
     (zona fraca 55-70 sem cor — WIN fraco win% 49.1% mas avg_move ruim)
 }
 
@@ -118,13 +118,13 @@ begin
   bDirAlta  := (Close > fMediaDir) and (fMediaDir > fMediaDir[iJanelaDir]);
   bDirBaixa := (Close < fMediaDir) and (fMediaDir < fMediaDir[iJanelaDir]);
 
-  // ─── CORES WIN (identico ao WDO — consistencia visual) ────────
+  // ─── CORES WIN (identico ao INDICADOR_FORCA_V1) ───────────────
   r := 255; g := 255; b := 255;
 
   if fForca >= ForcaExaustao then
   begin
-    // Fucsia: exaustao compradora
-    r := 255; g := 0; b := 180;
+    // Cyan: exaustao compradora
+    r := 0; g := 220; b := 220;
   end
   else if fForca >= ForcaMinimaForte then
   begin
@@ -133,8 +133,8 @@ begin
   end
   else if fForca <= -ForcaExaustao then
   begin
-    // Laranja: exaustao vendedora
-    r := 255; g := 140; b := 0;
+    // Fucsia: exaustao vendedora
+    r := 255; g := 0; b := 180;
   end
   else if fForca <= -ForcaMinimaForte then
   begin

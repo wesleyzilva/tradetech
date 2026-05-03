@@ -41,9 +41,9 @@ Robot de força calibrado especificamente para o **WDO (mini-dólar)**. Usa a f�
 |-----|-------|----------------|-------------|
 | ⬜ **Branco** | F < 55 (abs) | Sem sinal | Skip |
 | 🟢 **Verde escuro** | F ≥ 70 (alta) | Força compradora forte | **Entrada LONG prioritária** |
-| � **Verde claro** | F ≥ 85 (exaustão alta) | Momentum comprador extremo | **Entrada LONG — maior frequência** |
+| 🟦 **Cyan** | F ≥ 85 (exaustão alta) | Momentum comprador extremo | **Entrada LONG — maior frequência** |
 | 🔴 **Vermelho escuro** | F ≤ –70 (baixa) | Força vendedora forte | **Entrada SHORT prioritária** |
-| 🟥 **Vermelho claro** | F ≤ –85 (exaustão baixa) | Momentum vendedor extremo | **Entrada SHORT — máxima prioridade** |
+| 🩷 **Fúcsia** | F ≤ –85 (exaustão baixa) | Momentum vendedor extremo | **Entrada SHORT — máxima prioridade** |
 
 > 🟠 **Laranja** não é cor de candle — é o sinal de **volume expresso** (Plot9 gold/laranja quando volume > 1.5× média, plotado no sub-painel do INDICADOR_FORCA_V1).
 
@@ -109,13 +109,13 @@ A cada candle fechado:
 
 ### Pré-requisitos antes de entrar
 1. ✅ O candle de sinal **fechou** (não entrar antes do fechamento)
-2. ✅ Cor **verde escuro, verde claro, vermelho escuro ou vermelho claro** (F ≥ 70 abs)
+2. ✅ Cor **verde escuro, cyan, vermelho escuro ou fúcsia** (F ≥ 70 abs)
 3. ✅ EMA 30min e EMA 60min apontando na **mesma direção** do sinal
 4. ✅ Volume do candle de sinal **acima da média** (preferencialmente)
 
 ### Entrada
 - **Mercado na abertura do candle seguinte** ao de sinal
-- Se for verde claro/vermelho claro (F ≥ 85 compra / F ≤ –85 venda): entrada ainda mais prioritária — maior frequência histórica
+- Se for cyan/fúcsia (F ≥ 85 compra / F ≤ –85 venda): entrada ainda mais prioritária — maior frequência histórica
 
 ### Stop Loss
 - `SL = max(20, range_candle_sinal × 1.5)` em pontos
@@ -126,8 +126,8 @@ A cada candle fechado:
 - Quando preço avançar 30 pts (50% do TP): mover SL para entrada (break-even manual)
 
 ### Saída antecipada
-- Aparecer candle **vermelho claro** (exaustão vendedora) contra sua posição LONG → fechar
-- Aparecer candle **verde claro** (exaustão compradora) contra sua posição SHORT → fechar
+- Aparecer candle **fúcsia** (exaustão vendedora) contra sua posição LONG → fechar
+- Aparecer candle **cyan** (exaustão compradora) contra sua posição SHORT → fechar
 - Horário limite: 17:45
 
 ### Candle quase fechando com sinal
