@@ -61,14 +61,19 @@ A (Acceleration) = Volume / Average Volume              →  institutional press
 Result: Force score from -100% to +100%
 ```
 
-| Score range | Colour | Interpretation |
-|-------------|--------|----------------|
-| > +80% | 🟢 Green | Maximum buying force |
-| +60% to +79% | 🔵 Cyan | Strong buying |
-| +40% to +59% | 🟨 Yellow | Weak buying |
-| -15% to +15% | ⚫ Grey | No directional force |
-| -40% to -59% | 🟫 Brown | Weak selling |
-| < -80% | 🔴 Red | Maximum selling force |
+**Colour scheme — identical across all robots and INDICADOR_FORCA_V1:**
+
+| Score | Colour | RGB | Interpretation |
+|-------|--------|-----|----------------|
+| > +80% | 🟦 **Cyan** | `RGB(0,220,220)` | Buying exhaustion — exaustão compradora |
+| +60% to +79% | 🟢 **Green** | `RGB(0,200,0)` | Strong buying force |
+| +40% to +59% | 🩶 **Grey** | `RGB(130,130,130)` | Weak buying — watch only |
+| Doji (body < 15% range) | ⬜ **White** | — | Indecision — skip |
+| –40% to +40% | ⬜ **White** | — | No directional force |
+| –40% to –59% | 🩶 **Grey** | `RGB(130,130,130)` | Weak selling — watch only |
+| –60% to –79% | 🔴 **Red** | `RGB(200,0,0)` | Strong selling force |
+| < –80% | 🩷 **Fuchsia** | `RGB(255,0,180)` | Selling exhaustion — exaustão vendedora |
+| S/R zone, F < threshold | 🟡 **Yellow** | — | Zone active, no confirmation — wait |
 
 ---
 
@@ -108,7 +113,7 @@ Robots and indicators developed on Neologica Profit platform targeting WIN B3:
 
 | Indicator | Description | Language | Status |
 |-----------|-------------|----------|--------|
-| `INDICADOR_FORCA_V1` | F=MA 4-colour paintbar + F histogram sub-panel + S/R zone highlight | NTFL | ✅ v1.0 |
+| `INDICADOR_FORCA_V1` | F=MA 7-colour paintbar + F histogram sub-panel + S/R zone highlight + gold volume Plot9 | NTFL | ✅ v1.0 |
 
 > Use NTFL no gráfico para leitura + NTSL separado para execução. O indicador e o robô compartilham a mesma fórmula F=M×A.
 
@@ -123,6 +128,50 @@ Robots and indicators developed on Neologica Profit platform targeting WIN B3:
 | `SCALPER_ZONA_V1` | Zone S/R + Force (F≥55) confirmation, RR=2 | NTSL | 🔄 In testing |
 | `IFR_reversal` | RSI reversal at structure support/resistance | NTSL | 🔲 Planned |
 | `VWAP_pullback` | Pullback to VWAP in trending session | NTSL | 🔲 Planned |
+
+---
+
+## Robot Comparison — How They Differ
+
+All robots share the same core formula **F = M × A**. What differs is **when to enter**, **how much to risk**, and **which asset they are calibrated for**.
+
+| Robot | Asset | Entry filter | Colours | SL logic | RR | Special |
+|-------|-------|-------------|---------|----------|----|--------|
+| `FORCA_SEMAFORO_CORES_SOM` | WDO/WIN | F ≥ threshold (rainbow) | 6-colour gradient | fixed | configurable | **Reference only — do not modify** |
+| `FORCA_SEMAFORO_V10` | Any (generic) | F ≥ 55 (fraco) or F ≥ 70 (forte) | 2-tone: verde claro+escuro / verm claro+escuro | dynamic: max(fixo, range×0.75) | configurable | `EntrarSomenteForte` toggle — adaptable to any asset |
+| `FORCA_WDO_V11` | **WDO only** | F ≥ 70 (zona fraca descartada) | Verde / Cyan / Verm / Fúcsia | dynamic: max(20, range×1.5) | **3.0** | Calibrated on 47,786 candles 2012–2026 |
+| `FORCA_WIN_V11` | **WIN only** | F ≥ 70 (zona fraca descartada) | Verde / Cyan / Verm / Fúcsia | dynamic: max(822, range×2.0) | **3.0** | Best backtest: exaustão 44.6% win, RR3 |
+| `SCALPER_ZONA_V1` | WDO/WIN | F ≥ 55 **inside S/R zone only** | Verde / Fúcsia / Amarelo (zona) | dynamic: max(zona, range×1.2) | **2.0** | Quality > quantity; max 8 candles held |
+| `INDICADOR_FORCA_V1` | Visual only | — | 7 cores + amarelo + gold volume | — | — | Companion visual for all NTSL robots |
+
+### Key decision: which robot to use?
+
+```
+Manual trading / learning phase
+  └─► INDICADOR_FORCA_V1 (visual only) — understand the colour system first
+
+Generic or custom asset
+  └─► FORCA_SEMAFORO_V10 — configure SL/TP/thresholds per asset
+
+WDO (mini-dollar) — automated execution
+  └─► FORCA_WDO_V11 — pre-calibrated, SL=20pts, TP=60pts
+
+WIN (mini-index) — automated execution
+  └─► FORCA_WIN_V11 — pre-calibrated, SL=822pts, TP=2466pts
+
+Conservative / zone-based
+  └─► SCALPER_ZONA_V1 — fewer trades, higher confidence, shorter hold
+```
+
+### Colour consistency rule
+
+All V11 robots and INDICADOR_FORCA_V1 use the **same RGB values**:
+- 🟢 Verde escuro `RGB(0,180,0)` — forte (F ≥ 70)
+- 🟦 Cyan `RGB(0,220,220)` — exaustão compradora (F ≥ 85)
+- 🔴 Vermelho `RGB(200,0,0)` — forte (F ≤ –70)
+- 🩷 Fúcsia `RGB(255,0,180)` — exaustão vendedora (F ≤ –85)
+
+SEMÁFORO_V10 uses its own 2-tone scheme (verde claro/escuro, verm claro/escuro) — **this is intentional and correct**.
 
 ---
 
@@ -155,38 +204,71 @@ tradetech/
 
 Calibrated on **47,786 candles (WDO) and 47,787 candles (WIN)** · full historical series 2012–2026.
 
-### Current Range Reference (15 min)
+### Current Range Reference (2026 actual vs historical)
 
-| Asset | Avg Range 15min | Avg Range 5min | Typical Range 2026 |
-|-------|-----------------|----------------|---------------------|
-| **WDO** (mini-dollar) | 13.3 pts | 6.1 pts | **15–20 pts** (higher BRL volatility in 2026) |
-| **WIN** (mini-index) | 411 pts | 171 pts | **430–520 pts** (elevated equity volatility) |
+| Asset | TF | Historical avg range | **2026 avg range** | Change | Multiplier used |
+|-------|----|--------------------|-------------------|--------|----------------|
+| **WDO** | 15 min | 13.3 pts | **~17 pts** | +28% | 1.5× range |
+| **WDO** | 5 min | 6.1 pts | **~7.5 pts** | +23% | 2.0× range |
+| **WIN** | 15 min | 411 pts | **~480 pts** | +17% | 2.0× range |
+| **WIN** | 5 min | 171 pts | **~200 pts** | +17% | 2.0× range |
 
-> ⚠️ 2026 context: Brazilian fiscal/political uncertainty has pushed ranges **15–30% above** the historical average. **Adjust your SL upward** when the market is in a high-volatility regime — the SL must always be ≥ 1.5× current average range (WDO) or ≥ 2× (WIN) to avoid noise-based stops.
+> ⚠️ **2026 context:** BRL fiscal/political uncertainty has pushed ranges **15–30% above** the historical average used in backtests. The robots' default SL values were calibrated on historical ranges — in a high-volatility regime they become too tight, causing more noise-based stops and degraded win rate.
 
-### SL Sizing — Do NOT go below these floors
+---
 
-| Asset | Timeframe | Minimum SL | Rationale |
-|-------|-----------|------------|-----------|
-| WDO | 15 min | **20 pts** | 1.5× avg range — protects P80 adverse move in next candle |
-| WDO | 5 min | **12 pts** | 2× avg range (5min range = 6.1 pts) |
-| WIN | 15 min | **822 pts** | 2× avg range |
-| WIN | 5 min | **342 pts** | 2× avg range (5min range = 171 pts) |
+### 2026 SL/TP Adjustment — Recalibrate to Current Ranges
 
-> **Never reduce SL below these values** to "get more contracts". A smaller SL on the same timeframe just means more premature stops and a worse win rate. The solution to small capital is a **shorter timeframe** or **larger capital**, not a tighter SL.
+> **Rule:** SL must always equal `historical_multiplier × CURRENT range`. Never use historical SL on a higher-volatility environment.
 
-### Sizing Table — Realistic Contracts per Capital
+| Asset | TF | Backtest SL | 2026 Range avg | **2026 Adjusted SL** | **2026 TP (RR=3)** | Min capital for 1 contract |
+|-------|----|----|---|---|---|---|
+| WDO | 15 min | 20 pts | 17 pts | **25 pts** (+25%) | **75 pts** | R$25k @ 1% / R$12.5k @ 2% |
+| WDO | 5 min | 12 pts | 7.5 pts | **15 pts** (+25%) | **45 pts** | R$15k @ 1% / **R$7.5k @ 2%** |
+| WIN | 15 min | 822 pts | 480 pts | **960 pts** (+17%) | **2.880 pts** | R$19.2k @ 1% / **R$9.6k @ 2%** |
+| WIN | 5 min | 342 pts | 200 pts | **400 pts** (+17%) | **1.200 pts** | **R$8k @ 1%** / R$4k @ 2% |
 
-| Capital | Risk | Asset | TF | SL | Risk/contract | Contracts |
-|---------|------|-------|----|----|---------------|-----------|
-| R$ 10k | 1% = R$100 | **WIN** | **5 min** | 342 pts × R$0.20 = **R$68** | R$68 | **1 contract** ✅ |
-| R$ 10k | 2% = R$200 | **WDO** | **5 min** | 12 pts × R$10 = R$120 | R$120 | **1 contract** ✅ |
-| R$ 10k | 1% = R$100 | WDO | 15 min | 20 pts × R$10 = R$200 | R$200 | 0 contracts ❌ |
-| R$ 10k | 2% = R$200 | WDO | 15 min | 20 pts × R$10 = R$200 | R$200 | **1 contract** ✅ |
-| R$ 20k | 1% = R$200 | WDO | 15 min | 20 pts × R$10 = R$200 | R$200 | **1 contract** ✅ |
-| R$ 20k | 1% = R$200 | WIN | 15 min | 822 pts × R$0.20 = R$164 | R$164 | **1 contract** ✅ |
+> **Do NOT reduce SL to get more contracts.** A tighter SL on the same timeframe = more premature stops = lower win rate = negative edge. If capital is the constraint, the solution is a **shorter timeframe** (smaller absolute SL) or **more capital**, never a compressed stop.
 
-**Best starting point with R$10k:** WIN 5min (1 contract, ~0.7% actual risk) or WDO 5min at 2% tolerance.
+---
+
+### How much to adjust and with how many contracts — 2026 guide
+
+**The adjustment is always UPWARD, not downward:**
+
+- Historical SL was calibrated on avg range × multiplier (1.5× WDO, 2.0× WIN)
+- In 2026 ranges are ~17–28% larger → apply the **same multiplier to the current range**
+- Result: SL increases ~17–28% from the default robot values
+- TP follows (RR=3 is maintained)
+- Win rate should **improve or stay the same** because SL no longer clips on normal noise
+
+```
+2026 recalibration formula:
+  SL_2026 = ceil(current_range_avg × multiplier / 5) × 5   ← round to nearest 5pts
+  TP_2026 = SL_2026 × 3
+  contracts = floor(capital × risk% / (SL_2026 × point_value))
+```
+
+**Example with R$10k — 2026 adjusted:**
+
+| Capital | Risk | Asset | TF | SL 2026 | Risk/contract | Contracts |
+|---------|------|-------|----|----|---------------|----------|
+| R$10k | 1% = R$100 | **WIN** | **5 min** | 400 pts × R$0.20 = **R$80** | R$80 | **1 contract** ✅ |
+| R$10k | 2% = R$200 | WIN | 5 min | 400 pts × R$0.20 = R$80 | R$80 | **2 contracts** ✅ |
+| R$10k | 2% = R$200 | WDO | 5 min | 15 pts × R$10 = **R$150** | R$150 | **1 contract** ✅ |
+| R$10k | 1% = R$100 | WDO | 5 min | 15 pts × R$10 = R$150 | R$150 | 0 contracts ❌ |
+| R$10k | 2% = R$200 | WIN | 15 min | 960 pts × R$0.20 = **R$192** | R$192 | **1 contract** ✅ |
+| R$10k | 1% = R$100 | WIN | 15 min | 960 pts × R$0.20 = R$192 | R$192 | 0 contracts ❌ |
+| R$10k | any | WDO | 15 min | 25 pts × R$10 = R$250 | R$250 | ❌ needs R$12.5k+ |
+
+**Best option in 2026 with R$10k:**
+
+| Rank | Option | SL | Actual risk | Contracts | Notes |
+|------|--------|----|------------|-----------|-------|
+| 🥇 1st | **WIN 5min @ 1%** | 400 pts · R$80 | R$80 (~0.8%) | 1 | Best risk/reward — WIN exaustão 44.6% win |
+| 🥈 2nd | **WIN 5min @ 2%** | 400 pts · R$80 | R$80 | 2 | 2 contracts if you accept 1.6% actual risk |
+| 🥉 3rd | **WIN 15min @ 2%** | 960 pts · R$192 | R$192 (~1.9%) | 1 | Fewer trades, more reliable signal |
+| 4th | WDO 5min @ 2% | 15 pts · R$150 | R$150 (~1.5%) | 1 | WDO has lower win% than WIN at exhaustion |
 
 ---
 
@@ -222,7 +304,7 @@ Calibrated on **47,786 candles (WDO) and 47,787 candles (WIN)** · full historic
 2. **Stop candle contra** (`UsarStopCandleContra`): if an opposite-direction force candle at F ≥ 85 appears, position closes immediately — regardless of SL/TP.
 3. **Stop horário** (17:45 default): all positions closed before market close.
 
-> On larger candles you have **more time to analyse** but the same point-based logic applies. The robot handles all of this. Manually: watch for an opposite-colour extreme (fuchsia/orange against your long, or cyan/green against your short) as your exit trigger.
+> On larger candles you have **more time to analyse** but the same point-based logic applies. The robot handles all of this. Manually: watch for an opposite-colour extreme (fúcsia against your long, or cyan against your short) as your exit trigger.
 
 ---
 
