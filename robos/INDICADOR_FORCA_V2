@@ -1,0 +1,304 @@
+{ 
+  Indicador : INDICADOR_FORCA_V2
+  Tipo      : NTFL (indicador visual — sem ordens, apenas visualizacao)
+  Versao    : 2.0
+  Base      : FORCA_WDO_V12 / FORCA_WIN_V12
+
+  === DIFERENCA CRITICA vs V1 ===
+
+  V1 usava: ForcaFraca=40 ForcaForte=60 ForcaExaustao=80
+            — sem filtro MTF (EMA direcional + EMA contexto)
+            — mostrando cor verde mesmo quando robo NAO entraria
+
+  V2 usa:   ForcaMinimaForte=70 ForcaExaustao=85 (mesmo que V12)
+            + verifica alinhamento MTF (iJanelaDir + iJanelaCtx)
+            + diferencia candles por:
+              a) F forte + MTF alinhado  → cor SOLIDA (robo ENTRARIA)
+              b) F forte + MTF contrario → cor OPACA (robo NAO entraria)
+              c) F ausente               → branco (sem sinal)
+
+  === ESQUEMA DE CORES V2 (6 estados) ===
+
+  ENTRADA CONFIRMADA (F + MTF alinhado — robo V12 executaria):
+    Cyan    (0,220,220)  = F >= 85  + ctx alta + dir alta   = exaustao compradora ✅
+    Verde   (0,180,0)    = F [70,85)+ ctx alta + dir alta   = forte compradora    ✅
+    Fucsia  (255,0,180)  = F <= -85 + ctx baixa+ dir baixa  = exaustao vendedora  ✅
+    Verm    (200,0,0)    = F (-85,-70]+ ctx baixa+ dir baixa= forte vendedora     ✅
+
+  SINAL SEM CONTEXTO (F forte mas MTF contrario — robo V12 NAO entraria):
+    Verde opaco  (0,120,60)   = F >= 70 mas ctx/dir NAO alinhados alta  ⚠️
+    Verm opaco   (120,40,40)  = F <= -70 mas ctx/dir NAO alinhados baixa ⚠️
+
+  SEM SINAL:
+    Branco (255,255,255) = F absoluto < 70 (ruido, cinza, fraco)
+
+  DOJI OVERRIDE:
+    Azul(80,80,160) = corpo/range < LimiarDoji  → indecisao independente de F
+
+  === PLOTS NO SUB-PAINEL ===
+  Plot1: histograma de F (igual V1)
+  Plot2: zero
+  Plot3/4: limiares ±70 (entrada forte)
+  Plot5/6: limiares ±85 (exaustao)
+  Plot7: EMA direcional  (linha pontilhada)
+  Plot8: EMA contexto    (linha pontilhada)
+  Plot9: volume expresso (dourado)
+  Plot10: projecao de SL abaixo do Close atual (quando F ativo + MTF ok)
+
+  === COMO USAR ===
+  1. Aplique este indicador (NTFL) no grafico junto com FORCA_WDO_V12 ou FORCA_WIN_V12
+  2. Cor SOLIDA = robo estaria tentando entrar (pode estar em posicao)
+  3. Cor OPACA  = forca existe mas falta contexto — monitorar confluencia
+  4. SL projetado (Plot10) = nivel de saida caso tivesse entrado agora
+
+  === CONFIGURACAO RECOMENDADA ===
+  WDO 5min : ForcaMinimaForte=70, ForcaExaustao=85, iJanelaDir=3, iJanelaCtx=6, ZonaPontos=12, StopSimulado=12
+  WDO 15min: ForcaMinimaForte=70, ForcaExaustao=85, iJanelaDir=2, iJanelaCtx=4, ZonaPontos=20, StopSimulado=20
+  WIN 5min : ForcaMinimaForte=70, ForcaExaustao=85, iJanelaDir=3, iJanelaCtx=6, ZonaPontos=342, StopSimulado=342
+  WIN 15min: ForcaMinimaForte=70, ForcaExaustao=85, iJanelaDir=2, iJanelaCtx=4, ZonaPontos=822, StopSimulado=822
+}
+
+input
+  // === FORCA (alinhados com V12) ===
+  ForcaMinimaForte(70.0);        // limiar forte — igual ao robo V12
+  ForcaExaustao(85.0);           // limiar exaustao — igual ao robo V12
+  LimiarDoji(0.10);              // corpo/range < 10% → doji → azul
+  PeriodoMediaVolume(20);
+  RatioVolumeExpresso(1.5);
+
+  // === MULTI-TF — DEVE SER IDENTICO AO ROBO ===
+  // WDO/WIN 5min : iJanelaDir=3, iJanelaCtx=6
+  // WDO/WIN 15min: iJanelaDir=2, iJanelaCtx=4
+  iJanelaDir(3);
+  iJanelaCtx(6);
+
+  // === ZONA S/R ===
+  JanelaZona(3);
+  ZonaPontos(12.0);              // WDO 5min=12 | WDO 15min=20 | WIN 5min=342 | WIN 15min=822
+  ToleranciaZona(3.0);           // WDO: 3 | WIN: 100
+  MostrarZona(true);
+
+  // === SL SIMULADO (projecao no sub-painel) ===
+  // Plota nivel de SL baseado no range atual * FatorRangeSL
+  StopSimulado(12.0);            // mesmo que StopMinimo do robo
+  FatorRangeSL(1.5);             // mesmo que FatorRangeSL do robo
+  MostrarSLSimulado(true);
+
+  // === ALERTAS ===
+  MostrarAlertas(true);
+
+var
+  fCorpo, fRange, fVolMedia : float;
+  fMassa, fAceleracao, fForca, fForcaAbs : float;
+  fMediaDir, fMediaCtx : float;
+  bCtxAlta, bCtxBaixa, bDirAlta, bDirBaixa : boolean;
+  bMTF_Compra, bMTF_Venda : boolean;       // true = MTF totalmente alinhado
+  bForcaCompra, bForcaVenda : boolean;
+  bDoji : boolean;
+
+  // Zona S/R
+  fMaxZona, fMinZona : float;
+  fTopoZona, fBaseZona : float;
+  bZonaSuporte, bZonaResistencia : boolean;
+  i : integer;
+
+  // Cores
+  r, g, b : integer;
+  rP, gP, bP : integer;
+
+  // SL simulado
+  fSL : float;
+
+begin
+  // ─── F = M x A ────────────────────────────────────────────────
+  fCorpo := Close - Open;
+  fRange := High - Low;
+  if fRange <= 0 then fRange := 0.0001;
+  fVolMedia := Media(PeriodoMediaVolume, Volume);
+  if fVolMedia <= 0 then fVolMedia := 1;
+
+  fMassa      := fCorpo / fRange;
+  fAceleracao := Volume / fVolMedia;
+  fForca      := fMassa * fAceleracao * 100;
+  if fForca >  100 then fForca :=  100;
+  if fForca < -100 then fForca := -100;
+  fForcaAbs := abs(fForca);
+
+  // ─── Multi-TF (IDENTICO ao V12) ───────────────────────────────
+  fMediaDir := Media(iJanelaDir, Close);
+  fMediaCtx := Media(iJanelaCtx, Close);
+  bCtxAlta  := (Close > fMediaCtx) and (fMediaCtx > fMediaCtx[iJanelaCtx]);
+  bCtxBaixa := (Close < fMediaCtx) and (fMediaCtx < fMediaCtx[iJanelaCtx]);
+  bDirAlta  := (Close > fMediaDir) and (fMediaDir > fMediaDir[iJanelaDir]);
+  bDirBaixa := (Close < fMediaDir) and (fMediaDir < fMediaDir[iJanelaDir]);
+
+  // MTF totalmente alinhado = mesmo critério do V12
+  bMTF_Compra := bCtxAlta and bDirAlta;
+  bMTF_Venda  := bCtxBaixa and bDirBaixa;
+
+  // Força direcional
+  bForcaCompra := fForca >= ForcaMinimaForte;
+  bForcaVenda  := fForca <= -ForcaMinimaForte;
+
+  // Doji
+  bDoji := (fRange > 0) and (abs(fCorpo) / fRange < LimiarDoji);
+
+  // ─── Zona S/R ─────────────────────────────────────────────────
+  fMaxZona := High[1]; fMinZona := Low[1];
+  for i := 1 to JanelaZona do
+  begin
+    if High[i] > fMaxZona then fMaxZona := High[i];
+    if Low[i]  < fMinZona then fMinZona := Low[i];
+  end;
+  fTopoZona        := fMaxZona + ZonaPontos;
+  fBaseZona        := fMinZona - ZonaPontos;
+  bZonaResistencia := (Close >= fMaxZona - ToleranciaZona) and (Close <= fTopoZona);
+  bZonaSuporte     := (Close <= fMinZona + ToleranciaZona) and (Close >= fBaseZona);
+
+  // ─── SL simulado ──────────────────────────────────────────────
+  fSL := StopSimulado;
+  if (fRange * FatorRangeSL) > fSL then fSL := fRange * FatorRangeSL;
+
+  // ─── PaintBar — 6 estados operacionais ────────────────────────
+  r := 255; g := 255; b := 255;   // default: branco
+
+  if bDoji then
+  begin
+    // Doji: indecisao — azul escuro independente de F
+    r := 80; g := 80; b := 160;
+  end
+  else if bForcaCompra then
+  begin
+    if bMTF_Compra then
+    begin
+      // ✅ ENTRADA CONFIRMADA compradora (robo V12 executaria)
+      if fForca >= ForcaExaustao then begin
+        r := 0; g := 220; b := 220;          // cyan: exaustao + MTF ok
+      end else begin
+        r := 0; g := 180; b := 0;            // verde escuro: forte + MTF ok
+      end;
+    end
+    else begin
+      // ⚠️ FORCA EXISTE mas MTF NAO alinhado (robo NAO entraria)
+      if fForca >= ForcaExaustao then begin
+        r := 0; g := 140; b := 120;          // cyan opaco: exaustao sem contexto
+      end else begin
+        r := 0; g := 100; b := 50;           // verde opaco: forte sem contexto
+      end;
+    end;
+  end
+  else if bForcaVenda then
+  begin
+    if bMTF_Venda then
+    begin
+      // ✅ ENTRADA CONFIRMADA vendedora (robo V12 executaria)
+      if fForca <= -ForcaExaustao then begin
+        r := 255; g := 0; b := 180;          // fucsia: exaustao venda + MTF ok
+      end else begin
+        r := 200; g := 0; b := 0;            // vermelho: forte venda + MTF ok
+      end;
+    end
+    else begin
+      // ⚠️ FORCA VENDA mas MTF NAO alinhado
+      if fForca <= -ForcaExaustao then begin
+        r := 160; g := 0; b := 100;          // fucsia opaco: exaustao venda sem ctx
+      end else begin
+        r := 120; g := 30; b := 30;          // vermelho opaco: forte venda sem ctx
+      end;
+    end;
+  end
+  else if MostrarZona and (bZonaSuporte or bZonaResistencia) then
+  begin
+    // Zona S/R ativa sem forca — aguardar confirmacao
+    r := 200; g := 170; b := 0;             // amarelo escuro (zona, sem sinal)
+  end;
+  // F < 70 fora de zona → branco (ruido)
+
+  PaintBar(RGB(r, g, b));
+
+  // ─── Plot 1: histograma F (cor = operacional) ─────────────────
+  rP := r; gP := g; bP := b;
+  if (r = 255) and (g = 255) and (b = 255) then begin
+    rP := 120; gP := 120; bP := 120;        // cinza para barras brancas no sub-painel
+  end;
+  if bDoji then begin rP := 80; gP := 80; bP := 160; end;
+
+  Plot(fForca);
+  SetPlotColor(1, RGB(rP, gP, bP));
+  SetPlotStyle(1, 2);   // histograma
+  SetPlotWidth(1, 2);
+
+  // ─── Plot 2: linha zero ───────────────────────────────────────
+  Plot2(0);
+  SetPlotColor(2, RGB(80, 80, 80));
+  SetPlotStyle(2, 1);
+  SetPlotWidth(2, 1);
+
+  // ─── Plot 3/4: limiares ±70 (entrada forte) ──────────────────
+  Plot3(ForcaMinimaForte);
+  SetPlotColor(3, RGB(0, 150, 0));
+  SetPlotStyle(3, 2);    // pontilhado
+  SetPlotWidth(3, 1);
+
+  Plot4(-ForcaMinimaForte);
+  SetPlotColor(4, RGB(180, 0, 0));
+  SetPlotStyle(4, 2);
+  SetPlotWidth(4, 1);
+
+  // ─── Plot 5/6: limiares ±85 (exaustao) ───────────────────────
+  Plot5(ForcaExaustao);
+  SetPlotColor(5, RGB(0, 220, 220));
+  SetPlotStyle(5, 2);
+  SetPlotWidth(5, 1);
+
+  Plot6(-ForcaExaustao);
+  SetPlotColor(6, RGB(255, 0, 180));
+  SetPlotStyle(6, 2);
+  SetPlotWidth(6, 1);
+
+  // ─── Plot 7/8: EMA direcional e contexto (grafico principal) ──
+  // Plota no sub-painel como referencia de tendencia normalizada
+  // Valor: F medio das ultimas N barras (proxy de tendencia)
+  Plot7(Media(iJanelaDir, fForca));
+  SetPlotColor(7, RGB(255, 200, 0));   // amarelo: media direcional
+  SetPlotStyle(7, 1);
+  SetPlotWidth(7, 1);
+
+  Plot8(Media(iJanelaCtx, fForca));
+  SetPlotColor(8, RGB(180, 80, 255));  // roxo: media contexto (mais lenta)
+  SetPlotStyle(8, 1);
+  SetPlotWidth(8, 1);
+
+  // ─── Plot 9: volume expresso (dourado) ────────────────────────
+  if Volume > (fVolMedia * RatioVolumeExpresso) then
+  begin
+    Plot9(ForcaExaustao + 8);
+    SetPlotColor(9, RGB(255, 215, 0));
+    SetPlotStyle(9, 2);
+    SetPlotWidth(9, 3);
+  end
+  else
+    Plot9(0);
+
+  // ─── Plot 10: SL simulado (somente quando ha sinal valido) ────
+  // Representa onde estaria o hard SL se entrasse neste candle
+  // Positivo no sub-painel = quanto SL consome do F
+  if MostrarSLSimulado and (bForcaCompra or bForcaVenda) then
+  begin
+    // Exibe como nivel negativo (custo do SL em relacao ao F atual)
+    Plot10(-(fSL / fRange) * 10);           // normalizacao indicativa
+    SetPlotColor(10, RGB(255, 100, 0));     // laranja: nivel de risco
+    SetPlotStyle(10, 2);
+    SetPlotWidth(10, 2);
+  end
+  else
+    Plot10(0);
+
+  // ─── Alertas (so quando V12 entraria — F + MTF) ───────────────
+  if MostrarAlertas then
+  begin
+    if bForcaCompra and bMTF_Compra then Alert(RGB(0, 200, 0));
+    if bForcaVenda  and bMTF_Venda  then Alert(RGB(200, 0, 0));
+  end;
+
+end;
