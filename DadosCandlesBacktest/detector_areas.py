@@ -318,7 +318,8 @@ def processar_ativo(
         areas = calcular_toques(areas, df, janela)
 
         n_rel = sum(1 for a in areas if a["toques"] >= min_toques)
-        print(f"  [{tf:6}] {len(df):6}c -> {len(areas):5} areas -> {n_rel} relevantes (x={x}pts)")
+        print(
+            f"  [{tf:6}] {len(df):6}c -> {len(areas):5} areas -> {n_rel} relevantes (x={x}pts)")
         areas_por_tf[tf] = areas
 
     if not areas_por_tf:

@@ -1,0 +1,38 @@
+{
+  "WDO 60/30/15": {
+    "range_medio_pts": 13.32,
+    "melhor_sl_pts": 19.97,
+    "melhor_rr": 3.0,
+    "melhor_tp_pts": 59.92,
+    "winrate": 41.3,
+    "resultado_r": 572623.47,
+    "contratos_suger": 5
+  },
+  "WIN 60/30/15": {
+    "range_medio_pts": 410.98,
+    "melhor_sl_pts": 821.96,
+    "melhor_rr": 3.0,
+    "melhor_tp_pts": 2465.89,
+    "winrate": 45.3,
+    "resultado_r": 1222915.56,
+    "contratos_suger": 1
+  },
+  "WDO 30/15/5": {
+    "range_medio_pts": 6.12,
+    "melhor_sl_pts": 12.24,
+    "melhor_rr": 3.0,
+    "melhor_tp_pts": 36.71,
+    "winrate": 43.3,
+    "resultado_r": 587386.28,
+    "contratos_suger": 8
+  },
+  "WIN 30/15/5": {
+    "range_medio_pts": 170.92,
+    "melhor_sl_pts": 341.84,
+    "melhor_rr": 3.0,
+    "melhor_tp_pts": 1025.53,
+    "winrate": 41.9,
+    "resultado_r": 376644.37,
+    "contratos_suger": 1
+  }
+}
