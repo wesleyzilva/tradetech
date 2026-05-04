@@ -1,0 +1,293 @@
+{ 
+  Robo  : FORCA_WDO_V12
+  Tipo  : NTSL (estrategia/robo executavel)
+  Ativo : WDO (mini-dolar)
+  Versao: 12.0
+  Base  : FORCA_WDO_V11
+
+  === MELHORIAS V12 vs V11 ===
+
+  1. HARD STOP LOSS via Low/High intrabar [BUG FIX CRITICO]
+     — V11 calculava fSL mas NAO colocava ordem de stop real.
+       Tinha apenas StopCandleContra (exaustao contraria).
+       Resultado: trades sem stop real, gerando perdas de -1365pts no WDO 5min.
+     — V12: if IsBought and (Low <= fEntrada - fSL) then ClosePosition [intrabar]
+     — V12: if IsSold   and (High >= fEntrada + fSL) then ClosePosition [intrabar]
+
+  2. BREAK-EVEN AGRESSIVO: ratio 0.33 (era 0.50)
+     — Trigger BE em 1/3 do TP (ex: 12pts num TP=36 no 5min)
+     — Apos trigger, fecha se Low/High toca entrada (nao so Close)
+
+  3. TRAILING STOP (novo parametro UsarTrailing)
+     — Apos BE ativo, trailing de TrailingPasso pts atras do preco
+     — Ex: preco avanca 30pts => SL muda para 20pts de lucro (TrailingPasso=10)
+
+  4. PERDA MAXIMA DIARIA (novo parametro MaxPerdaDiaria)
+     — Para de operar se perda acumulada no dia >= MaxPerdaDiaria pts
+     — Reset a cada novo dia
+
+  5. PARAMETROS DEFAULT MUDADOS PARA 5min (mais adequado ao ativo WDO)
+     — StopMinimo: 20pts (15min) -> 12pts (5min)
+     — TakeProfit: 60pts (15min) -> 36pts (5min)
+     — iJanelaDir: 2 (15min) -> 3 (5min)
+     — iJanelaCtx: 4 (15min) -> 6 (5min)
+
+  Para usar no 15min: StopMinimo=20, TakeProfit=60, iJanelaDir=2, iJanelaCtx=4
+  Para usar no 10min: StopMinimo=15, TakeProfit=45, iJanelaDir=2, iJanelaCtx=5
+
+  === CALIBRACAO (identica ao V11) ===
+  Backtest SL=20 TP=60 RR=3.0 WDO 15min 2012-2026:
+    Ambos (F>=70): n=6721  win=39.5%  PnL=+78.220pts
+  Range medio: 15min=13.3pts | 5min=6.1pts
+  SL ideal: 15min=20pts | 5min=12pts (2x range medio)
+}
+
+input
+  // === FORCA ===
+  ForcaMinimaForte(70.0);
+  ForcaExaustao(85.0);
+  PeriodoMediaVolume(20);
+  UsarFiltroVolume(true);
+  VolumeMinimo(2000);
+
+  // === MULTI-TF (default 5min: tripleta 30/15/5) ===
+  // 15min: iJanelaDir=2 iJanelaCtx=4
+  //  5min: iJanelaDir=3 iJanelaCtx=6 (default V12)
+  iJanelaDir(3);
+  iJanelaCtx(6);
+
+  // === STOP/ALVO ===
+  // V12: hard SL aplicado via Low/High intrabar
+  // Para 5min usar StopMinimo=12, TakeProfit=36
+  // Para 15min usar StopMinimo=20, TakeProfit=60
+  StopMinimo(12.0);              // 12pts = 2x range medio @5min
+  FatorRangeSL(1.5);             // SL = max(StopMinimo, range*1.5) — nunca menor que StopMinimo
+  TakeProfit(36.0);              // RR 3.0 no 5min (12×3)
+  UsarBreakEven(true);
+  BreakEvenRatio(0.33);          // V12: trigger BE apos 33% do TP (era 0.50)
+                                  // Ex 5min: BE trigger = 36*0.33 = ~12pts de lucro
+  UsarTrailing(true);            // V12: trailing stop apos BE ativo
+  TrailingPasso(4.0);            // a cada 4pts de avanco, SL sobe 4pts (WDO 5min)
+
+  // === GERENCIAMENTO DE RISCO ===
+  CapitalReais(10000.0);
+  RiscoPorcentagem(1.0);         // 1% do capital (R$100 por trade)
+  PontoValorReais(10.0);         // WDO: 1pt = R$10
+  MaxContratos(10);
+  MaxPerdaDiaria(60.0);          // V12: para se perder MaxPerdaDiaria pts no dia (ex 60 = 5xSL)
+
+  // === SAIDAS ===
+  StopHorario_H(17);
+  StopHorario_M(45);
+  UsarStopCandleContra(true);
+  ForcaStopContra(85.0);
+  PermitirReversao(true);
+  MaxBarrasEmPosicao(0);         // 0 = sem limite de barras
+
+  // === ALERTAS ===
+  MostrarAlertas(true);
+  HabilitarOperacoes(true);
+
+var
+  fCorpo, fRange, fVolMedia : float;
+  fMassa, fAceleracao, fForca, fForcaAbs : float;
+  fMediaDir, fMediaCtx : float;
+  bCtxAlta, bCtxBaixa, bDirAlta, bDirBaixa : boolean;
+  r, g, b : integer;
+  iBarras : integer;
+  bDeveOperar, bBreakEven : boolean;
+  fEntrada, fSL, fSLAtivo : float;
+  fTrailingRef : float;
+  iQtd : integer;
+  // perda diaria
+  fPerdaDia : float;
+  iDiaAtual : integer;
+
+begin
+  // ─── Reset perda diaria (novo dia) ───────────────────────────
+  if Date() <> iDiaAtual then
+  begin
+    iDiaAtual  := Date();
+    fPerdaDia  := 0.0;
+  end;
+
+  // ─── Calculos base ────────────────────────────────────────────
+  fCorpo := Close - Open;
+  fRange := High - Low;
+  if fRange <= 0 then fRange := 0.0001;
+  fVolMedia := Media(PeriodoMediaVolume, Volume);
+  if fVolMedia <= 0 then fVolMedia := 1;
+
+  // ─── F = M x A ────────────────────────────────────────────────
+  fMassa      := fCorpo / fRange;
+  fAceleracao := Volume / fVolMedia;
+  fForca      := fMassa * fAceleracao * 100;
+  if fForca >  100 then fForca :=  100;
+  if fForca < -100 then fForca := -100;
+  fForcaAbs := abs(fForca);
+
+  // ─── Multi-TF ─────────────────────────────────────────────────
+  fMediaDir := Media(iJanelaDir, Close);
+  fMediaCtx := Media(iJanelaCtx, Close);
+  bCtxAlta  := (Close > fMediaCtx) and (fMediaCtx > fMediaCtx[iJanelaCtx]);
+  bCtxBaixa := (Close < fMediaCtx) and (fMediaCtx < fMediaCtx[iJanelaCtx]);
+  bDirAlta  := (Close > fMediaDir) and (fMediaDir > fMediaDir[iJanelaDir]);
+  bDirBaixa := (Close < fMediaDir) and (fMediaDir < fMediaDir[iJanelaDir]);
+
+  // ─── Cores (identico ao V11 / INDICADOR_FORCA_V1) ─────────────
+  r := 255; g := 255; b := 255;
+  if fForca >= ForcaExaustao then begin r := 0;   g := 220; b := 220; end
+  else if fForca >= ForcaMinimaForte then begin r := 0;   g := 180; b := 0;   end
+  else if fForca <= -ForcaExaustao   then begin r := 255; g := 0;   b := 180; end
+  else if fForca <= -ForcaMinimaForte then begin r := 200; g := 0;   b := 0;   end;
+  PaintBar(RGB(r, g, b));
+
+  // ─── SL dinamico ──────────────────────────────────────────────
+  fSL := StopMinimo;
+  if (fRange * FatorRangeSL) > fSL then fSL := fRange * FatorRangeSL;
+
+  // ─── Sizing por risco ─────────────────────────────────────────
+  if (fSL > 0) and (PontoValorReais > 0) then
+    iQtd := CapitalReais * (RiscoPorcentagem / 100) / (fSL * PontoValorReais)
+  else
+    iQtd := 1;
+  if iQtd < 1 then iQtd := 1;
+  if iQtd > MaxContratos then iQtd := MaxContratos;
+
+  // ─── Stop horario ─────────────────────────────────────────────
+  if Time() >= (StopHorario_H * 10000 + StopHorario_M * 100) then
+  begin
+    if IsBought or IsSold then ClosePosition;
+    bDeveOperar := false;
+  end
+  else
+    bDeveOperar := true;
+
+  // ─── Perda maxima diaria (V12) ───────────────────────────────
+  if (MaxPerdaDiaria > 0) and (fPerdaDia >= MaxPerdaDiaria) then
+  begin
+    if IsBought or IsSold then ClosePosition;
+    bDeveOperar := false;
+  end;
+
+  // ─── Controle barras em posicao ───────────────────────────────
+  if IsBought or IsSold then
+    iBarras := iBarras + 1
+  else begin
+    iBarras     := 0;
+    bBreakEven  := false;
+    fTrailingRef := 0;
+  end;
+
+  if (MaxBarrasEmPosicao > 0) and (iBarras >= MaxBarrasEmPosicao) then
+  begin
+    if IsBought or IsSold then ClosePosition;
+    iBarras := 0; bDeveOperar := false;
+  end;
+
+  // ─── [V12] HARD STOP LOSS via intrabar High/Low ───────────────
+  // BUG FIX: V11 nao colocava SL real — apenas usava fSL para sizing.
+  // V12 verifica se Low/High atingiu o nivel de SL calculado na entrada.
+  if IsBought and (Low <= fEntrada - fSLAtivo) then
+  begin
+    fPerdaDia := fPerdaDia + fSLAtivo;
+    ClosePosition;
+    iBarras := 0;
+  end;
+  if IsSold and (High >= fEntrada + fSLAtivo) then
+  begin
+    fPerdaDia := fPerdaDia + fSLAtivo;
+    ClosePosition;
+    iBarras := 0;
+  end;
+
+  // ─── Stop candle contra ───────────────────────────────────────
+  if UsarStopCandleContra then
+  begin
+    if IsBought  and (fForca <= -ForcaStopContra) then begin ClosePosition; iBarras := 0; end;
+    if IsSold    and (fForca >= ForcaStopContra)  then begin ClosePosition; iBarras := 0; end;
+  end;
+
+  // ─── [V12] Break-even com trigger agressivo e Low/High ────────
+  // BreakEvenRatio=0.33: dispara com 1/3 do TP (nao 1/2)
+  // Usa Low/High p/ fechar intrabar quando volta para entrada
+  if UsarBreakEven then
+  begin
+    if IsBought and (not bBreakEven) then
+      if (Close - fEntrada) >= (TakeProfit * BreakEvenRatio) then bBreakEven := true;
+    if IsSold and (not bBreakEven) then
+      if (fEntrada - Close) >= (TakeProfit * BreakEvenRatio) then bBreakEven := true;
+    if bBreakEven then
+    begin
+      // V12: usa Low/High para detectar toque no BE intrabar
+      if IsBought  and (Low  <= fEntrada) then begin ClosePosition; iBarras := 0; end;
+      if IsSold    and (High >= fEntrada) then begin ClosePosition; iBarras := 0; end;
+    end;
+  end;
+
+  // ─── [V12] Trailing Stop (apos BE ativo) ─────────────────────
+  // TrailingPasso pts: SL sobe acompanhando preco maximo atingido
+  // Ex: TrailingPasso=4 => SL fica sempre 4pts atras do Close mais alto
+  if UsarTrailing and bBreakEven then
+  begin
+    if IsBought then
+    begin
+      if Close - TrailingPasso > fTrailingRef then
+        fTrailingRef := Close - TrailingPasso;
+      if (fTrailingRef > fEntrada) and (Low <= fTrailingRef) then
+        begin ClosePosition; iBarras := 0; end;
+    end;
+    if IsSold then
+    begin
+      if (Close + TrailingPasso < fTrailingRef) or (fTrailingRef = 0) then
+        fTrailingRef := Close + TrailingPasso;
+      if (fTrailingRef < fEntrada) and (High >= fTrailingRef) then
+        begin ClosePosition; iBarras := 0; end;
+    end;
+  end;
+
+  // ─── Take Profit (High/Low intrabar — mais rapido que Close) ──
+  if IsBought  and (High >= fEntrada + TakeProfit) then begin ClosePosition; iBarras := 0; end;
+  if IsSold    and (Low  <= fEntrada - TakeProfit) then begin ClosePosition; iBarras := 0; end;
+
+  // ─── ENTRADAS ─────────────────────────────────────────────────
+  if HabilitarOperacoes and bDeveOperar then
+  begin
+    // COMPRA: F >= 70 + MTF alinhado
+    if (fForca >= ForcaMinimaForte)
+      and bCtxAlta and bDirAlta
+      and ((not UsarFiltroVolume) or (Volume >= VolumeMinimo)) then
+    begin
+      if PermitirReversao and IsSold then ClosePosition;
+      if (not IsBought) and (not IsSold) then
+      begin
+        BuyAtMarket;
+        fEntrada     := Close;
+        fSLAtivo     := fSL;            // salva SL do candle de entrada
+        fTrailingRef := Close - fSL;    // inicia trailing no nivel do SL
+        iBarras      := 0;
+        bBreakEven   := false;
+        if MostrarAlertas then Alert(RGB(0, 200, 0));
+      end;
+    end;
+
+    // VENDA: F <= -70 + MTF alinhado
+    if (fForca <= -ForcaMinimaForte)
+      and bCtxBaixa and bDirBaixa
+      and ((not UsarFiltroVolume) or (Volume >= VolumeMinimo)) then
+    begin
+      if PermitirReversao and IsBought then ClosePosition;
+      if (not IsBought) and (not IsSold) then
+      begin
+        SellShortAtMarket;
+        fEntrada     := Close;
+        fSLAtivo     := fSL;            // salva SL do candle de entrada
+        fTrailingRef := Close + fSL;    // inicia trailing no nivel do SL
+        iBarras      := 0;
+        bBreakEven   := false;
+        if MostrarAlertas then Alert(RGB(200, 0, 0));
+      end;
+    end;
+  end;
+
+end;
