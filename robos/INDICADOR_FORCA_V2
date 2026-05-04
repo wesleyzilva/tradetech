@@ -86,6 +86,7 @@ input
 
   // === ALERTAS ===
   MostrarAlertas(true);
+  AlertarSoExaustao(false); // true = alerta apenas no tom brilhante (F>=85+MTF)
 
 var
   fCorpo, fRange, fVolMedia : float;
@@ -294,11 +295,28 @@ begin
   else
     Plot10(0);
 
-  // ─── Alertas (so quando V12 entraria — F + MTF) ───────────────
+  // ─── Alertas — 4 estados distintos para configurar sons no Profit ────
+  // Profit > Configuracoes > Alertas: cada cor pode ter um som diferente
+  //   Verde escuro  (0,160,0)   = compra forte    [F 70..85 + MTF]
+  //   Verde claro   (0,255,80)  = compra exaustao [F>=85  + MTF]  ← mais urgente
+  //   Verm medio    (210,0,0)   = venda forte      [F -85..-70 + MTF]
+  //   Verm vivo     (255,80,80) = venda exaustao  [F<=-85 + MTF]  ← mais urgente
   if MostrarAlertas then
   begin
-    if bForcaCompra and bMTF_Compra then Alert(RGB(0, 200, 0));
-    if bForcaVenda  and bMTF_Venda  then Alert(RGB(200, 0, 0));
+    if bForcaCompra and bMTF_Compra then
+    begin
+      if fForca >= ForcaExaustao then
+        Alert(RGB(0, 255, 80))    // compra EXAUSTAO — som urgente
+      else if not AlertarSoExaustao then
+        Alert(RGB(0, 160, 0));    // compra FORTE
+    end;
+    if bForcaVenda and bMTF_Venda then
+    begin
+      if fForca <= -ForcaExaustao then
+        Alert(RGB(255, 80, 80))   // venda EXAUSTAO — som urgente
+      else if not AlertarSoExaustao then
+        Alert(RGB(210, 0, 0));    // venda FORTE
+    end;
   end;
 
 end;
