@@ -1,0 +1,14 @@
+FORCA_WDO_V13
+
+Compilando ...
+Parser[285,5]: Não é possível começar um statement com "VAR"
+Parser[287,7]: fLimiteEntrada não é um identificador válido
+Parser[294,22]: Função ou variável inválida: fLimiteEntrada
+Parser[294,22]: Operações lógicas devem ser executadas somente com Booleanos
+Parser[293,8]: Em um IF, a expressão deve ser Booleana
+Parser[313,23]: Função ou variável inválida: fLimiteEntrada
+Parser[313,23]: Tipo deve ser numérico depois de um sinal de adição/subtração
+Parser[313,23]: Operações lógicas devem ser executadas somente com Booleanos
+Parser[312,8]: Em um IF, a expressão deve ser Booleana
+Parser[331,1]: O código deve começar com begin
+Erro de Sintaxe
