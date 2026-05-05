@@ -111,6 +111,70 @@ A análise de sequência usa os trades de VENDA (V) como proxy do sinal vermelho
 
 ---
 
+## Distribuição de Trades por Timeframe — Calibração SL/TP
+
+> Interpretar: `≤ -100` = perdeu mais que o SL configurado (trailing falhou/gap). `> 150` = capturou movimento grande (SG não limitou). `BE` = saiu no zero (break-even acionado com sucesso).
+
+### WDO_V12 — SL ref=12pts | TP ref=36pts
+
+| TF | n | ≤-100% | -100/-50% | -50/-1% | BE% | 1/50% | 50/150% | >150% | MaxGanho | MaxPerda |
+|-----|---|--------|-----------|---------|-----|-------|---------|-------|----------|----------| 
+| 5m | 176 | 15% | 20% | 25% | 5% | 9% | 16% | 10% | 650 | -500 |
+| 10m | 113 | 16% | 19% | 21% | 1% | 10% | 16% | 17% | 730 | -500 |
+| 15m | 90 | 20% | 18% | 13% | 2% | 10% | 18% | 19% | 650 | -490 |
+| 20m | 80 | 19% | 19% | 14% | 2% | 11% | 16% | 19% | 560 | -500 |
+| 30m | 54 | 11% | 13% | 15% | 2% | 7% | 30% | 22% | 550 | -235 |
+| 60m | 39 | 28% | 18% | 5% | 0% | 8% | 15% | 26% | 405 | -350 |
+| diario | 7 | 43% | 0% | 0% | 0% | 0% | 0% | 57% | 490 | -1380 |
+
+### WIN_V12 — SL ref=342pts | TP ref=1026pts
+
+| TF | n | ≤-100% | -100/-50% | -50/-1% | BE% | 1/50% | 50/150% | >150% | MaxGanho | MaxPerda |
+|-----|---|--------|-----------|---------|-----|-------|---------|-------|----------|----------| 
+| 5m | 387 | 14% | 18% | 17% | 1% | 7% | 36% | 7% | 500 | -338 |
+| 10m | 248 | 21% | 14% | 16% | 1% | 6% | 32% | 11% | 353 | -388 |
+| 15m | 181 | 21% | 10% | 15% | 0% | 6% | 33% | 16% | 982 | -834 |
+| 20m | 146 | 23% | 10% | 8% | 0% | 10% | 29% | 20% | 416 | -486 |
+| 30m | 110 | 29% | 10% | 12% | 0% | 5% | 26% | 17% | 479 | -525 |
+| 60m | 69 | 33% | 6% | 3% | 0% | 3% | 33% | 22% | 830 | -1135 |
+| diario | 15 | 40% | 0% | 0% | 0% | 7% | 13% | 40% | 666 | -616 |
+
+---
+
+## Matriz de Prioridade — Robôs × Timeframes
+
+> **Legenda de status:** 
+> 🟢 Operar — PnL positivo e Win% ≥ 45%  
+> 🟡 Vigilância — PnL positivo mas Win% < 45% ou n < 30  
+> 🔴 Pausar — PnL negativo  
+> ⚫ Não testado / sem dados  
+
+### WDO
+
+| Timeframe | V11 | V12 | Recomendação |
+|-----------|-----|-----|--------------|
+| **5m** | 🔴 -2875pts (30%w) | 🔴 -275pts (35%w) | 🚫 Pausar — calibrar |
+| **10m** | 🔴 -780pts (42%w) | 🟡 +655pts (42%w, n=113) | ⚠️ Monitorar |
+| **15m** | 🟢 +1970pts (51%w) | 🟢 +1055pts (47%w) | ✅ Operar |
+| **20m** | 🟢 +2710pts (50%w) | 🟢 +870pts (46%w) | ✅ Operar |
+| **30m** | 🟡 +1510pts (43%w, n=49) | 🟢 +3765pts (59%w) | ✅ Prioridade ALTA |
+| **60m** | 🔴 -650pts (39%w) | 🟢 +360pts (49%w) | ✅ Operar |
+| **diario** | ⚫ sem dados | 🔴 -865pts (57%w) | 🚫 Pausar — calibrar |
+
+### WIN
+
+| Timeframe | V11 | V12 | Recomendação |
+|-----------|-----|-----|--------------|
+| **5m** | 🟡 +3494pts (44%w, n=316) | 🟢 +4588pts (51%w) | ✅ Prioridade ALTA |
+| **10m** | 🟡 +4583pts (45%w, n=188) | 🟢 +791pts (48%w) | ✅ Operar |
+| **15m** | 🟡 +5181pts (45%w, n=134) | 🟢 +3392pts (54%w) | ✅ Prioridade ALTA |
+| **20m** | 🟢 +45pts (47%w) | 🟢 +974pts (59%w) | ✅ Prioridade ALTA |
+| **30m** | 🔴 -664pts (37%w) | 🔴 -621pts (49%w) | 🚫 Pausar — calibrar |
+| **60m** | 🔴 -840pts (41%w) | 🔴 -300pts (58%w) | 🚫 Pausar — calibrar |
+| **diario** | 🟡 +690pts (36%w, n=14) | 🟡 +1116pts (60%w, n=15) | ✅ Operar |
+
+---
+
 ## Checklist para próxima versão (V13)
 
 - [ ] Analisar se MaxPerdaDia está muito amplo (precisa calibrar)
