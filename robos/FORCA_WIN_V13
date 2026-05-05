@@ -1,105 +1,34 @@
-{ 
-  Robo  : FORCA_WIN_V13
-  Tipo  : NTSL (estrategia/robo executavel)
-  Ativo : WIN (mini-indice Bovespa)
-  Versao: 13.0
-  Base  : FORCA_WIN_V12
-
-  === MELHORIAS V13 vs V12 ===
-
-  1. SEM OPERAÇÕES OVERNIGHT [CRITICO]
-     — V12: posicao aberta antes de 17:45 poderia sobreviver para o dia seguinte
-     — V13: ao iniciar a PRIMEIRA BARRA de um novo dia, se houver posicao aberta,
-       FECHA IMEDIATAMENTE antes de qualquer outro calculo.
-     — Garantia absoluta: sem carry overnight.
-
-  2. HORARIO DE INICIO ajustavel (HoraInicioH / HoraInicioM)
-     — Default: 09h30 — evitar leilao de abertura e primeiros 30min volateis
-     — WIN tem alta volatilidade nos primeiros candles (abertura B3 + gap de NY)
-
-  3. TRAILING PASSO CORRIGIDO: 100pts -> 150pts (WIN 5min)
-     — V12: TrailingPasso=100pts
-     — WIN@5min range medio ~170pts => trailing de 100 captura apenas 59% do range
-     — V13: 150pts => trailing em ~88% do range, menos ruido mas mais protetor
-
-  4. FILTRO DE LADO: OperarCompra / OperarVenda (novos parametros)
-     — V12 analise WIN: VENDA Win%=47.8%, PnL=-2648pts (problema oposto ao WDO)
-     — WIN COMPRA Win%=56.6%, PnL=+12588pts — consistente e lucrativo
-     — Default V13: OperarVenda(true) [pode desabilitar para backtest puro COMPRA]
-     — Sugerido: rodar com OperarVenda(false) para focar no lado forte
-
-  5. SINAL FORTE exclusivo: SomenteSinalForte (novo parametro)
-     — WIN calibracao historica (2012-2026): Exaustao(F>=85) melhor zona
-       n=4735 win=44.6% PnL=+3.058.662pts vs n=6531 win=43.7% com F>=70
-     — Quando true: so aceita F>=ForcaExaustao(85) — menos trades, melhor qualidade
-     — Default: false (comportamento igual ao V12)
-
-  6. MaxPerdaDiaria mantida em 1x TP (1026pts)
-     — WIN: MaxPerdaDiaria ja estava em 1026 = 1x TP — correto
-     — Mantido sem alteracao
-
-  === CALIBRACAO BASE (V12 resultados) ===
-  WIN 15m COMPRA: Win%=62.8%, PnL=+4962pts  ← MELHOR CONFIGURACAO
-  WIN  5m COMPRA: Win%=53.0%, PnL=+2243pts  ← SEGUNDO MELHOR
-  WIN 20m COMPRA: Win%=65.8%, PnL=+1160pts  ← ALTO WIN%, MENOS TRADES
-  WIN 15m VENDA:  Win%=44.8%, PnL=-1570pts  ← EVITAR (desabilitar OperarVenda)
-
-  Para 5min  : StopMinimo=342,  TakeProfit=1026,  iJanelaDir=3, iJanelaCtx=6
-  Para 15min : StopMinimo=822,  TakeProfit=2466,  iJanelaDir=2, iJanelaCtx=4
-  Para 20min : StopMinimo=1000, TakeProfit=3000,  iJanelaDir=2, iJanelaCtx=4
-}
-
 input
-  // === FORCA ===
   ForcaMinimaForte(70.0);
   ForcaExaustao(85.0);
   PeriodoMediaVolume(20);
   UsarFiltroVolume(true);
   VolumeMinimo(2000);
-
-  // === MULTI-TF (default 5min: tripleta 30/15/5) ===
-  // 15min: iJanelaDir=2 iJanelaCtx=4
-  //  5min: iJanelaDir=3 iJanelaCtx=6
   iJanelaDir(3);
   iJanelaCtx(6);
-
-  // === STOP/ALVO ===
-  // WIN 5min: range medio ~170pts => SL=342 (2x range)
-  // WIN 15min: range medio ~411pts => SL=822 (2x range)
-  StopMinimo(342.0);             // 2x range medio WIN@5min
-  FatorRangeSL(2.0);             // SL = max(StopMinimo, range*2.0)
-  TakeProfit(1026.0);            // RR 3.0: 342x3=1026 @ 5min
+  StopMinimo(342.0);
+  FatorRangeSL(2.0);
+  TakeProfit(1026.0);
   UsarBreakEven(true);
-  BreakEvenRatio(0.33);          // trigger BE com 33% do TP = ~340pts no 5min
+  BreakEvenRatio(0.33);
   UsarTrailing(true);
-  TrailingPasso(150.0);          // [V13] 150pts (era 100) — ~88% do range medio @5min
-
-  // === GERENCIAMENTO DE RISCO ===
+  TrailingPasso(150.0);
   CapitalReais(10000.0);
-  RiscoPorcentagem(1.0);         // 1% = R$100 por trade
-  PontoValorReais(0.20);         // WIN mini: 1pt = R$0.20
+  RiscoPorcentagem(1.0);
+  PontoValorReais(0.20);
   MaxContratos(10);
-  MaxPerdaDiaria(1026.0);        // 1x TP — se perdeu 1 TP, dia encerrado (mantido V12)
-
-  // === HORARIO ===
-  HoraInicioH(9);                // [V13] nao operar antes deste horario
-  HoraInicioM(30);               // [V13] default: 09h30 (evitar abertura B3 + gap NY)
+  MaxPerdaDiaria(1026.0);
+  HoraInicioH(9);
+  HoraInicioM(30);
   StopHorario_H(17);
   StopHorario_M(45);
-
-  // === FILTROS V13 ===
-  SomenteSinalForte(false);      // [V13] true = so F>=ForcaExaustao(85)
-                                  // WIN historico: exaustao=44.6% win% (+3M pts 2012-2026)
-  OperarCompra(true);            // [V13] WIN COMPRA Win%=56.6% — manter ativo
-  OperarVenda(true);             // [V13] false = ignora vendas (WIN VENDA PnL=-2648)
-
-  // === SAIDAS ===
+  SomenteSinalForte(false);
+  OperarCompra(true);
+  OperarVenda(true);
   UsarStopCandleContra(true);
   ForcaStopContra(85.0);
   PermitirReversao(true);
   MaxBarrasEmPosicao(0);
-
-  // === ALERTAS ===
   MostrarAlertas(true);
   HabilitarOperacoes(true);
 
@@ -117,11 +46,9 @@ var
   fPerdaDia : float;
   iDiaAtual : integer;
   bHorarioPermitido : boolean;
+  fLimiteEntrada : float;
 
 begin
-  // ─── [V13] FECHAR OVERNIGHT — 1a barra do novo dia fecha tudo ─
-  // CRITICO: garante sem carry overnight — independente do StopHorario.
-  // Executa ANTES de qualquer calculo ou verificacao de posicao.
   if Date() <> iDiaAtual then
   begin
     if IsBought or IsSold then
@@ -135,14 +62,12 @@ begin
     fPerdaDia := 0.0;
   end;
 
-  // ─── Calculos base ────────────────────────────────────────────
   fCorpo := Close - Open;
   fRange := High - Low;
   if fRange <= 0 then fRange := 0.0001;
   fVolMedia := Media(PeriodoMediaVolume, Volume);
   if fVolMedia <= 0 then fVolMedia := 1;
 
-  // ─── F = M x A ────────────────────────────────────────────────
   fMassa      := fCorpo / fRange;
   fAceleracao := Volume / fVolMedia;
   fForca      := fMassa * fAceleracao * 100;
@@ -150,7 +75,6 @@ begin
   if fForca < -100 then fForca := -100;
   fForcaAbs := abs(fForca);
 
-  // ─── Multi-TF ─────────────────────────────────────────────────
   fMediaDir := Media(iJanelaDir, Close);
   fMediaCtx := Media(iJanelaCtx, Close);
   bCtxAlta  := (Close > fMediaCtx) and (fMediaCtx > fMediaCtx[iJanelaCtx]);
@@ -158,23 +82,16 @@ begin
   bDirAlta  := (Close > fMediaDir) and (fMediaDir > fMediaDir[iJanelaDir]);
   bDirBaixa := (Close < fMediaDir) and (fMediaDir < fMediaDir[iJanelaDir]);
 
-  // ─── Cores ─────────────────────────────────────────────────────
-  // Verde forte   : F >=  85 → RGB(0,220,220)   — sinal LONG maxima prioridade
-  // Verde fraco   : F >=  70 → RGB(0,180,0)     — sinal LONG normal
-  // Vermelho forte: F <= -85 → RGB(255,0,180)   — sinal SHORT maxima prioridade
-  // Vermelho fraco: F <= -70 → RGB(200,0,0)     — sinal SHORT normal
   r := 255; g := 255; b := 255;
-  if fForca >= ForcaExaustao then begin r := 0;   g := 220; b := 220; end   // verde forte
-  else if fForca >= ForcaMinimaForte then begin r := 0;   g := 180; b := 0;   end  // verde fraco
-  else if fForca <= -ForcaExaustao   then begin r := 255; g := 0;   b := 180; end  // vermelho forte
-  else if fForca <= -ForcaMinimaForte then begin r := 200; g := 0;   b := 0;   end; // vermelho fraco
+  if fForca >= ForcaExaustao then begin r := 0;   g := 220; b := 220; end
+  else if fForca >= ForcaMinimaForte then begin r := 0;   g := 180; b := 0;   end
+  else if fForca <= -ForcaExaustao   then begin r := 255; g := 0;   b := 180; end
+  else if fForca <= -ForcaMinimaForte then begin r := 200; g := 0;   b := 0;   end;
   PaintBar(RGB(r, g, b));
 
-  // ─── SL dinamico ──────────────────────────────────────────────
   fSL := StopMinimo;
   if (fRange * FatorRangeSL) > fSL then fSL := fRange * FatorRangeSL;
 
-  // ─── Sizing por risco ─────────────────────────────────────────
   if (fSL > 0) and (PontoValorReais > 0) then
     iQtd := CapitalReais * (RiscoPorcentagem / 100) / (fSL * PontoValorReais)
   else
@@ -182,11 +99,10 @@ begin
   if iQtd < 1 then iQtd := 1;
   if iQtd > MaxContratos then iQtd := MaxContratos;
 
-  // ─── [V13] Janela de horario permitido ────────────────────────
   bHorarioPermitido := (Time() >= (HoraInicioH * 10000 + HoraInicioM * 100))
                    and (Time() <  (StopHorario_H * 10000 + StopHorario_M * 100));
 
-  // ─── Stop horario ─────────────────────────────────────────────
+
   if Time() >= (StopHorario_H * 10000 + StopHorario_M * 100) then
   begin
     if IsBought or IsSold then ClosePosition;
@@ -195,14 +111,12 @@ begin
   else
     bDeveOperar := bHorarioPermitido;
 
-  // ─── Perda maxima diaria ─────────────────────────────────────
   if (MaxPerdaDiaria > 0) and (fPerdaDia >= MaxPerdaDiaria) then
   begin
     if IsBought or IsSold then ClosePosition;
     bDeveOperar := false;
   end;
 
-  // ─── Controle barras em posicao ───────────────────────────────
   if IsBought or IsSold then
     iBarras := iBarras + 1
   else begin
@@ -217,7 +131,7 @@ begin
     iBarras := 0; bDeveOperar := false;
   end;
 
-  // ─── Hard Stop Loss intrabar ──────────────────────────────────
+
   if IsBought and (Low <= fEntrada - fSLAtivo) then
   begin
     fPerdaDia := fPerdaDia + fSLAtivo;
@@ -231,14 +145,13 @@ begin
     iBarras := 0;
   end;
 
-  // ─── Stop candle contra ───────────────────────────────────────
   if UsarStopCandleContra then
   begin
     if IsBought  and (fForca <= -ForcaStopContra) then begin ClosePosition; iBarras := 0; end;
     if IsSold    and (fForca >= ForcaStopContra)  then begin ClosePosition; iBarras := 0; end;
   end;
 
-  // ─── Break-even (Low/High intrabar) ───────────────────────────
+
   if UsarBreakEven then
   begin
     if IsBought and (not bBreakEven) then
@@ -252,9 +165,7 @@ begin
     end;
   end;
 
-  // ─── [V13] Trailing Stop — passo 150pts (era 100) ─────────────
-  // WIN@5min range medio ~170pts — 150pts = ~88% do range
-  // Antes: 100pts = 59% do range => saidas dentro do movimento normal
+
   if UsarTrailing and bBreakEven then
   begin
     if IsBought then
@@ -273,22 +184,16 @@ begin
     end;
   end;
 
-  // ─── Take Profit intrabar ─────────────────────────────────────
   if IsBought  and (High >= fEntrada + TakeProfit) then begin ClosePosition; iBarras := 0; end;
   if IsSold    and (Low  <= fEntrada - TakeProfit) then begin ClosePosition; iBarras := 0; end;
 
-  // ─── ENTRADAS ─────────────────────────────────────────────────
   if HabilitarOperacoes and bDeveOperar then
   begin
-    // ─── [V13] Forca minima de entrada ──────────────────────────
-    var fLimiteEntrada : float;
     if SomenteSinalForte then
-      fLimiteEntrada := ForcaExaustao      // apenas F>=85
+      fLimiteEntrada := ForcaExaustao
     else
-      fLimiteEntrada := ForcaMinimaForte;  // F>=70 (padrao)
+      fLimiteEntrada := ForcaMinimaForte;
 
-    // COMPRA: OperarCompra=false desabilita lado comprador
-    // WIN COMPRA Win%=56.6%, PnL=+12588pts — manter habilitado
     if OperarCompra
       and (fForca >= fLimiteEntrada)
       and bCtxAlta and bDirAlta
@@ -307,8 +212,6 @@ begin
       end;
     end;
 
-    // VENDA: OperarVenda=false desabilita lado vendedor
-    // WIN VENDA Win%=47.8%, PnL=-2648pts — considere OperarVenda(false)
     if OperarVenda
       and (fForca <= -fLimiteEntrada)
       and bCtxBaixa and bDirBaixa
