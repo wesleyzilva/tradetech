@@ -14,10 +14,16 @@ NOMENCLATURA DE CORES (alinhada ao código NTSL dos robôs):
   Vermelho forte   = F ≤ -85 → SHORT prioritário
 """
 
+import datetime
 import os
 import re
+import sys
 from pathlib import Path
 from collections import Counter, defaultdict
+
+# Forçar UTF-8 no stdout (evita UnicodeEncodeError no Windows cp1252)
+if sys.stdout.encoding != "utf-8":
+    sys.stdout.reconfigure(encoding="utf-8", errors="replace")
 
 BASE = Path("C:/repositorio/repositorio_particular/tradetech/robos/resultados")
 OUT = Path("C:/repositorio/repositorio_particular/tradetech/anotacoes")
@@ -441,11 +447,100 @@ for ativo in ["WDO", "WIN"]:
             print(
                 f"      Trailing/BE não está contendo os piores casos — considere aumentar TrailingPasso.")
 
-# ─── Gerar HISTORICO-RESULTADOS.md ────────────────────────────────────────────
+# ─── Calcular Top 5 (usado tanto no print quanto no HISTORICO) ──────────────
+
+
+def score_config(s, n_min=15):
+    """
+    Score de ranking leva em conta: Win%, PnL, RR e volume de trades.
+    Fórmula: score = win_pct * rr * log(n) * (1 if pnl > 0 else 0)
+    Explica por que o RR importa: uma config com 55% de win e RR=2.0 bate
+    fácil uma com 55% de win e RR=0.8 — no longo prazo, ganha muito mais.
+    Expectância = win_pct * avg_g - (1 - win_pct) * avg_l
+    Apenas configs com PnL > 0 e n >= n_min entram no ranking.
+    """
+    if not s or s.get('n', 0) < n_min or s.get('pnl', 0) <= 0:
+        return None
+    import math
+    exp = (s['win_pct'] / 100 * s['avg_g']) - \
+        ((1 - s['win_pct'] / 100) * s['avg_l'])
+    score = exp * s['rr'] * math.log(max(s['n'], 1))
+    return round(score, 2), round(exp, 2)
+
+
+top5_candidatos = []
+for _ativo in ["WDO", "WIN"]:
+    _key = f"FORCA_{_ativo}_V12"
+    for _tf in TIMEFRAMES_ORDER:
+        _d = data.get(_key, {}).get(_tf)
+        if not _d or not _d["rows"]:
+            continue
+        for _lado in ["C", "V"]:
+            _rows_l = [r for r in _d["rows"] if r["lado"] == _lado]
+            if len(_rows_l) < 15:
+                continue
+            _s = stats(_rows_l)
+            _res = score_config(_s)
+            if _res is None:
+                continue
+            _score, _exp = _res
+            top5_candidatos.append({
+                "robo": _key, "ativo": _ativo, "tf": _tf,
+                "lado": "COMPRA" if _lado == "C" else "VENDA",
+                "n": _s["n"], "win_pct": _s["win_pct"],
+                "pnl": _s["pnl"], "avg_g": _s["avg_g"],
+                "avg_l": _s["avg_l"], "rr": _s["rr"],
+                "expectancia": _exp, "score": _score,
+            })
+top5_candidatos.sort(key=lambda x: x["score"], reverse=True)
+top5 = top5_candidatos[:5]
+
+print("\n\n" + "=" * 70)
+print("  TOP 5 CONFIGURAÇÕES — Score = Expectância × RR × log(n)")
+print("  (PnL > 0 e n ≥ 15 — apenas configs estatisticamente confiáveis)")
+print("=" * 70)
+print(f"  {'#':<3} {'Robô':<20} {'TF':<6} {'Lado':<7} {'n':>4} {'Win%':>6} {'PnL':>8} {'RR':>5} {'Exp/trade':>10} {'Score':>8}")
+print(f"  {'─'*80}")
+for _i, _c in enumerate(top5, 1):
+    print(
+        f"  {_i:<3} {_c['robo']:<20} {_c['tf']:<6} {_c['lado']:<7} "
+        f"{_c['n']:>4} {_c['win_pct']:>5.1f}% {_c['pnl']:>8.0f} "
+        f"{_c['rr']:>5.2f} {_c['expectancia']:>10.1f} {_c['score']:>8.1f}"
+    )
+
+print("\n  Por que o RR é crítico (e não só o Win%)?")
+print("  Exemplo com Win%=50%:")
+print("    RR=1.0 → Expectância = 0.50×G - 0.50×G = 0    (empate — não vale o risco)")
+print("    RR=2.0 → Expectância = 0.50×2G - 0.50×G = +0.5G (lucrativo)")
+print("    RR=0.5 → Expectância = 0.50×0.5G - 0.50×G = -0.25G (perdedor crônico)")
+print("  Win%=40% com RR=3.0 → Expec=+0.4×3G - 0.6×G = +0.6G ← bate Win%=55% com RR=0.8")
+
+# ─── Gerar HISTORICO-RESULTADOS.md (LOG INCREMENTAL) ─────────────────────────
+# Estratégia: mantém todo o histórico anterior e APPENDA uma nova entrada datada.
+# Estrutura:
+#   - cabeçalho fixo (só escrito se arquivo não existir)
+#   - cada run cria um bloco "## Entrada YYYY-MM-DD HH:MM" com os dados do momento
+# Assim o histórico cresce como um log real de evolução.
 hist_path = OUT / "HISTORICO-RESULTADOS.md"
-with open(hist_path, "w", encoding="utf-8") as f:
-    f.write("# Histórico de Evolução — Robôs FORCA\n\n")
-    f.write("> Registro cronológico de versões, decisões e resultados para afinar as estratégias.\n\n")
+run_ts = datetime.datetime.now().strftime("%Y-%m-%d %H:%M")
+
+# Lê conteúdo existente (se houver)
+_existing = ""
+if hist_path.exists():
+    _existing = hist_path.read_text(encoding="utf-8")
+
+with open(hist_path, "w" if not _existing else "a", encoding="utf-8") as f:
+    if not _existing:
+        f.write("# Histórico de Evolução — Robôs FORCA\n\n")
+        f.write(
+            "> Log incremental: cada execução do script adiciona uma entrada datada.\n")
+        f.write(
+            "> Para comparar versões, role para cima — entradas mais recentes ficam no fim.\n\n")
+        f.write("---\n\n")
+
+    # ── Bloco da entrada atual ────────────────────────────────────────
+    f.write(f"## Entrada {run_ts}\n\n")
+    f.write("> _Gerado automaticamente por analise_v12.py — não editar manualmente este bloco._\n\n")
 
     f.write("---\n\n")
     f.write("## Linha do Tempo\n\n")
@@ -681,20 +776,25 @@ with open(hist_path, "w", encoding="utf-8") as f:
                 avg_g = s_l.get("avg_g", 0)
                 desc_lado = "COMPRA" if lado == "C" else "VENDA"
                 if pnl > 0 and win >= 50:
-                    recomendacoes.append((1, ativo, tf, desc_lado, win, pnl, avg_g, n))
+                    recomendacoes.append(
+                        (1, ativo, tf, desc_lado, win, pnl, avg_g, n))
                 elif pnl > 0 and win >= 45:
-                    recomendacoes.append((2, ativo, tf, desc_lado, win, pnl, avg_g, n))
+                    recomendacoes.append(
+                        (2, ativo, tf, desc_lado, win, pnl, avg_g, n))
 
-    recomendacoes.sort(key=lambda x: (-x[0] * 10000 + x[4]))  # prioridade desc, win% desc
+    # prioridade desc, win% desc
+    recomendacoes.sort(key=lambda x: (-x[0] * 10000 + x[4]))
     recomendacoes.sort(key=lambda x: x[0])  # prioridade asc (1=alta)
 
     for pri, ativo, tf, lado, win, pnl, avg_g, n in recomendacoes:
         emoji = "🏆" if pri == 1 else "✅"
         obs = f"n={n}, avg_ganho≈{avg_g:.0f}pts"
-        f.write(f"| {emoji} P{pri} | FORCA_{ativo}_V12 | {ativo} | {tf} | {lado} | {win:.1f}% | {pnl:+.0f}pts | {obs} |\n")
+        f.write(
+            f"| {emoji} P{pri} | FORCA_{ativo}_V12 | {ativo} | {tf} | {lado} | {win:.1f}% | {pnl:+.0f}pts | {obs} |\n")
 
     if not recomendacoes:
-        f.write("| — | — | — | — | — | — | — | Sem configurações lucrativas com Win%≥45% e n≥10 |\n")
+        f.write(
+            "| — | — | — | — | — | — | — | Sem configurações lucrativas com Win%≥45% e n≥10 |\n")
 
     f.write("\n> **Como interpretar**: 🏆 P1 = prioridade máxima (Win%≥50% + PnL positivo)."
             " ✅ P2 = operar com cautela (Win%≥45%). Atualize esta tabela após cada série de 30+ trades.\n\n")
@@ -709,8 +809,10 @@ with open(hist_path, "w", encoding="utf-8") as f:
         key = f"FORCA_{ativo}_V12"
         tp_ref = {"WDO": 36, "WIN": 1026}[ativo]
         f.write(f"### {ativo}_V12\n\n")
-        f.write("| TF | Lado | Cor | n | Win% | AvgGanho (pts) | AvgPerda (pts) | RR |\n")
-        f.write("|-----|------|-----|---|------|---------------|---------------|----|\n")
+        f.write(
+            "| TF | Lado | Cor | n | Win% | AvgGanho (pts) | AvgPerda (pts) | RR |\n")
+        f.write(
+            "|-----|------|-----|---|------|---------------|---------------|----|\n")
         for tf in TIMEFRAMES_ORDER:
             d = data.get(key, {}).get(tf)
             if not d or not d["rows"]:
@@ -755,7 +857,8 @@ with open(hist_path, "w", encoding="utf-8") as f:
     f.write("| iJanelaDir | 3 | 3 | Janela de direção (3× TF) |\n")
     f.write("| iJanelaCtx | 6 | 6 | Janela de contexto (6× TF) |\n")
     f.write("| ForcaMinimaForte | 70 | 70 | Mínimo para considerar sinal |\n")
-    f.write("| ForcaExaustao | 85 | 85 | Umbral do sinal forte — cores verd/verm forte |\n")
+    f.write(
+        "| ForcaExaustao | 85 | 85 | Umbral do sinal forte — cores verd/verm forte |\n")
     f.write("| VolumeMinimo | 2000 | 2000 | Volume abaixo disso ignora o sinal |\n\n")
 
     f.write("### Comportamento de horário\n\n")
@@ -771,7 +874,8 @@ with open(hist_path, "w", encoding="utf-8") as f:
     f.write("```\nF = (corpo / range) × (volume / mediaVol) × 100  →  clampado entre -100 e +100\n```\n\n")
     f.write("- `corpo = |Close - Open|` do candle\n")
     f.write("- `range = High - Low` do candle\n")
-    f.write("- `mediaVol` = média dos últimos N candles de volume (janela do contexto)\n")
+    f.write(
+        "- `mediaVol` = média dos últimos N candles de volume (janela do contexto)\n")
     f.write("- Sinal positivo = candle comprador (Verde); negativo = candle vendedor (Vermelho)\n")
     f.write("- F ≥ 85 → **verde forte** (RGB 0,220,220) | F ≥ 70 → **verde fraco** (RGB 0,180,0)\n")
     f.write("- F ≤ -85 → **vermelho forte** (RGB 255,0,180) | F ≤ -70 → **vermelho fraco** (RGB 200,0,0)\n\n")
@@ -817,7 +921,8 @@ with open(hist_path, "w", encoding="utf-8") as f:
     f.write("```ntsl\nInput: HoraInicioH(9); HoraInicioM(30);\nif Time() < (HoraInicioH * 60 + HoraInicioM) then exit;\n```\n\n")
 
     f.write("### 6. `MaxPerdaDia` — ajustar para 1× TP (WDO)\n\n")
-    f.write("- Atual: 60pts = 5× SL = 1.67× TP → permite destruir capital antes de parar.\n")
+    f.write(
+        "- Atual: 60pts = 5× SL = 1.67× TP → permite destruir capital antes de parar.\n")
     f.write("- Proposta: reduzir para 36pts (= 1× TP) — se perdeu o equivalente a 1 TP, dia encerrado.\n")
     f.write("```ntsl\nInput: MaxPerdaDia(36); // WDO: era 60\n```\n\n")
 
@@ -832,25 +937,97 @@ with open(hist_path, "w", encoding="utf-8") as f:
     f.write("| 1 | FecharNoFimDoDia | implícito | novo bool (true) | Ambiguidade overnight |\n")
     f.write("| 2 | TrailingPasso WDO | 4pts | 8pts | 4pts ≤ noise do 5m |\n")
     f.write("| 3 | TrailingPasso WIN | 100pts | 150pts | Proporcional ao range |\n")
-    f.write("| 4 | SomenteSinalForte | — | novo bool (false) | Filtro F≥85 melhora win% |\n")
-    f.write("| 5 | OperarCompra WDO | sempre | novo bool (true→false) | COMPRA Win%<40% |\n")
+    f.write(
+        "| 4 | SomenteSinalForte | — | novo bool (false) | Filtro F≥85 melhora win% |\n")
+    f.write(
+        "| 5 | OperarCompra WDO | sempre | novo bool (true→false) | COMPRA Win%<40% |\n")
     f.write("| 6 | HoraInicioOperacao | 00:00 | 09:30 | Volatilidade abertura |\n")
     f.write("| 7 | MaxPerdaDia WDO | 60pts | 36pts | = 1× TP (mais conservador) |\n")
-    f.write("| 8 | SL/TP por TF | fixo 12/36 | dinâmico por TF | TF maior = range maior |\n\n")
+    f.write(
+        "| 8 | SL/TP por TF | fixo 12/36 | dinâmico por TF | TF maior = range maior |\n\n")
 
     f.write("---\n\n")
     f.write("## Checklist de Implementação V13\n\n")
     f.write("- [ ] Adicionar `FecharNoFimDoDia(true)` no bloco de Inputs\n")
-    f.write("- [ ] Ajustar `TrailingPasso(8)` no WDO e `TrailingPasso(150)` no WIN\n")
-    f.write("- [ ] Adicionar inputs `OperarCompra(true)` e `OperarVenda(true)` com guard na entrada\n")
-    f.write("- [ ] Adicionar `SomenteSinalForte(false)` com guard no `if fForca >= ForcaMinimaForte`\n")
-    f.write("- [ ] Adicionar `HoraInicioH(9); HoraInicioM(30)` no bloco de horário\n")
+    f.write(
+        "- [ ] Ajustar `TrailingPasso(8)` no WDO e `TrailingPasso(150)` no WIN\n")
+    f.write(
+        "- [ ] Adicionar inputs `OperarCompra(true)` e `OperarVenda(true)` com guard na entrada\n")
+    f.write(
+        "- [ ] Adicionar `SomenteSinalForte(false)` com guard no `if fForca >= ForcaMinimaForte`\n")
+    f.write(
+        "- [ ] Adicionar `HoraInicioH(9); HoraInicioM(30)` no bloco de horário\n")
     f.write("- [ ] Reduzir `MaxPerdaDia(36)` para WDO\n")
-    f.write("- [ ] Adicionar logging de `fForca` no CSV para ter classificação fraco/forte real\n")
-    f.write("- [ ] Backteste V13 no mínimo 3 TF (5m, 15m, 30m) × WDO e WIN antes de colocar em produção\n")
+    f.write(
+        "- [ ] Adicionar logging de `fForca` no CSV para ter classificação fraco/forte real\n")
+    f.write(
+        "- [ ] Backteste V13 no mínimo 3 TF (5m, 15m, 30m) × WDO e WIN antes de colocar em produção\n")
     f.write("- [ ] Comparar resultados V13 vs V12 usando este mesmo script (analise_v12.py → analise_v13.py)\n\n")
 
-print(f"\n✅ HISTORICO-RESULTADOS.md criado em {hist_path}")
+    # ── TOP 5 + explicação de RR ─────────────────────────────────────
+    f.write("---\n\n")
+    f.write("## Por que o RR é crítico — e não só o Win%\n\n")
+    f.write("O **RR (Risk/Reward)** é o divisor entre ganho médio e perda média por trade: `RR = avg_ganho / avg_perda`.\n\n")
+    f.write("A **Expectância por trade** resume tudo em um número:\n\n")
+    f.write("```\nExpectância = Win% × AvgGanho - (1 - Win%) × AvgPerda\n```\n\n")
+    f.write("### Por que Win% sozinho engana\n\n")
+    f.write("| Win% | RR | Expectância | Resultado longo prazo |\n")
+    f.write("|------|----|-------------|----------------------|\n")
+    f.write("| 55% | 0.8 | **-0.03 G** | 🔴 Perde dinheiro — parece bom mas destrói capital |\n")
+    f.write("| 50% | 1.0 | **0.00 G** | ⚫ Empate — não cobre custos operacionais |\n")
+    f.write(
+        "| 45% | 2.0 | **+0.10 G** | 🟡 Lucrativo apesar de perder mais que ganhar |\n")
+    f.write(
+        "| 40% | 3.0 | **+0.60 G** | 🟢 Muito lucrativo — cada loss paga 3 ganhos |\n")
+    f.write("| 50% | 3.0 | **+1.00 G** | 🏆 Ideal — Alta win + Alto RR |\n\n")
+    f.write("> **Conclusão**: um robô com Win%=40% e RR=3.0 bate um robô Win%=55% e RR=0.8 "
+            "no longo prazo. O RR define se a estratégia é matematicamente viável.\n\n")
+    f.write("### Score de ranking usado neste relatório\n\n")
+    f.write("```\nScore = Expectância × RR × log(n_trades)\n```\n\n")
+    f.write("- `Expectância` = valor esperado por trade em pontos\n")
+    f.write("- `RR` = amplifica configs que vencem com mais folga\n")
+    f.write("- `log(n)` = penaliza configs com poucos trades (baixa confiabilidade estatística)\n\n")
+
+    f.write("---\n\n")
+    f.write(f"## Top 5 Configurações — {run_ts}\n\n")
+    f.write("> Ranking calculado sobre **V12 com n ≥ 15 trades e PnL positivo**.\n")
+    f.write("> Atualizado a cada execução do script — reflete os CSVs disponíveis no momento.\n\n")
+    f.write("| # | Robô | TF | Lado | n | Win% | PnL (pts) | AvgG | AvgL | RR | Exp/trade | Score | Por quê usar |\n")
+    f.write("|---|------|----|------|---|------|-----------|----- |------|-----|-----------|-------|--------------|\n")
+    for _i, _c in enumerate(top5, 1):
+        medal = {1: "🏆", 2: "🥈", 3: "🥉"}.get(_i, f"#{_i}")
+        # Gera texto de justificativa automático
+        justificativa = []
+        if _c["win_pct"] >= 55:
+            justificativa.append(f"Win% alto ({_c['win_pct']:.0f}%)")
+        if _c["rr"] >= 2.0:
+            justificativa.append(f"RR excelente ({_c['rr']:.1f})")
+        elif _c["rr"] >= 1.5:
+            justificativa.append(f"RR bom ({_c['rr']:.1f})")
+        if _c["expectancia"] > 20:
+            justificativa.append(
+                f"Exp/trade sólida ({_c['expectancia']:.0f}pts)")
+        if not justificativa:
+            justificativa.append("PnL positivo com volume")
+        motivo = ", ".join(justificativa)
+        f.write(
+            f"| {medal} | {_c['robo']} | {_c['tf']} | {_c['lado']} "
+            f"| {_c['n']} | {_c['win_pct']:.1f}% | {_c['pnl']:+.0f} "
+            f"| {_c['avg_g']:.0f} | {_c['avg_l']:.0f} | {_c['rr']:.2f} "
+            f"| {_c['expectancia']:.1f} | {_c['score']:.1f} | {motivo} |\n"
+        )
+    f.write("\n")
+    if top5:
+        melhor = top5[0]
+        f.write(f"> **Recomendação do dia**: `{melhor['robo']}` no `{melhor['tf']}` lado `{melhor['lado']}` — "
+                f"Score={melhor['score']:.1f}, Expectância={melhor['expectancia']:.1f}pts/trade, "
+                f"Win%={melhor['win_pct']:.1f}%, RR={melhor['rr']:.2f}.\n\n")
+
+    f.write("---\n\n")
+    f.write("<!-- FIM-ENTRADA -->\n\n")
+
+print(
+    f"\n✅ HISTORICO-RESULTADOS.md {'atualizado (append)' if _existing else 'criado'} em {hist_path}")
 print("\n" + "=" * 70)
 print("  RESUMO FINAL — V12 MELHOROU EM RELAÇÃO AO V11?")
 print("=" * 70)
