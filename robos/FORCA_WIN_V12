@@ -122,11 +122,15 @@ begin
   bDirBaixa := (Close < fMediaDir) and (fMediaDir < fMediaDir[iJanelaDir]);
 
   // ─── Cores (identico ao V11) ───────────────────────────────────
+  // Verde forte   : F >=  85 → RGB(0,220,220)   — sinal LONG máxima prioridade
+  // Verde fraco   : F >=  70 → RGB(0,180,0)     — sinal LONG normal
+  // Vermelho forte: F <= -85 → RGB(255,0,180)   — sinal SHORT máxima prioridade
+  // Vermelho fraco: F <= -70 → RGB(200,0,0)     — sinal SHORT normal
   r := 255; g := 255; b := 255;
-  if fForca >= ForcaExaustao then begin r := 0;   g := 220; b := 220; end
-  else if fForca >= ForcaMinimaForte then begin r := 0;   g := 180; b := 0;   end
-  else if fForca <= -ForcaExaustao   then begin r := 255; g := 0;   b := 180; end
-  else if fForca <= -ForcaMinimaForte then begin r := 200; g := 0;   b := 0;   end;
+  if fForca >= ForcaExaustao then begin r := 0;   g := 220; b := 220; end   // verde forte
+  else if fForca >= ForcaMinimaForte then begin r := 0;   g := 180; b := 0;   end  // verde fraco
+  else if fForca <= -ForcaExaustao   then begin r := 255; g := 0;   b := 180; end  // vermelho forte
+  else if fForca <= -ForcaMinimaForte then begin r := 200; g := 0;   b := 0;   end; // vermelho fraco
   PaintBar(RGB(r, g, b));
 
   // ─── SL dinamico ──────────────────────────────────────────────
