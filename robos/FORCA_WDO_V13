@@ -99,10 +99,10 @@ begin
   if iQtd < 1 then iQtd := 1;
   if iQtd > MaxContratos then iQtd := MaxContratos;
 
-  bHorarioPermitido := (Time() >= (HoraInicioH * 10000 + HoraInicioM * 100))
-                   and (Time() <  (StopHorario_H * 10000 + StopHorario_M * 100));
+  bHorarioPermitido := (Time() >= (HoraInicioH * 100 + HoraInicioM))
+                   and (Time() <  (StopHorario_H * 100 + StopHorario_M));
 
-  if Time() >= (StopHorario_H * 10000 + StopHorario_M * 100) then
+  if Time() >= (StopHorario_H * 100 + StopHorario_M) then
   begin
     if IsBought or IsSold then ClosePosition;
     bDeveOperar := false;
