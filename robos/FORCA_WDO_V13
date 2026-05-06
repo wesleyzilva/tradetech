@@ -77,10 +77,10 @@ begin
 
   fMediaDir := Media(iJanelaDir, Close);
   fMediaCtx := Media(iJanelaCtx, Close);
-  bCtxAlta  := (Close > fMediaCtx) and (fMediaCtx > fMediaCtx[iJanelaCtx]);
-  bCtxBaixa := (Close < fMediaCtx) and (fMediaCtx < fMediaCtx[iJanelaCtx]);
-  bDirAlta  := (Close > fMediaDir) and (fMediaDir > fMediaDir[iJanelaDir]);
-  bDirBaixa := (Close < fMediaDir) and (fMediaDir < fMediaDir[iJanelaDir]);
+  bCtxAlta  := (Close > fMediaCtx) and (fMediaCtx > fMediaCtx[6]);
+  bCtxBaixa := (Close < fMediaCtx) and (fMediaCtx < fMediaCtx[6]);
+  bDirAlta  := (Close > fMediaDir) and (fMediaDir > fMediaDir[3]);
+  bDirBaixa := (Close < fMediaDir) and (fMediaDir < fMediaDir[3]);
 
   r := 255; g := 255; b := 255;
   if fForca >= ForcaExaustao then begin r := 0;   g := 220; b := 220; end
