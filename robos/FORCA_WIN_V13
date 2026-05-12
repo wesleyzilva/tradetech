@@ -15,9 +15,19 @@
      — V12: trigger 33% do TP, stop move para entrada (0pts protegidos)
      — V13: trigger 70% do TP (=70pts), stop em entrada + 20% do TP (=+20pts)
 
-  3. Take Profit reduzido para 100pts
+  3. Take Profit ajustado para 200pts (RR 2.0 com SL=100pts)
      — V12: TakeProfit=1026pts (RR 3.0)
-     — V13: TakeProfit=100pts — operacoes mais curtas, saida principal por cor
+     — V13: TakeProfit=200pts — teto; saida principal por candle branco
+
+  4. [OPCAO 1 — RR 2.0] SL resistente a ruido + TP dobrado
+     — SL=100pts, TP=200pts, RR=2.0
+     — FatorRangeSL=0.59 (170pts range medio * 0.59 = 100pts)
+     — Necessita win rate >= 33% para ser lucrativo
+     — EV estimado: +28pts/trade (~60% win rate com candle-branco)
+
+  === OPCAO 2 — nao implementada ===
+  TP=500pts + SL=342pts (RR 1.46) NAO resolve: candle branco sai em ~50pts
+  antes do TP de 500pts — average gain continua ~50pts, EV negativo.
 
   === CALIBRACAO (WIN 15min 2012-2026) ===
   Exaustao(F>=85): n=4735  win=44.6%  PnL=+3.058.662pts  ← MELHOR ZONA
@@ -40,12 +50,12 @@ input
   // === STOP/ALVO ===
   // WIN 5min: range medio ~170pts => SL=342 (2x range)
   // WIN 15min: range medio ~411pts => SL=822 (2x range)
-  StopMinimo(342.0);             // 2x range medio WIN@5min
-  FatorRangeSL(2.0);             // SL = max(StopMinimo, range*2.0) — WIN tem moves muito volateis
-  TakeProfit(100.0);             // V13: 100pts — saida principal por candle branco
+  StopMinimo(100.0);             // [V13 Opcao1] SL igual ao TP — RR 1.0 (resistente a ruido)
+  FatorRangeSL(0.59);            // 170pts range medio * 0.59 = 100pts ~= StopMinimo
+  TakeProfit(200.0);             // V13: 200pts teto — RR 2.0 (SL=100pts); saida principal = candle branco
   UsarBreakEven(true);
-  BreakEvenRatio(0.70);          // V13: trigger BE com 70% do TP = 70pts
-  BreakEvenProtectRatio(0.20);   // V13: stop BE = entrada + 20% do TP = +20pts
+  BreakEvenRatio(0.70);          // V13: trigger BE com 70% do TP = 140pts
+  BreakEvenProtectRatio(0.20);   // V13: stop BE = entrada + 20% do TP = +40pts
   UsarTrailing(true);
   TrailingPasso(100.0);          // trailing de 100pts atras do preco (WIN 5min)
 
@@ -54,7 +64,7 @@ input
   RiscoPorcentagem(1.0);         // 1% = R$100 por trade
   PontoValorReais(0.20);         // WIN mini: 1pt = R$0.20
   MaxContratos(10);
-  MaxPerdaDiaria(1026.0);        // Stop dia = 1x TP (perder 1 TP => parar)
+  MaxPerdaDiaria(1000.0);        // Stop dia = 10x SL (10 * 100pts) — proporcional ao novo SL
 
   // === SAIDAS ===
   StopHorario_H(17);
