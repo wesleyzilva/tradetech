@@ -121,8 +121,8 @@ begin
   fMediaCtx := Media(iJanelaCtx, Close);
   bCtxAlta  := (Close > fMediaCtx) and (fMediaCtx > fMediaCtx[iJanelaCtx]);
   bCtxBaixa := (Close < fMediaCtx) and (fMediaCtx < fMediaCtx[iJanelaCtx]);
-  bDirAlta  := (Close > fMediaDir) and (fMediaDir > fMediaDir[iJanelaDir]);
-  bDirBaixa := (Close < fMediaDir) and (fMediaDir < fMediaDir[iJanelaDir]);
+  bDirAlta  := (Close > fMediaDir) and (fMediaDir > fMediaDir[iJanelaDir]); // Direcao de alta
+  bDirBaixa := (Close < fMediaDir) and (fMediaDir < fMediaDir[iJanelaDir]); // Direcao de baixa
 
   // ─── Cores — 2 tons de verde (LONG) e 2 tons de vermelho (SHORT) ─
   // Verde claro   : F >=  85 → RGB(0,255,0)     — exaustao compradora (max prioridade)
