@@ -3,36 +3,50 @@
   Tipo  : NTSL (estrategia/robo executavel — usa BuyAtMarket/SellShortAtMarket)
   Ativo : WIN (mini-indice)
   Versao: 14.0
-  Base  : FORCA_WIN_V11
+  Base  : FORCA_WIN_V12 (analise visual referenciada em V12/V13)
 
-  === MELHORIAS V14 vs V11 ===
+  === MELHORIAS V14 vs V12 ===
 
-  1. HARD STOP LOSS via Low/High intrabar [BUG FIX — herdado da linha WDO V12]
-     — V11 calculava fSL para sizing mas NAO aplicava SL por preco.
-       Protegia apenas via StopCandleContra (F>= ForcaStopContra) e BreakEven.
-       Risco: trade sem SL real se force contraria nao atingir o threshold.
-     — V14: if IsBought and (Low  <= fEntrada - fSLAtivo) then ClosePosition
-     — V14: if IsSold   and (High >= fEntrada + fSLAtivo) then ClosePosition
-     — Adiciona variavel fSLAtivo para preservar o SL calculado no candle de entrada.
+  1. HARD STOP LOSS via Low/High intrabar [HERDADO DO V12 — mantido]
+     — V12 ja implementou este fix. V14 herda e mantém identico.
+     — if IsBought and (Low  <= fEntrada - fSLAtivo) then ClosePosition
+     — if IsSold   and (High >= fEntrada + fSLAtivo) then ClosePosition
 
-  2. ForcaStopContra 85 → 70 [AJUSTE DE SAIDA ANTECIPADA]
-     — V11 fecha posicao contraria somente em exaustao (F >= 85).
+  2. ForcaStopContra 85 → 70 [NOVO vs V12]
+     — V12 fechava posicao contraria somente em exaustao (F >= 85).
      — V14 fecha ao detectar forca forte contraria (F >= 70), reagindo mais rapido.
      — Objetivo: reduzir AvgLoss sem impactar AvgWin.
-     — Backtest V11 15m: AvgLoss = -139 pts. Meta V14: ~-110 pts.
+     — Referencia V11 15m: AvgLoss = -139 pts. Meta V14: ~-110 pts.
 
-  3. SEM trailing stop (decisao intencional)
-     — Backtest WIN V12 (que adicionou trailing) mostrou:
-       AvgWin caiu de 258 pts (V11) para 141 pts (V12) — queda de 45%.
-       Trailing corta vencedores antes do TP.
-     — V14 mantem posicao aberta ate TP / SL / StopContra — deixa o trade correr.
+  3. SEM trailing stop [NOVO vs V12 — decisao intencional]
+     — V12 adicionou TrailingPasso=100pts apos BE ativo.
+     — Resultado: AvgWin caiu de 258 pts (V11) para 141 pts (V12) — queda de 45%.
+     — V14 remove o trailing. Posicao aberta ate TP / SL / StopContra.
 
-  4. SEM perda maxima diaria (decisao intencional para WIN)
-     — WIN tem RR 3.0 e SL grande (822 pts). Acumular 2-3 perdas no dia e raro.
-     — Adicionar MaxPerdaDiaria com SL de 822 pts seria muito restritivo.
-     — Gerenciamento de risco pelo sizing (1% do capital por trade).
+  4. Break-even mais conservador: ratio 0.33 → 0.50 [NOVO vs V12]
+     — V12: BE dispara em 33% do TP (~340pts no 5min) usando Low/High intrabar.
+     — V14: BE dispara em 50% do TP (1233pts no 15min) usando Close do candle.
+     — Mais espaco para o trade respirar antes de proteger capital.
+     — Checagem por Close (nao Low/High) evita saidas por whipsaw intrabar.
 
-  === CALIBRACAO (identica ao V11 — base estatistica inalterada) ===
+  5. SEM perda maxima diaria [NOVO vs V12 — decisao intencional]
+     — V12 tinha MaxPerdaDiaria=1026pts (1x TP do 5min).
+     — V14: SL=822pts no 15min, 2-3 perdas no dia sao raras. Gerenciamento pelo sizing.
+
+  6. Timeframe principal: 5min → 15min [NOVO vs V12]
+     — V12 default era 5min (SL=342, TP=1026). V14 opera em 15min (SL=822, TP=2466).
+     — Tripleta 60/30/15 em vez de 30/15/5. Menos ruido, menos trades/dia.
+
+  7. Filtro primeiro candle de forca [NOVO — baseado em analise visual V12/V13]
+     — Tela 12/05/2026 (V13 ao vivo): "ENTROU ATRASADO" — robo entrou no 2o candle
+       consecutivo de forca, comprando/vendendo no topo/fundo de um move ja estendido.
+     — V14: entrada somente se fForca[1] < ForcaMinimaForte (LONG) ou
+                                        fForca[1] > -ForcaMinimaForte (SHORT).
+     — Garante entrada no PRIMEIRO candle da sequencia de forca.
+     — Impacto esperado: reducao de N com melhora de AvgWin e EV/trade.
+     — ATENCAO: exige re-backtest antes de deploy em conta real.
+
+  === CALIBRACAO (referencia V11/V12 15min — filtro 1o candle ainda nao rebacktestado) ===
 
   Backtest WIN 15min | tripleta 60/30/15 | 47.787 candles | 2012-2026:
     Modo FORTE  (F 70-85) : n=1796  win=41.2%  PnL=+956.808 pts
@@ -45,8 +59,10 @@
   WIN ponto = R$0.20 (mini) — 822 pts SL = R$164 risco por contrato
   Sizing 1% de R$10k = R$100 / R$164 = ~0.6 → 1 contrato minimo
 
-  Resultado V11 15m (referencia):
+  Resultado V11 15m (referencia pre-filtro):
     134 trades | Win% 44.8% | Total 5181 pts | AvgWin 258 | AvgLoss -139 | Payoff 1.85x
+  Nota V12: trailing cortou AvgWin para ~141 pts — V14 remove trailing para recuperar ganho.
+  Nota V14: filtro 1o candle reduz N estimado em ~30-40% — rodar backtest para validar.
 
   Timeframes validos (multiplos inteiros):
     15min: iJanelaDir=2, iJanelaCtx=4  (tripleta 60/30/15) ← melhor backtest historico
@@ -84,7 +100,7 @@ input
   StopHorario_H(17);
   StopHorario_M(45);
   UsarStopCandleContra(true);
-  ForcaStopContra(70.0);        // V14: fecha se forca contraria >= 70 (era 85 no V11)
+  ForcaStopContra(70.0);        // V14: fecha se forca contraria >= 70 (era 85 no V12)
   PermitirReversao(true);
   MaxBarrasEmPosicao(0);        // 0 = sem limite
 
@@ -191,7 +207,7 @@ begin
     if IsSold    and (fForca >= ForcaStopContra)  then begin ClosePosition; iBarras := 0; end;
   end;
 
-  // ─── Break-even (V11: ratio 0.5, fecha no Close) ─────────────
+  // ─── Break-even (V14: ratio 0.5, fecha no Close — V12 usava 0.33 e Low/High intrabar)
   // Intencional: sem trailing. Deixar vencedores correrem ate TP.
   if UsarBreakEven then
   begin
@@ -213,8 +229,9 @@ begin
   // ─── ENTRADAS WIN ─────────────────────────────────────────────
   if HabilitarOperacoes and bDeveOperar then
   begin
-    // COMPRA: F >= ForcaMinimaForte + MTF alinhado
+    // COMPRA: F >= ForcaMinimaForte + primeiro candle da sequencia + MTF alinhado
     if (fForca >= ForcaMinimaForte)
+      and (fForca[1] < ForcaMinimaForte)    // V14: apenas primeiro candle de forca (evita entrada atrasada)
       and bCtxAlta and bDirAlta
       and ((not UsarFiltroVolume) or (Volume >= VolumeMinimo)) then
     begin
@@ -230,8 +247,9 @@ begin
       end;
     end;
 
-    // VENDA: F <= -ForcaMinimaForte + MTF alinhado
+    // VENDA: F <= -ForcaMinimaForte + primeiro candle da sequencia + MTF alinhado
     if (fForca <= -ForcaMinimaForte)
+      and (fForca[1] > -ForcaMinimaForte)   // V14: apenas primeiro candle de forca (evita entrada atrasada)
       and bCtxBaixa and bDirBaixa
       and ((not UsarFiltroVolume) or (Volume >= VolumeMinimo)) then
     begin
