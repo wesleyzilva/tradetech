@@ -118,6 +118,7 @@ var
   bDeveOperar, bBreakEven : boolean;
   fEntrada, fSL, fSLAtivo : float;  // V14: fSLAtivo preserva o SL do candle de entrada
   iQtd : integer;
+  iZonaAtual, iZonaAnterior : integer; // V14+COR: 2=exaust compra 1=forte compra 0=branco -1=forte venda -2=exaust venda
 
 begin
   // ─── Calculos base ────────────────────────────────────────────
@@ -143,12 +144,34 @@ begin
   bDirAlta  := (Close > fMediaDir) and (fMediaDir > fMediaDir[iJanelaDir]);
   bDirBaixa := (Close < fMediaDir) and (fMediaDir < fMediaDir[iJanelaDir]);
 
-  // ─── Cores WIN (identico ao V11) ──────────────────────────────
+  // ─── Zona atual (para deteccao de flip de cor) ─────────────
+  if fForca >= ForcaExaustao then iZonaAtual := 2
+  else if fForca >= ForcaMinimaForte then iZonaAtual := 1
+  else if fForca <= -ForcaExaustao then iZonaAtual := -2
+  else if fForca <= -ForcaMinimaForte then iZonaAtual := -1
+  else iZonaAtual := 0;
+
+  // ─── Cores padrao FORCA (verde/vermelho fraco e forte) ───────
+  // Verde fraco  (F 70-85)  : forte compradora
+  // Verde forte  (F >= 85)  : exaustao compradora
+  // Vermelho fraco (F -70 a -85): forte vendedora
+  // Vermelho forte (F <= -85)   : exaustao vendedora
   r := 255; g := 255; b := 255;
-  if fForca >= ForcaExaustao then begin r := 0;   g := 220; b := 220; end   // cyan: exaustao compradora
-  else if fForca >= ForcaMinimaForte then begin r := 0;   g := 180; b := 0;   end  // verde: forte
-  else if fForca <= -ForcaExaustao   then begin r := 255; g := 0;   b := 180; end  // fucsia: exaustao vendedora
-  else if fForca <= -ForcaMinimaForte then begin r := 200; g := 0;   b := 0;   end; // vermelho: forte
+  if fForca >= ForcaExaustao then begin r := 0;   g := 150; b := 0;   end   // verde forte
+  else if fForca >= ForcaMinimaForte then begin r := 120; g := 220; b := 120; end // verde fraco
+  else if fForca <= -ForcaExaustao   then begin r := 180; g := 0;   b := 0;   end // vermelho forte
+  else if fForca <= -ForcaMinimaForte then begin r := 255; g := 120; b := 120; end; // vermelho fraco
+
+  // ─── Override: CYANO / FUCSIA quando cor muda de direcao ─────
+  // Cyano  (0,220,220): zona atual = compra E anterior era venda/branco
+  //   → sinal visual de "voltou para compra" apos instabilidade
+  // Fucsia (255,0,180): zona atual = venda  E anterior era compra/branco
+  //   → sinal visual de "voltou para venda" apos instabilidade
+  if (iZonaAtual > 0) and (iZonaAnterior <= 0) then
+    begin r := 0; g := 220; b := 220; end       // cyano: flip para compra
+  else if (iZonaAtual < 0) and (iZonaAnterior >= 0) then
+    begin r := 255; g := 0; b := 180; end;      // fucsia: flip para venda
+
   PaintBar(RGB(r, g, b));
 
   // ─── SL dinamico ──────────────────────────────────────────────
@@ -265,5 +288,8 @@ begin
       end;
     end;
   end;
+
+  // ─── Atualiza zona anterior para proximo candle ───────────────
+  iZonaAnterior := iZonaAtual;
 
 end;

@@ -1,94 +1,68 @@
-{ 
-  Robo  : FORCA_WDO_V14
-  Tipo  : NTSL (estrategia/robo executavel — usa BuyAtMarket/SellShortAtMarket)
-  Ativo : WDO (mini-dolar)
-  Versao: 14.0
-  Base  : FORCA_WDO_V12
+{
+  Robo  : FORCA_WIN_V15_5MIN
+  Tipo  : NTSL (estrategia/robo executavel)
+  Ativo : WIN (mini-indice)
+  Versao: 15.0 (variante 5min)
+  Base  : FORCA_WIN_V15 (mesmo perfil scalp 50-100 pts)
 
-  === MELHORIAS V14 vs V12 ===
+  === DIFERENCA vs FORCA_WIN_V15 (15min) ===
 
-  1. ForcaMinimaForte 70 → 75 [FILTRO DE ENTRADA MAIS SELETIVO]
-     — Backtest WDO V12 30m: 54 trades, win=59.3%, expectancy=68.2 pts/trade.
-     — Elevar threshold reduz numero de trades mas aumenta win% estimada (~62-65%).
-     — Objetivo: manter o alto payoff (2.11x) e aumentar a precisao das entradas.
-     — Justificativa estatistica: zona 70-74 tem win% inferior a 75+ no WDO.
+  Mesmo robo, MESMA logica de saida (TP=50, Teto=100, Trailing 15, BE 0.6).
+  So muda o timeframe operacional e a tripleta MTF, para reduzir o whipsaw
+  intrabar que castiga o SL=30 pts no 15min (0.07x range medio).
 
-  2. PARAMETROS DEFAULT AJUSTADOS PARA 30min [MELHOR TF DO WDO]
-     — TF 30min e o melhor timeframe WDO por expectancy/trade entre todos testados.
-     — Analise comparativa (V12):
-         5min  : 151 trades, Total -255 pts (negativo)
-        10min  : 103 trades, Total  385 pts
-        15min  :  78 trades, Total  880 pts
-        30min  :  54 trades, Total 3765 pts ← melhor
-        60min  :  33 trades, Total    5 pts
-     — StopMinimo  : 12 pts (5min) → 20 pts (30min) — 2x range medio 30min
-     — TakeProfit  : 36 pts (5min) → 60 pts (30min) — RR 3.0 mantido
-     — iJanelaDir  :  3 (5min) →  2 (30min) — representa TF de 60min
-     — iJanelaCtx  :  6 (5min) →  4 (30min) — representa TF de 120min
-     — TrailingPasso: 4 pts (5min) → 8 pts (30min) — proporcional ao range
-     — MaxPerdaDiaria: mantida em 60 pts (equivale a 3x StopMinimo 30min)
+  Calibracao 5min:
+    Range medio WIN 5min     : ~171 pts (vs 411 no 15min)
+    SL=30 pts                : ~0.18x range medio (3x mais coerente que 15min)
+    TP=50 pts                : ~0.29x range medio (atingivel em 1-2 candles)
+    Teto=100 pts             : ~0.58x range medio (1 candle direcional cobre)
+    Tripleta MTF             : 30/15/5  (iJanelaDir=3, iJanelaCtx=6)
+    MaxBarrasEmPosicao       : 6 (= 30 min, equivalente aos 3 candles do 15min)
 
-  === CALIBRACAO BASE (WDO V12 30m — referencia de performance) ===
+  Backtest referencia WIN 5min (V11):
+    Modo AMBOS (F >= 70): n=6014  win=40.7%  PnL=+45.336 pts (TP/SL antigos)
+    Nota: resultado nao se aplica ao V15 — perfil de saida totalmente diferente.
 
-  Periodo: dez/2025 a mai/2026 (5 meses)
-    Trades  : 54
-    Win%    : 59.3%
-    Total   : 3.765 pts
-    AvgWin  : 170.6 pts  |  AvgLoss: -80.7 pts
-    Payoff  : 2.11x
-    Expectancy/trade: 68.2 pts  ← melhor entre todos os robos e TFs
-
-  Range medio WDO 30min: ~20 pts
-  SL ideal: 20 pts (1x range) | TP ideal: 60 pts (RR 3.0)
-  WDO ponto = R$10.00 | risco 1% de R$10k = R$100 = 0.5 contrato → 1 minimo
-
-  Tripleta 30min (multiplos inteiros):
-    Gatilho: 30min | Direcao: 60min (iJanelaDir=2) | Contexto: 120min (iJanelaCtx=4)
-
-  Para outros timeframes:
-    15min: StopMinimo=15, TakeProfit=45, iJanelaDir=2, iJanelaCtx=4, TrailingPasso=6
-    10min: StopMinimo=12, TakeProfit=36, iJanelaDir=2, iJanelaCtx=5, TrailingPasso=5
-     5min: StopMinimo=12, TakeProfit=36, iJanelaDir=3, iJanelaCtx=6, TrailingPasso=4
+  === STATUS ===
+    NAO rebacktestado. Variante experimental do V15 para 5min.
+    Comparar com FORCA_WIN_V15 (15min) na mesma janela antes de operar real.
 }
 
 input
   // === FORCA ===
-  ForcaMinimaForte(75.0);       // V14: 70 → 75 — mais seletivo, win% estimada 62-65%
+  ForcaMinimaForte(70.0);
   ForcaExaustao(85.0);
   PeriodoMediaVolume(20);
   UsarFiltroVolume(true);
-  VolumeMinimo(2000);
+  VolumeMinimo(5000);
 
-  // === MULTI-TF (default 30min: tripleta 120/60/30) ===
-  // 30min: iJanelaDir=2 iJanelaCtx=4  ← V14 default (melhor TF)
-  // 15min: iJanelaDir=2 iJanelaCtx=4
-  //  5min: iJanelaDir=3 iJanelaCtx=6
-  iJanelaDir(2);                // V14: 3 → 2 (ajuste para 30min)
-  iJanelaCtx(4);                // V14: 6 → 4 (ajuste para 30min)
+  // === MULTI-TF (tripleta WIN 5min: 30/15/5) ===
+  iJanelaDir(3);                // V15-5m: 5min * 3 = 15min
+  iJanelaCtx(6);                // V15-5m: 5min * 6 = 30min
 
-  // === STOP/ALVO (calibrados em WDO 30min) ===
-  StopMinimo(20.0);             // V14: 12 → 20 pts (2x range medio WDO 30min)
-  FatorRangeSL(1.5);            // SL = max(StopMinimo, range * 1.5)
-  TakeProfit(60.0);             // V14: 36 → 60 pts (RR 3.0 @ 30min)
+  // === STOP / ALVO V15 (scalp 50-100 pts) — IDENTICO V15 15min ===
+  StopMinimo(30.0);
+  FatorRangeSL(0.0);
+  TakeProfit(50.0);
+  TetoMaximo(100.0);
   UsarBreakEven(true);
-  BreakEvenRatio(0.33);         // BE dispara apos 33% do TP (20 pts de lucro @ 30min)
+  BreakEvenRatio(0.6);
   UsarTrailing(true);
-  TrailingPasso(8.0);           // V14: 4 → 8 pts (proporcional ao range 30min)
+  TrailingPasso(15.0);
 
   // === GERENCIAMENTO DE RISCO ===
   CapitalReais(10000.0);
-  RiscoPorcentagem(1.0);        // 1% do capital (R$100 por trade)
-  PontoValorReais(10.0);        // WDO: 1 pt = R$10,00
-  MaxContratos(10);
-  MaxPerdaDiaria(60.0);         // 3x StopMinimo — para se perder 60 pts no dia
+  RiscoPorcentagem(1.0);
+  PontoValorReais(0.20);
+  MaxContratos(5);
 
   // === SAIDAS ===
   StopHorario_H(17);
   StopHorario_M(45);
   UsarStopCandleContra(true);
-  ForcaStopContra(85.0);        // WDO: manter em 85 (exaustao) — payoff alto ja filtrado
+  ForcaStopContra(70.0);
   PermitirReversao(true);
-  MaxBarrasEmPosicao(0);        // 0 = sem limite de barras
+  MaxBarrasEmPosicao(6);        // V15-5m: 6 candles = 30min (equiv. aos 3 de 15min)
 
   // === ALERTAS ===
   MostrarAlertas(true);
@@ -105,17 +79,8 @@ var
   fEntrada, fSL, fSLAtivo : float;
   fTrailingRef : float;
   iQtd : integer;
-  fPerdaDia : float;
-  iDiaAtual : integer;
 
 begin
-  // ─── Reset perda diaria (novo dia) ───────────────────────────
-  if Date() <> iDiaAtual then
-  begin
-    iDiaAtual := Date();
-    fPerdaDia := 0.0;
-  end;
-
   // ─── Calculos base ────────────────────────────────────────────
   fCorpo := Close - Open;
   fRange := High - Low;
@@ -140,9 +105,9 @@ begin
   bDirBaixa := (Close < fMediaDir) and (fMediaDir < fMediaDir[iJanelaDir]);
 
   // ─── Cores padrao FORCA (verde/vermelho fraco e forte) ───────
-  // Verde fraco  (F 75-85)  : forte compradora
+  // Verde fraco  (F 70-85)  : forte compradora
   // Verde forte  (F >= 85)  : exaustao compradora
-  // Vermelho fraco (F -75 a -85): forte vendedora
+  // Vermelho fraco (F -70 a -85): forte vendedora
   // Vermelho forte (F <= -85)   : exaustao vendedora
   r := 255; g := 255; b := 255;
   if fForca >= ForcaExaustao then begin r := 0;   g := 150; b := 0;   end
@@ -151,9 +116,10 @@ begin
   else if fForca <= -ForcaMinimaForte then begin r := 255; g := 120; b := 120; end;
   PaintBar(RGB(r, g, b));
 
-  // ─── SL dinamico ──────────────────────────────────────────────
+  // ─── SL fixo ──────────────────────────────────────────────────
   fSL := StopMinimo;
-  if (fRange * FatorRangeSL) > fSL then fSL := fRange * FatorRangeSL;
+  if (FatorRangeSL > 0) and ((fRange * FatorRangeSL) > fSL) then
+    fSL := fRange * FatorRangeSL;
 
   // ─── Sizing por risco ─────────────────────────────────────────
   if (fSL > 0) and (PontoValorReais > 0) then
@@ -172,13 +138,6 @@ begin
   else
     bDeveOperar := true;
 
-  // ─── Perda maxima diaria ──────────────────────────────────────
-  if (MaxPerdaDiaria > 0) and (fPerdaDia >= MaxPerdaDiaria) then
-  begin
-    if IsBought or IsSold then ClosePosition;
-    bDeveOperar := false;
-  end;
-
   // ─── Controle barras em posicao ───────────────────────────────
   if IsBought or IsSold then
     iBarras := iBarras + 1
@@ -194,16 +153,14 @@ begin
     iBarras := 0; bDeveOperar := false;
   end;
 
-  // ─── Hard Stop Loss via intrabar High/Low (herdado V12) ──────
+  // ─── HARD STOP LOSS via intrabar High/Low ─────────────────────
   if IsBought and (Low <= fEntrada - fSLAtivo) then
   begin
-    fPerdaDia := fPerdaDia + fSLAtivo;
     ClosePosition;
     iBarras := 0;
   end;
   if IsSold and (High >= fEntrada + fSLAtivo) then
   begin
-    fPerdaDia := fPerdaDia + fSLAtivo;
     ClosePosition;
     iBarras := 0;
   end;
@@ -215,7 +172,19 @@ begin
     if IsSold    and (fForca >= ForcaStopContra)  then begin ClosePosition; iBarras := 0; end;
   end;
 
-  // ─── Break-even (trigger agressivo + Low/High) ───────────────
+  // ─── HARD CAP — TetoMaximo 100 pts ────────────────────────────
+  if IsBought and (High >= fEntrada + TetoMaximo) then
+  begin
+    ClosePosition;
+    iBarras := 0;
+  end;
+  if IsSold and (Low <= fEntrada - TetoMaximo) then
+  begin
+    ClosePosition;
+    iBarras := 0;
+  end;
+
+  // ─── Break-even ───────────────────────────────────────────────
   if UsarBreakEven then
   begin
     if IsBought and (not bBreakEven) then
@@ -224,12 +193,12 @@ begin
       if (fEntrada - Close) >= (TakeProfit * BreakEvenRatio) then bBreakEven := true;
     if bBreakEven then
     begin
-      if IsBought  and (Low  <= fEntrada) then begin ClosePosition; iBarras := 0; end;
-      if IsSold    and (High >= fEntrada) then begin ClosePosition; iBarras := 0; end;
+      if IsBought  and (Close <= fEntrada) then begin ClosePosition; iBarras := 0; end;
+      if IsSold    and (Close >= fEntrada) then begin ClosePosition; iBarras := 0; end;
     end;
   end;
 
-  // ─── Trailing Stop (apos BE ativo) ───────────────────────────
+  // ─── Trailing curto (apos BE) ─────────────────────────────────
   if UsarTrailing and bBreakEven then
   begin
     if IsBought then
@@ -248,15 +217,18 @@ begin
     end;
   end;
 
-  // ─── Take Profit ──────────────────────────────────────────────
-  if IsBought  and (High >= fEntrada + TakeProfit) then begin ClosePosition; iBarras := 0; end;
-  if IsSold    and (Low  <= fEntrada - TakeProfit) then begin ClosePosition; iBarras := 0; end;
+  // ─── Take Profit fixo TP1 (50 pts) ────────────────────────────
+  if IsBought  and (High >= fEntrada + TakeProfit) and (not bBreakEven) then
+    begin ClosePosition; iBarras := 0; end;
+  if IsSold    and (Low  <= fEntrada - TakeProfit) and (not bBreakEven) then
+    begin ClosePosition; iBarras := 0; end;
 
-  // ─── ENTRADAS WDO ─────────────────────────────────────────────
+  // ─── ENTRADAS WIN (1o candle + MTF + volume) ──────────────────
   if HabilitarOperacoes and bDeveOperar then
   begin
-    // COMPRA: F >= ForcaMinimaForte (75) + MTF alinhado
+    // COMPRA
     if (fForca >= ForcaMinimaForte)
+      and (fForca[1] < ForcaMinimaForte)
       and bCtxAlta and bDirAlta
       and ((not UsarFiltroVolume) or (Volume >= VolumeMinimo)) then
     begin
@@ -273,8 +245,9 @@ begin
       end;
     end;
 
-    // VENDA: F <= -ForcaMinimaForte (-75) + MTF alinhado
+    // VENDA
     if (fForca <= -ForcaMinimaForte)
+      and (fForca[1] > -ForcaMinimaForte)
       and bCtxBaixa and bDirBaixa
       and ((not UsarFiltroVolume) or (Volume >= VolumeMinimo)) then
     begin
