@@ -1,51 +1,105 @@
 {
   Robo  : FORCA_WIN_V16
-  Tipo  : NTSL
+  Tipo  : NTSL (estrategia/robo executavel)
   Ativo : WIN (mini-indice)
   Versao: 16.0
   Base  : FORCA_WIN_V14
-  Status: NAO rebacktestado. Validar antes de operar real.
-  Docs  : RAID_LOG.md
+
+  === MUDANCAS V16 vs V14 ===
+
+  1. ALERTA DE INSTABILIDADE (cor cyano/fucsia)
+     — Se a cor (zona de forca) mudar >= MaxMudancasCor (3) dentro da janela
+       JanelaInstabilidade (5 candles), pinta:
+         CYANO  RGB(0,220,220)   se zona atual = compra (F > 0)
+         FUCSIA RGB(255,0,180)   se zona atual = venda  (F < 0)
+     — Sinaliza visualmente um momento de indecisao do mercado.
+
+  2. ALERTA DE MUDANCA TARDIA NO CANDLE [opcional]
+     — Aproximacao: se a forca CRUZOU o limiar neste candle e o |fForca| esta
+       proximo da borda da zona (fForca dentro de +/-10% do limiar superior ou
+       inferior), trata como mudanca "no fim do candle" e pinta cyano/fucsia.
+     — Limitacao: NTSL roda no fechamento do candle. Deteccao precisa de
+       "ultimos 10% do tempo" exige modo de execucao intrabar/tick.
+
+  3. SL SEMPRE MENOR QUE O VALOR DO SINAL
+     — Define teto para fSL como o corpo do candle de entrada (|Close-Open|).
+     — Garante que o stop nunca seja maior que o proprio movimento que gerou
+       o sinal de forca (evita risco assimetrico em candles pequenos).
+     — Calculo: fSL := min(fSL, |fCorpo| * 0.9) quando UsarSLMenorQueSinal=true.
+
+  4. TRAILING PROPORCIONAL (10% inicial, aperta com o avanco)
+     — Passo do trailing = (TakeProfit - lucroAtual) * TrailingPctInicial (10%).
+     — No inicio (lucro=0): passo = 10% do TP largo.
+     — Conforme o lucro avanca: passo diminui proporcionalmente -> trava mais perto.
+     — Piso: 2% do TP para nao colar no preco.
+     — Ativa apenas apos BE armado.
+
+  5. BREAK-EVEN POR COR OPOSTA (saida defensiva)
+     — Se posicao COMPRADA e o candle atual fechar vermelho (qualquer intensidade)
+       -> arma BE imediatamente.
+     — Se VENDIDA e candle verde -> arma BE.
+     — Reduz drawdown quando o momentum gira contra.
+
+  6. BREAK-EVEN POR 5 CANDLES BRANCOS CONSECUTIVOS
+     — Conta candles com |F| < ForcaMinimaForte (zona branca).
+     — Se atingir CandlesBrancosParaBE (5) com posicao aberta -> arma BE.
+     — Protege contra lateralizacoes longas que erodem o lucro.
+
+  === RESTANTE: IDENTICO AO V14 ===
+    - Filtro 1o candle de forca (fForca[1] < limiar)
+    - MTF tripleta 60/30/15 (iJanelaDir=2, iJanelaCtx=4)
+    - Hard SL intrabar via Low/High
+    - ForcaStopContra = 70
+    - BE classico por % do TP (BreakEvenRatio=0.5)
+    - TakeProfit hard em 2466 pts, StopMinimo=822, FatorRangeSL=2.0
+    - Cores padrao: 3 niveis verde/vermelho (alerta@55, forte@70, exaustao@85)
+      override por cyano/fucsia em alerta de instabilidade
+      Nivel 1 (55-70): apenas visual, sem operacao
+
+  === STATUS ===
+    NAO rebacktestado. Validar antes de operar real.
+    Comparar com V14 no mesmo periodo para isolar o impacto de cada nova regra.
 }
 
 input
   // === FORCA ===
   ForcaMinimaForte(70.0);
   ForcaExaustao(85.0);
+  ForcaAlerta(55.0);            // nivel 1: apenas visual, indica aproximacao (sem operacao)
   PeriodoMediaVolume(20);
   UsarFiltroVolume(true);
   VolumeMinimo(5000);
 
-  // === CONTEXTO (estrutura same-TF: MA5 / MA20) ===
-  iJanelaDir(5);
-  iJanelaCtx(20);
+  // === MULTI-TF (tripleta WIN 15min: 60/30/15) ===
+  iJanelaDir(2);
+  iJanelaCtx(4);
 
-  // === STOP / ALVO ===
-  StopMinimo(75.0);
-  FatorRangeSL(0.0);
-  TakeProfit(150.0);
+  // === STOP / ALVO (V14) ===
+  StopMinimo(822.0);
+  FatorRangeSL(2.0);
+  TakeProfit(2466.0);
   UsarBreakEven(true);
-  BreakEvenRatio(0.333);
+  BreakEvenRatio(0.5);
 
   // === V16: SL menor que valor do sinal ===
-  UsarSLMenorQueSinal(false);
-  PctSLvsCorpo(0.9);
+  UsarSLMenorQueSinal(true);
+  PctSLvsCorpo(0.9);            // SL <= 90% do |corpo| do candle de entrada
 
   // === V16: Trailing proporcional ===
   UsarTrailingProporcional(true);
-  TrailingPctInicial(0.62);
-  TrailingPctPiso(0.10);
+  TrailingPctInicial(0.10);     // passo = 10% da distancia restante ao TP
+  TrailingPctPiso(0.02);        // piso de 2% do TP
 
   // === V16: Alertas visuais ===
   UsarAlertaInstabilidade(true);
-  JanelaInstabilidade(5);
-  MaxMudancasCor(3);
-  UsarAlertaMudancaTardia(false);
-  PctBordaZona(0.10);
+  JanelaInstabilidade(5);       // candles na janela
+  MaxMudancasCor(3);            // 3+ mudancas de zona em 5 candles = alerta
+  UsarAlertaMudancaTardia(false); // OPCIONAL — aproximacao por proximidade da borda
+  PctBordaZona(0.10);           // |fForca| dentro de +/-10% do limiar
 
   // === V16: BE adaptativo ===
   UsarBEPorCorOposta(true);
-  CandlesBrancosParaBE(5);
+  CandlesBrancosParaBE(5);      // 5 brancos consecutivos -> BE
 
   // === GERENCIAMENTO DE RISCO ===
   CapitalReais(10000.0);
@@ -59,7 +113,7 @@ input
   UsarStopCandleContra(true);
   ForcaStopContra(70.0);
   PermitirReversao(true);
-  MaxBarrasEmPosicao(6);
+  MaxBarrasEmPosicao(0);
 
   // === ALERTAS ===
   MostrarAlertas(true);
@@ -78,8 +132,6 @@ var
 
   // V16
   iZonaAtual, iZonaAnterior : integer;
-  iZonaEntrada : integer;
-  fTPAtivo : float;
   iMudancasJanela, iBarrasJanela : integer;
   iCandlesBrancos : integer;
   bAlertaInstavel, bAlertaTardio : boolean;
@@ -108,14 +160,16 @@ begin
   fMediaCtx := Media(iJanelaCtx, Close);
   bCtxAlta  := (Close > fMediaCtx) and (fMediaCtx > fMediaCtx[iJanelaCtx]);
   bCtxBaixa := (Close < fMediaCtx) and (fMediaCtx < fMediaCtx[iJanelaCtx]);
-  bDirAlta  := (Close > fMediaDir) and (fMediaDir > fMediaCtx);
-  bDirBaixa := (Close < fMediaDir) and (fMediaDir < fMediaCtx);
+  bDirAlta  := (Close > fMediaDir) and (fMediaDir > fMediaDir[iJanelaDir]);
+  bDirBaixa := (Close < fMediaDir) and (fMediaDir < fMediaDir[iJanelaDir]);
 
   // ─── [V16] Zona de forca (2/1/0/-1/-2) ────────────────────────
-  if fForca >= ForcaExaustao then iZonaAtual := 2
-  else if fForca >= ForcaMinimaForte then iZonaAtual := 1
-  else if fForca <= -ForcaExaustao then iZonaAtual := -2
-  else if fForca <= -ForcaMinimaForte then iZonaAtual := -1
+  if fForca >= ForcaExaustao then iZonaAtual := 3
+  else if fForca >= ForcaMinimaForte then iZonaAtual := 2
+  else if fForca >= ForcaAlerta then iZonaAtual := 1
+  else if fForca <= -ForcaExaustao then iZonaAtual := -3
+  else if fForca <= -ForcaMinimaForte then iZonaAtual := -2
+  else if fForca <= -ForcaAlerta then iZonaAtual := -1
   else iZonaAtual := 0;
 
   // ─── [V16] Janela rolante de mudancas de zona (instabilidade) ─
@@ -144,19 +198,19 @@ begin
 
   // ─── Cores padrao (verde/vermelho fraco/forte) ────────────────
   r := 255; g := 255; b := 255;
-  if Volume >= fVolMedia then
-  begin
-    if fForca >= ForcaExaustao      then begin r := 0;   g := 150; b := 0;   end
-    else if fForca >= ForcaMinimaForte  then begin r := 120; g := 220; b := 120; end
-    else if fForca <= -ForcaExaustao    then begin r := 180; g := 0;   b := 0;   end
-    else if fForca <= -ForcaMinimaForte then begin r := 255; g := 120; b := 120; end;
-  end;
+  if fForca >= ForcaExaustao then begin r := 0;   g := 150; b := 0;   end   // nivel 3: exaustao compra
+  else if fForca >= ForcaMinimaForte then begin r := 120; g := 220; b := 120; end  // nivel 2: forte compra
+  else if fForca >= ForcaAlerta then begin r := 210; g := 255; b := 210; end       // nivel 1: chegando compra
+  else if fForca <= -ForcaExaustao   then begin r := 180; g := 0;   b := 0;   end  // nivel 3: exaustao venda
+  else if fForca <= -ForcaMinimaForte then begin r := 255; g := 120; b := 120; end // nivel 2: forte venda
+  else if fForca <= -ForcaAlerta then begin r := 255; g := 220; b := 220; end;     // nivel 1: chegando venda
 
-  // ─── [V16] Override por alerta: cyano (compra) / fucsia (venda) ──────
-  if bAlertaInstavel then
+  // ─── [V16] Override por alerta: cyano (compra) / fucsia (venda)
+  if bAlertaInstavel or bAlertaTardio then
   begin
-    if iZonaAtual > 0      then begin r := 0;   g := 220; b := 220; end
-    else if iZonaAtual < 0 then begin r := 255; g := 0;   b := 180; end;
+    if iZonaAtual > 0 then begin r := 0;   g := 220; b := 220; end       // cyano
+    else if iZonaAtual < 0 then begin r := 255; g := 0;   b := 180; end; // fucsia
+    // se zona = 0 (branco), mantem branco
   end;
   PaintBar(RGB(r, g, b));
 
@@ -196,8 +250,6 @@ begin
     bBreakEven    := false;
     fTrailingRef  := 0;
     iCandlesBrancos := 0;
-    iZonaEntrada  := 0;
-    fTPAtivo      := 0;
   end;
 
   if (MaxBarrasEmPosicao > 0) and (iBarras >= MaxBarrasEmPosicao) then
@@ -251,9 +303,9 @@ begin
   if UsarBreakEven then
   begin
     if IsBought and (not bBreakEven) then
-      if (Close - fEntrada) >= (fTPAtivo * BreakEvenRatio) then bBreakEven := true;
+      if (Close - fEntrada) >= (TakeProfit * BreakEvenRatio) then bBreakEven := true;
     if IsSold and (not bBreakEven) then
-      if (fEntrada - Close) >= (fTPAtivo * BreakEvenRatio) then bBreakEven := true;
+      if (fEntrada - Close) >= (TakeProfit * BreakEvenRatio) then bBreakEven := true;
     if bBreakEven then
     begin
       if IsBought  and (Close <= fEntrada) then begin ClosePosition; iBarras := 0; end;
@@ -261,16 +313,16 @@ begin
     end;
   end;
 
-  // ─── [V16] Trailing proporcional (zona ±2 apenas) ──────────
-  if UsarTrailingProporcional and bBreakEven and (abs(iZonaEntrada) = 2) then
+  // ─── [V16] Trailing proporcional (apos BE armado) ─────────────
+  if UsarTrailingProporcional and bBreakEven then
   begin
     fLucroAtual := 0;
     if IsBought then fLucroAtual := Close - fEntrada;
     if IsSold   then fLucroAtual := fEntrada - Close;
 
-    fPassoTrail := (fTPAtivo - fLucroAtual) * TrailingPctInicial;
-    if fPassoTrail < (fTPAtivo * TrailingPctPiso) then
-      fPassoTrail := fTPAtivo * TrailingPctPiso;
+    fPassoTrail := (TakeProfit - fLucroAtual) * TrailingPctInicial;
+    if fPassoTrail < (TakeProfit * TrailingPctPiso) then
+      fPassoTrail := TakeProfit * TrailingPctPiso;
 
     if IsBought then
     begin
@@ -289,8 +341,8 @@ begin
   end;
 
   // ─── Take Profit hard ─────────────────────────────────────────
-  if IsBought  and (High >= fEntrada + fTPAtivo) then begin ClosePosition; iBarras := 0; end;
-  if IsSold    and (Low  <= fEntrada - fTPAtivo) then begin ClosePosition; iBarras := 0; end;
+  if IsBought  and (High >= fEntrada + TakeProfit) then begin ClosePosition; iBarras := 0; end;
+  if IsSold    and (Low  <= fEntrada - TakeProfit) then begin ClosePosition; iBarras := 0; end;
 
   // ─── ENTRADAS WIN (V14: 1o candle + MTF + volume) ─────────────
   if HabilitarOperacoes and bDeveOperar then
@@ -306,12 +358,8 @@ begin
       begin
         BuyAtMarket;
         fEntrada       := Close;
-        if abs(iZonaAtual) = 2 then fSLAtivo := 100.0
-        else                        fSLAtivo :=  75.0;
-        fTrailingRef   := Close - fSLAtivo;
-        iZonaEntrada   := iZonaAtual;
-        if abs(iZonaAtual) = 2 then fTPAtivo := 250.0
-        else                        fTPAtivo := 150.0;
+        fSLAtivo       := fSL;
+        fTrailingRef   := Close - fSL;
         iBarras        := 0;
         bBreakEven     := false;
         iCandlesBrancos := 0;
@@ -330,12 +378,8 @@ begin
       begin
         SellShortAtMarket;
         fEntrada       := Close;
-        if abs(iZonaAtual) = 2 then fSLAtivo := 100.0
-        else                        fSLAtivo :=  75.0;
-        fTrailingRef   := Close + fSLAtivo;
-        iZonaEntrada   := iZonaAtual;
-        if abs(iZonaAtual) = 2 then fTPAtivo := 250.0
-        else                        fTPAtivo := 150.0;
+        fSLAtivo       := fSL;
+        fTrailingRef   := Close + fSL;
         iBarras        := 0;
         bBreakEven     := false;
         iCandlesBrancos := 0;
