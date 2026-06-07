@@ -239,6 +239,10 @@ begin
   end;
 
   // ─── Sizing por risco ─────────────────────────────────────────
+  // iQtd = Capital x Risco% / (SL x PontoValor)
+  // Com Capital=10k, Risco=1%, SL=280, PV=0.20 → iQtd=1 contrato
+  // Nota: BuyAtMarket/SellShortAtMarket sem parametro = 1 contrato (padrao NTSL).
+  // Para multi-contrato, substituir por BuyAtMarket(iQtd) apos validar em demo.
   if (fSL > 0) and (PontoValorReais > 0) then
     iQtd := CapitalReais * (RiscoPorcentagem / 100) / (fSL * PontoValorReais)
   else
@@ -370,9 +374,9 @@ begin
       if (not IsBought) and (not IsSold) then
       begin
         if fForca >= ForcaExaustao then
-          fTPAtivo := TakeProfitNivel3    // RR 2.5
+          fTPAtivo := TakeProfitNivel3    // RR 3.0 (280 x 3)
         else
-          fTPAtivo := TakeProfitNivel2;   // RR 2.0
+          fTPAtivo := TakeProfitNivel2;   // RR 2.0 (280 x 2)
         BuyAtMarket;
         fEntrada       := Close;
         fSLAtivo       := fSL;
@@ -393,9 +397,9 @@ begin
       if (not IsBought) and (not IsSold) then
       begin
         if fForca <= -ForcaExaustao then
-          fTPAtivo := TakeProfitNivel3    // RR 2.5
+          fTPAtivo := TakeProfitNivel3    // RR 3.0 (280 x 3)
         else
-          fTPAtivo := TakeProfitNivel2;   // RR 2.0
+          fTPAtivo := TakeProfitNivel2;   // RR 2.0 (280 x 2)
         SellShortAtMarket;
         fEntrada       := Close;
         fSLAtivo       := fSL;
