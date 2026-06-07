@@ -1,79 +1,51 @@
 {
-  Robo  : FORCA_WIN_V17
+  Robo  : FORCA_WIN_V17_sinaisForcaComMedias
   Tipo  : NTSL (estrategia/robo executavel)
   Ativo : WIN (mini-indice)
   Versao: 17.0
-  Base  : FORCA_WIN_V14
 
-  === ORIGEM DAS MUDANCAS: OCR das imagens ScreenToStudy_MaterOfTrades ===
+  ============================================================
+  1. GATILHO
+  ============================================================
+  — F = (Corpo/Range) x (Volume/MediaVolume) x 100
+  — Entra no 1o candle que cruza ForcaMinimaForte (65):
+      COMPRA : fForca >= 65  AND  fForca[1] < 65
+      VENDA  : fForca <= -65 AND  fForca[1] > -65
 
-  A analise anterior (V14) usou apenas o telasAnalise.md (resumo textual).
-  O OCR das 27 imagens com Windows.Media.Ocr revelou 4 divergencias criticas
-  entre o codigo V14 e o que estava sendo observado/anotado visualmente.
+  ============================================================
+  2. CONTEXTO / FILTRO
+  ============================================================
+  — Medias (scalp): MA(rapida) vs MA(lenta)
+      COMPRA : MA(rapida) > MA(lenta)  AND  Close > MA(lenta)
+      VENDA  : MA(rapida) < MA(lenta)  AND  Close < MA(lenta)
+  — Defaults testados: iJanelaDir=9 / iJanelaCtx=20
+    Alternativa mais rapida: iJanelaDir=3 / iJanelaCtx=20
+  — Volume direcional:
+      COMPRA : fCorpo > 0  AND  Volume >= Media(20, Volume)
+      VENDA  : fCorpo < 0  AND  Volume >= Media(20, Volume)
 
-  === MUDANCAS V17 vs V14 (baseadas em OCR direto) ===
+  ============================================================
+  3. GESTAO DE RISCO
+  ============================================================
+  — SL      : 150 pts (fixo, FatorRangeSL=0)
+  — TP      : 1500 pts (hard — trailing tende a fechar antes)
+  — RR      : 10.0  (1500 / 150)
+  — BE      : 75 pts absolutos (50% do SL)
+  — Trailing: 280 pts fixos apos BE
+  — Sizing  : Capital x Risco% / (SL x PontoValor)  [max 5 contratos]
 
-  1. StopMinimo: 822 → 150 pts                        [CRITICO — OCR]
-     — Todas as imagens WIN com painel de ordens mostram "stop0f. 150" ou
-       "stop0f. 155". O V14 usava 822 pts (2x range medio 15min).
-     — Divergencia de ~5x entre o stop visual e o stop do robo.
-     — Imagens fonte: SinalForteAteOnde, SinalForteVoltoueDeuPerda,
-       SinalDiarioiniciandoEm60m, 3sinais_menores_devo_aguardar,
-       ProbabilidadeSinal60min, 3sinais_menores_1maior_PERDA.
-     — FatorRangeSL desligado (0.0) para manter o SL fixo em 150.
+  Saidas antecipadas (ordem de prioridade):
+    a) Hard SL intrabar via Low/High
+    b) Stop candle contra: forca oposta >= 70
+    c) BE absoluto: lucro >= 75 pts -> fecha se voltar a entrada
+    d) Trailing 280 pts (apos BE armado)
+    e) Saidas parciais 3 niveis: TP1=150, TP2=300 (opcional, default off)
+    f) Stop horario: 17h45
 
-  2. ForcaMinimaForte: 70 → 65                        [CRITICO — OCR]
-     — O painel do indicador FR(RSD[9]) mostra linhas horizontais em:
-         90,00 (superior) / 65,00 (inferior) / 10,00 (piso)
-     — V14 usava 70/85/10. O threshold real observado era 65, nao 70.
-     — Impacto: mais sinais gerados (F 65-70 agora validos).
-
-  3. ForcaExaustao: 85 → 90                           [MEDIO — OCR]
-     — Mesma fonte. Linha superior do painel FR(RSD[9]) = 90,00.
-     — V14 usava 85. Exaustao real era 90.
-     — Impacto: zona exaustao mais estreita (90-100 em vez de 85-100).
-
-  4. BreakEven absoluto: ratio 0.5 → 75 pts absolutos [CRITICO — OCR]
-     — Captura 04/05 mostra anotacao: "50 pts - Stop 1" (WDO, stop=15pts).
-     — Padrao inferido: BE ativa em ~50% do SL como valor absoluto.
-     — Para WIN com SL=150: 150 * 0.5 = 75 pts → BreakEvenPts=75.
-     — Antes: BE ativava em 50% do TP = 1233 pts (absurdamente longe do SL).
-
-  5. Trailing: 0 → 280 pts (apos BE)                  [MEDIO — OCR]
-     — Imagem 2sinaisFortesOndeEstaStopTecnicoOUEstrutural mostra "280,00 ts".
-     — "ts" = trailing stop de 280 pts.
-     — V14 havia removido o trailing intencionalmente (V12 cortava AvgWin).
-     — Reintroduzido com passo FIXO de 280 pts (diferente do V12 que usava
-       passo proporcional pequeno que cortava o vencedor).
-
-  6. Saidas parciais 3x (opcional)                    [MEDIO — OCR]
-     — Imagem 3sinais_QuantosPontosBusco mostra:
-         Carteira | Venda I (x3 entradas separadas = 3 ordens de saida)
-         Abra_26 1 Comprado 3 (posicao de 3 contratos)
-         Carteira | Venda Stop 3 (stop final com 3 contratos)
-     — Padrao: entrar com iQtd contratos, fechar em 3 niveis.
-     — ATENCAO: ClosePosition fecha TUDO. Saida parcial exige SellAtMarket(n)
-       ou BuyAtMarket(n) — verificar suporte na plataforma.
-     — Implementado com flag UsarSaidasParciais. Default: false (comportamento
-       seguro = fechar tudo em cada evento de saida).
-     — TP1 = 1x SL (150 pts) — fecha 1/3
-     — TP2 = 2x SL (300 pts) — fecha 1/3
-     — Resto: trailing 280 pts ou TP hard em TakeProfit.
-
-  === MANTIDO DO V14 ===
-    - Filtro 1o candle de forca (fForca[1] < limiar)
-    - MTF tripleta 60/30/15 (iJanelaDir=2, iJanelaCtx=4)
-    - Hard SL intrabar via Low/High (fSLAtivo)
-    - ForcaStopContra = 70 (saida rapida por forca contraria)
-    - Cores padrao verde/vermelho fraco/forte (V14+)
-    - Stop horario 17:45
-    - Filtro de volume (VolumeMinimo=5000)
-
-  === CALIBRACAO / STATUS ===
-    NAO rebacktestado. Parametros derivados de OCR das telas de analise.
-    Backtest prioritario: WIN 15min com SL=150, BE=75, Trailing=280,
-    ForcaMinimaForte=65, ForcaExaustao=90 — periodo 2024-2026.
-    Comparar com V14 (SL=822, BE=1233, sem trailing, F=70/85).
+  === STATUS ===
+    NAO rebacktestado. Backtestear antes de operar real.
+    Parametros base: OCR telas MasterOfTrades (SL=150, BE=75, Trailing=280)
+    Limiares de forca: F=65 (forte) / F=90 (exaustao) — OCR FR(RSD[9])
 }
 
 input
@@ -81,12 +53,11 @@ input
   ForcaMinimaForte(65.0);       // V17: 70 → 65 (linha inferior FR(RSD[9]))
   ForcaExaustao(90.0);          // V17: 85 → 90 (linha superior FR(RSD[9]))
   PeriodoMediaVolume(20);
-  UsarFiltroVolume(true);
-  VolumeMinimo(5000);
+  UsarFiltroVolume(true);       // Volume direcional: corpo + Volume >= Media
 
-  // === MULTI-TF (tripleta WIN 15min: 60/30/15) — IDENTICO V14 ===
-  iJanelaDir(2);
-  iJanelaCtx(4);
+  // === CONTEXTO MEDIAS scalp (MA rapida vs MA lenta) ===
+  iJanelaDir(9);                // MA rapida direcional — testar 3 ou 9
+  iJanelaCtx(20);               // MA lenta contexto
 
   // === STOP / ALVO (V17: calibrados por OCR) ===
   StopMinimo(150.0);            // V17: 822 → 150 pts (stop0f. 150-155 nas telas)
@@ -148,13 +119,13 @@ begin
   if fForca < -100 then fForca := -100;
   fForcaAbs := abs(fForca);
 
-  // ─── Multi-TF ─────────────────────────────────────────────────
+  // ─── Contexto medias scalp ──────────────────────────────────
   fMediaDir := Media(iJanelaDir, Close);
   fMediaCtx := Media(iJanelaCtx, Close);
-  bCtxAlta  := (Close > fMediaCtx) and (fMediaCtx > fMediaCtx[iJanelaCtx]);
-  bCtxBaixa := (Close < fMediaCtx) and (fMediaCtx < fMediaCtx[iJanelaCtx]);
-  bDirAlta  := (Close > fMediaDir) and (fMediaDir > fMediaDir[iJanelaDir]);
-  bDirBaixa := (Close < fMediaDir) and (fMediaDir < fMediaDir[iJanelaDir]);
+  bCtxAlta  := Close > fMediaCtx;              // preco acima da MA lenta
+  bCtxBaixa := Close < fMediaCtx;
+  bDirAlta  := fMediaDir > fMediaCtx;          // MA rapida acima da MA lenta
+  bDirBaixa := fMediaDir < fMediaCtx;
 
   // ─── Cores padrao FORCA (verde/vermelho fraco/forte) ─────────
   // Verde fraco  (F 65-90)  : forte compradora   [V17: limiar 65]
@@ -305,11 +276,11 @@ begin
   // ─── ENTRADAS WIN (V14: 1o candle + MTF + volume) ─────────────
   if HabilitarOperacoes and bDeveOperar then
   begin
-    // COMPRA: F >= 65 + primeiro candle + MTF + volume
+    // COMPRA: F >= 65 + primeiro candle + MA rapida > MA lenta + volume direcional
     if (fForca >= ForcaMinimaForte)
       and (fForca[1] < ForcaMinimaForte)
       and bCtxAlta and bDirAlta
-      and ((not UsarFiltroVolume) or (Volume >= VolumeMinimo)) then
+      and ((not UsarFiltroVolume) or ((fCorpo > 0) and (Volume >= fVolMedia))) then
     begin
       if PermitirReversao and IsSold then ClosePosition;
       if (not IsBought) and (not IsSold) then
@@ -326,11 +297,11 @@ begin
       end;
     end;
 
-    // VENDA: F <= -65 + primeiro candle + MTF + volume
+    // VENDA: F <= -65 + primeiro candle + MA rapida < MA lenta + volume direcional
     if (fForca <= -ForcaMinimaForte)
       and (fForca[1] > -ForcaMinimaForte)
       and bCtxBaixa and bDirBaixa
-      and ((not UsarFiltroVolume) or (Volume >= VolumeMinimo)) then
+      and ((not UsarFiltroVolume) or ((fCorpo < 0) and (Volume >= fVolMedia))) then
     begin
       if PermitirReversao and IsBought then ClosePosition;
       if (not IsBought) and (not IsSold) then

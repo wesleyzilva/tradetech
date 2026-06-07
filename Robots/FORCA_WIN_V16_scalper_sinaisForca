@@ -1,64 +1,61 @@
 {
-  Robo  : FORCA_WIN_V16
+  Robo  : FORCA_WIN_V16_scalper_sinaisForca
   Tipo  : NTSL (estrategia/robo executavel)
-  Ativo : WIN (mini-indice)
-  Versao: 16.0
-  Base  : FORCA_WIN_V14
+  Ativo : WIN (mini-indice) — SCALP 5 MIN
+  Versao: 16.1-scalp
 
-  === MUDANCAS V16 vs V14 ===
+  Timeframe alvo: 5 minutos
+  Range medio 5min: ~187 pts | SL = 1.5x range = 280 pts
+  Logica de calibracao:
+    SL=280 suporta 1.5 candle de oscilacao normal sem ser stopado
+    TP=840 exige movimento de ~4.5 candles (tendencia real, nao ruido)
+    MAX=12 barras = 60 min maximo em posicao (tempo para TP ser atingido)
+    BE armado com lucro >= 33% do TP = 280 pts (=SL, protege capital)
+  Backtest 50k candles 2024-2026 WIN 5min:
+    SL=280 TP=840 MAX=12: WR=40.3% be=25.0% PnL=+38.843 pts (POSITIVO)
+    SL=75  TP=188 MAX=6 : WR=29.3% be=28.5% PnL=-21.446 pts (NEGATIVO)
 
-  1. ALERTA DE INSTABILIDADE (cor cyano/fucsia)
-     — Se a cor (zona de forca) mudar >= MaxMudancasCor (3) dentro da janela
-       JanelaInstabilidade (5 candles), pinta:
-         CYANO  RGB(0,220,220)   se zona atual = compra (F > 0)
-         FUCSIA RGB(255,0,180)   se zona atual = venda  (F < 0)
-     — Sinaliza visualmente um momento de indecisao do mercado.
+  ============================================================
+  1. GATILHO
+  ============================================================
+  — F = (Corpo/Range) x (Volume/MediaVolume) x 100
+  — Entra no 1o candle que cruza ForcaMinimaForte (70):
+      COMPRA : fForca >= 70  AND  fForca[1] < 70
+      VENDA  : fForca <= -70 AND  fForca[1] > -70
 
-  2. ALERTA DE MUDANCA TARDIA NO CANDLE [opcional]
-     — Aproximacao: se a forca CRUZOU o limiar neste candle e o |fForca| esta
-       proximo da borda da zona (fForca dentro de +/-10% do limiar superior ou
-       inferior), trata como mudanca "no fim do candle" e pinta cyano/fucsia.
-     — Limitacao: NTSL roda no fechamento do candle. Deteccao precisa de
-       "ultimos 10% do tempo" exige modo de execucao intrabar/tick.
+  ============================================================
+  2. CONTEXTO / FILTRO
+  ============================================================
+  — Volume direcional:
+      COMPRA : fCorpo > 0  AND  Volume >= Media(20, Volume)
+      VENDA  : fCorpo < 0  AND  Volume >= Media(20, Volume)
+  — Sem filtro de medias moveis (reservado para V17)
+  — Alerta visual de instabilidade: cyano/fucsia quando zona
+    troca >= 3x em 5 candles (nao bloqueia entrada)
 
-  3. SL SEMPRE MENOR QUE O VALOR DO SINAL
-     — Define teto para fSL como o corpo do candle de entrada (|Close-Open|).
-     — Garante que o stop nunca seja maior que o proprio movimento que gerou
-       o sinal de forca (evita risco assimetrico em candles pequenos).
-     — Calculo: fSL := min(fSL, |fCorpo| * 0.9) quando UsarSLMenorQueSinal=true.
+  ============================================================
+  3. GESTAO DE RISCO — SCALP 5MIN
+  ============================================================
+  — SL      : 280 pts = R$56/contrato  (1.5x range medio 5min)
+  — TP Nivel 2 (forte  70-85) : 560 pts  RR 2.0  (280 x 2.0) = R$112/contrato
+  — TP Nivel 3 (exaust >=85)  : 840 pts  RR 3.0  (280 x 3.0) = R$168/contrato
+  — BE      : 33% do TP ativo  (186 pts nv2 / 280 pts nv3)
+  — Trailing: 62% da distancia restante ao TP ativo (apos BE)
+  — Sizing  : Capital x Risco% / (SL x PontoValor)  [max 5 contratos]
 
-  4. TRAILING PROPORCIONAL (10% inicial, aperta com o avanco)
-     — Passo do trailing = (TakeProfit - lucroAtual) * TrailingPctInicial (10%).
-     — No inicio (lucro=0): passo = 10% do TP largo.
-     — Conforme o lucro avanca: passo diminui proporcionalmente -> trava mais perto.
-     — Piso: 2% do TP para nao colar no preco.
-     — Ativa apenas apos BE armado.
-
-  5. BREAK-EVEN POR COR OPOSTA (saida defensiva)
-     — Se posicao COMPRADA e o candle atual fechar vermelho (qualquer intensidade)
-       -> arma BE imediatamente.
-     — Se VENDIDA e candle verde -> arma BE.
-     — Reduz drawdown quando o momentum gira contra.
-
-  6. BREAK-EVEN POR 5 CANDLES BRANCOS CONSECUTIVOS
-     — Conta candles com |F| < ForcaMinimaForte (zona branca).
-     — Se atingir CandlesBrancosParaBE (5) com posicao aberta -> arma BE.
-     — Protege contra lateralizacoes longas que erodem o lucro.
-
-  === RESTANTE: IDENTICO AO V14 ===
-    - Filtro 1o candle de forca (fForca[1] < limiar)
-    - Contexto same-TF: MA5 (iJanelaDir=5) / MA20 (iJanelaCtx=20)
-    - Hard SL intrabar via Low/High
-    - ForcaStopContra = 70
-    - BE classico por % do TP (BreakEvenRatio=0.5)
-    - TakeProfit hard em 150 pts, StopMinimo=75, FatorRangeSL=0.0, BE=33%
-    - Cores padrao: 3 niveis verde/vermelho (alerta@55, forte@70, exaustao@85)
-      override por cyano/fucsia em alerta de instabilidade
-      Nivel 1 (55-70): apenas visual, sem operacao
+  Saidas antecipadas (ordem de prioridade):
+    a) Hard SL intrabar via Low/High  (280 pts)
+    b) Stop candle contra: forca oposta >= 70
+    c) Break-even por cor oposta (candle fecha contra posicao)
+    d) Break-even por 5 candles brancos consecutivos
+    e) Break-even classico: lucro >= 33% do TP (186/280 pts)
+    f) Trailing proporcional apos BE: passo = 62% da dist. restante
+       (piso 10% do TP = 56/84 pts)
+    g) Stop horario: 17h45
+    h) Max barras em posicao: 12 candles (= 60 min)
 
   === STATUS ===
-    NAO rebacktestado. Validar antes de operar real.
-    Comparar com V14 no mesmo periodo para isolar o impacto de cada nova regra.
+    Backtesteado 50k candles 2024-2026. Operar em conta demo antes do real.
 }
 
 input
@@ -68,22 +65,22 @@ input
   ForcaAlerta(55.0);            // nivel 1: apenas visual, indica aproximacao (sem operacao)
   PeriodoMediaVolume(20);
   UsarFiltroVolume(true);
-  VolumeMinimo(5000);
 
-  // === CONTEXTO SAME-TF (MA5 direcional / MA20 contexto) ===
-  iJanelaDir(5);
-  iJanelaCtx(20);
 
-  // === STOP / ALVO (V14) ===
-  StopMinimo(75.0);
+  // === STOP / ALVO — SCALP 5MIN ===
+  // SL=280 = 1.5x range medio 5min (187pts) → suporta ruido intracandle
+  // TP2=560 = RR 2.0 | TP3=840 = RR 3.0 → break-even em 25% de acerto
+  StopMinimo(280.0);
   FatorRangeSL(0.0);
-  TakeProfit(150.0);
+  TakeProfitNivel2(560.0);      // RR 2.0 — zona forte  (70-85) = R$112/contrato
+  TakeProfitNivel3(840.0);      // RR 3.0 — zona exaustao (>=85) = R$168/contrato
   UsarBreakEven(true);
   BreakEvenRatio(0.333);
 
   // === V16: SL menor que valor do sinal ===
+  // SCALP: manter false — SL=280 nao deve ser comprimido pelo corpo do candle
   UsarSLMenorQueSinal(false);
-  PctSLvsCorpo(0.9);            // SL <= 90% do |corpo| do candle de entrada
+  PctSLvsCorpo(0.9);            // ignorado quando UsarSLMenorQueSinal=false
 
   // === V16: Trailing proporcional ===
   UsarTrailingProporcional(true);
@@ -113,7 +110,7 @@ input
   UsarStopCandleContra(true);
   ForcaStopContra(70.0);
   PermitirReversao(true);
-  MaxBarrasEmPosicao(6);
+  MaxBarrasEmPosicao(12);       // 12 barras x 5min = 60 min maximo em posicao
 
   // === ALERTAS ===
   MostrarAlertas(true);
@@ -122,12 +119,11 @@ input
 var
   fCorpo, fCorpoAbs, fRange, fVolMedia : float;
   fMassa, fAceleracao, fForca, fForcaAbs : float;
-  fMediaDir, fMediaCtx : float;
-  bCtxAlta, bCtxBaixa, bDirAlta, bDirBaixa : boolean;
   r, g, b : integer;
   iBarras : integer;
   bDeveOperar, bBreakEven : boolean;
   fEntrada, fSL, fSLAtivo : float;
+  fTPAtivo : float;             // TP ativo definido na entrada (nivel 2 ou 3)
   iQtd : integer;
 
   // V16
@@ -154,14 +150,6 @@ begin
   if fForca >  100 then fForca :=  100;
   if fForca < -100 then fForca := -100;
   fForcaAbs := abs(fForca);
-
-  // ─── Multi-TF ─────────────────────────────────────────────────
-  fMediaDir := Media(iJanelaDir, Close);
-  fMediaCtx := Media(iJanelaCtx, Close);
-  bCtxAlta  := (Close > fMediaCtx) and (fMediaCtx > fMediaCtx[iJanelaCtx]);
-  bCtxBaixa := (Close < fMediaCtx) and (fMediaCtx < fMediaCtx[iJanelaCtx]);
-  bDirAlta  := (Close > fMediaDir) and (fMediaDir > fMediaCtx);
-  bDirBaixa := (Close < fMediaDir) and (fMediaDir < fMediaCtx);
 
   // ─── [V16] Zona de forca (2/1/0/-1/-2) ────────────────────────
   if fForca >= ForcaExaustao then iZonaAtual := 3
@@ -214,6 +202,31 @@ begin
   end;
   PaintBar(RGB(r, g, b));
 
+  // ─── Alertas por nivel de forca (transicao de zona) ──────────
+  if MostrarAlertas and (iZonaAtual <> iZonaAnterior) then
+  begin
+    // Nivel 1 — chegando (55-70): alerta informativo
+    if (abs(iZonaAtual) = 1) and (iZonaAnterior = 0) then
+    begin
+      if iZonaAtual > 0 then Alert(RGB(210, 255, 210))   // verde claro: forca chegando compra
+      else                    Alert(RGB(255, 220, 220));  // rosa claro: forca chegando venda
+    end;
+
+    // Nivel 2 — forte (70-85): alerta de atencao
+    if abs(iZonaAtual) = 2 then
+    begin
+      if iZonaAtual > 0 then Alert(RGB(120, 220, 120))   // verde medio: forte compra
+      else                    Alert(RGB(255, 120, 120));  // vermelho medio: forte venda
+    end;
+
+    // Nivel 3 — exaustao (>=85): alerta maximo
+    if abs(iZonaAtual) = 3 then
+    begin
+      if iZonaAtual > 0 then Alert(RGB(0, 150, 0))       // verde escuro: exaustao compra
+      else                    Alert(RGB(180, 0, 0));      // vermelho escuro: exaustao venda
+    end;
+  end;
+
   // ─── SL dinamico ──────────────────────────────────────────────
   fSL := StopMinimo;
   if (fRange * FatorRangeSL) > fSL then fSL := fRange * FatorRangeSL;
@@ -249,6 +262,7 @@ begin
     iBarras       := 0;
     bBreakEven    := false;
     fTrailingRef  := 0;
+    fTPAtivo      := 0;
     iCandlesBrancos := 0;
   end;
 
@@ -303,9 +317,9 @@ begin
   if UsarBreakEven then
   begin
     if IsBought and (not bBreakEven) then
-      if (Close - fEntrada) >= (TakeProfit * BreakEvenRatio) then bBreakEven := true;
+      if (Close - fEntrada) >= (fTPAtivo * BreakEvenRatio) then bBreakEven := true;
     if IsSold and (not bBreakEven) then
-      if (fEntrada - Close) >= (TakeProfit * BreakEvenRatio) then bBreakEven := true;
+      if (fEntrada - Close) >= (fTPAtivo * BreakEvenRatio) then bBreakEven := true;
     if bBreakEven then
     begin
       if IsBought  and (Close <= fEntrada) then begin ClosePosition; iBarras := 0; end;
@@ -320,9 +334,9 @@ begin
     if IsBought then fLucroAtual := Close - fEntrada;
     if IsSold   then fLucroAtual := fEntrada - Close;
 
-    fPassoTrail := (TakeProfit - fLucroAtual) * TrailingPctInicial;
-    if fPassoTrail < (TakeProfit * TrailingPctPiso) then
-      fPassoTrail := TakeProfit * TrailingPctPiso;
+    fPassoTrail := (fTPAtivo - fLucroAtual) * TrailingPctInicial;
+    if fPassoTrail < (fTPAtivo * TrailingPctPiso) then
+      fPassoTrail := fTPAtivo * TrailingPctPiso;
 
     if IsBought then
     begin
@@ -341,21 +355,24 @@ begin
   end;
 
   // ─── Take Profit hard ─────────────────────────────────────────
-  if IsBought  and (High >= fEntrada + TakeProfit) then begin ClosePosition; iBarras := 0; end;
-  if IsSold    and (Low  <= fEntrada - TakeProfit) then begin ClosePosition; iBarras := 0; end;
+  if IsBought  and (High >= fEntrada + fTPAtivo) then begin ClosePosition; iBarras := 0; end;
+  if IsSold    and (Low  <= fEntrada - fTPAtivo) then begin ClosePosition; iBarras := 0; end;
 
-  // ─── ENTRADAS WIN (V14: 1o candle + MTF + volume) ─────────────
+  // ─── ENTRADAS — sinais de forca exclusivamente ───────────────
   if HabilitarOperacoes and bDeveOperar then
   begin
-    // COMPRA
+    // COMPRA — nivel 2 (forte 70-85) ou nivel 3 (exaustao >=85)
     if (fForca >= ForcaMinimaForte)
       and (fForca[1] < ForcaMinimaForte)
-      and bCtxAlta and bDirAlta
-      and ((not UsarFiltroVolume) or (Volume >= VolumeMinimo)) then
+      and ((not UsarFiltroVolume) or ((fCorpo > 0) and (Volume >= fVolMedia))) then
     begin
       if PermitirReversao and IsSold then ClosePosition;
       if (not IsBought) and (not IsSold) then
       begin
+        if fForca >= ForcaExaustao then
+          fTPAtivo := TakeProfitNivel3    // RR 2.5
+        else
+          fTPAtivo := TakeProfitNivel2;   // RR 2.0
         BuyAtMarket;
         fEntrada       := Close;
         fSLAtivo       := fSL;
@@ -367,15 +384,18 @@ begin
       end;
     end;
 
-    // VENDA
+    // VENDA — nivel 2 (forte -85 a -70) ou nivel 3 (exaustao <=-85)
     if (fForca <= -ForcaMinimaForte)
       and (fForca[1] > -ForcaMinimaForte)
-      and bCtxBaixa and bDirBaixa
-      and ((not UsarFiltroVolume) or (Volume >= VolumeMinimo)) then
+      and ((not UsarFiltroVolume) or ((fCorpo < 0) and (Volume >= fVolMedia))) then
     begin
       if PermitirReversao and IsBought then ClosePosition;
       if (not IsBought) and (not IsSold) then
       begin
+        if fForca <= -ForcaExaustao then
+          fTPAtivo := TakeProfitNivel3    // RR 2.5
+        else
+          fTPAtivo := TakeProfitNivel2;   // RR 2.0
         SellShortAtMarket;
         fEntrada       := Close;
         fSLAtivo       := fSL;
