@@ -82,11 +82,11 @@ function Write-Header {
     Write-Host ''
 }
 
-function Write-OK   { param([string]$M); Write-Host "  [OK] $M" -ForegroundColor Green  }
+function Write-OK { param([string]$M); Write-Host "  [OK] $M" -ForegroundColor Green }
 function Write-Warn { param([string]$M); Write-Host "  [!!] $M" -ForegroundColor Yellow }
-function Write-Err  { param([string]$M); Write-Host "  [XX] $M" -ForegroundColor Red    }
-function Write-Info { param([string]$M); Write-Host "  [..] $M" -ForegroundColor Cyan   }
-function Write-Bold { param([string]$M); Write-Host "  $M"       -ForegroundColor White  }
+function Write-Err { param([string]$M); Write-Host "  [XX] $M" -ForegroundColor Red }
+function Write-Info { param([string]$M); Write-Host "  [..] $M" -ForegroundColor Cyan }
+function Write-Bold { param([string]$M); Write-Host "  $M"       -ForegroundColor White }
 
 # ---------------------------------------------------------------------------
 # Workspace do VS Code
@@ -121,7 +121,7 @@ function Convert-ToWorkspaceRelativePath {
     param([string]$TargetPath)
 
     $workspaceRootResolved = [System.IO.Path]::GetFullPath($WorkspaceRoot)
-    $targetResolved        = [System.IO.Path]::GetFullPath($TargetPath)
+    $targetResolved = [System.IO.Path]::GetFullPath($TargetPath)
 
     if ($targetResolved.StartsWith($workspaceRootResolved, [System.StringComparison]::OrdinalIgnoreCase)) {
         $relative = $targetResolved.Substring($workspaceRootResolved.Length).TrimStart('\')
@@ -140,15 +140,15 @@ function Add-WorkspaceFolder {
     )
 
     $workspaceData = Get-WorkspaceData
-    $relativePath  = Convert-ToWorkspaceRelativePath -TargetPath $FolderPath
+    $relativePath = Convert-ToWorkspaceRelativePath -TargetPath $FolderPath
 
     if (-not $FolderName) {
         $FolderName = Split-Path $FolderPath -Leaf
     }
 
     $alreadyExists = @($workspaceData.folders | Where-Object {
-        $_.path -eq $relativePath -or $_.name -eq $FolderName
-    }).Count -gt 0
+            $_.path -eq $relativePath -or $_.name -eq $FolderName
+        }).Count -gt 0
 
     if ($alreadyExists) {
         Write-Warn "O repositorio '$FolderName' ja esta no workspace."
@@ -170,9 +170,9 @@ function Remove-WorkspaceFolder {
     param([string]$FolderName)
 
     $workspaceData = Get-WorkspaceData
-    $targetFolder  = @($workspaceData.folders | Where-Object {
-        $_.name -eq $FolderName -or $_.path -eq $FolderName
-    } | Select-Object -First 1)
+    $targetFolder = @($workspaceData.folders | Where-Object {
+            $_.name -eq $FolderName -or $_.path -eq $FolderName
+        } | Select-Object -First 1)
 
     if ($targetFolder.Count -eq 0) {
         Write-Warn "Repositorio '$FolderName' nao foi encontrado no workspace."
@@ -180,8 +180,8 @@ function Remove-WorkspaceFolder {
     }
 
     $workspaceData.folders = @($workspaceData.folders | Where-Object {
-        $_.name -ne $targetFolder[0].name -and $_.path -ne $targetFolder[0].path
-    })
+            $_.name -ne $targetFolder[0].name -and $_.path -ne $targetFolder[0].path
+        })
     Save-WorkspaceData -WorkspaceData $workspaceData
     Write-OK "Repositorio '$($targetFolder[0].name)' removido do workspace."
     return $true
@@ -196,8 +196,8 @@ function Invoke-CloneOne {
     if (-not [string]::IsNullOrWhiteSpace($SuggestedName)) { $defaultFolderName = $SuggestedName }
 
     $folderNameInput = Read-Host "  Nome da pasta local (Enter = $defaultFolderName)"
-    $folderName      = if ([string]::IsNullOrWhiteSpace($folderNameInput)) { $defaultFolderName } else { $folderNameInput.Trim() }
-    $targetPath      = Join-Path $WorkspaceRoot $folderName
+    $folderName = if ([string]::IsNullOrWhiteSpace($folderNameInput)) { $defaultFolderName } else { $folderNameInput.Trim() }
+    $targetPath = Join-Path $WorkspaceRoot $folderName
 
     if (Test-Path $targetPath) {
         Write-Warn "A pasta '$targetPath' ja existe."
@@ -264,7 +264,7 @@ function Invoke-RemoveFromWorkspace {
     Write-Header 'REMOVER REPOSITORIO DO WORKSPACE'
 
     $workspaceData = Get-WorkspaceData
-    $folders       = @($workspaceData.folders)
+    $folders = @($workspaceData.folders)
 
     if ($folders.Count -eq 0) {
         Write-Warn 'Nenhum repositorio encontrado no workspace.'
@@ -318,14 +318,15 @@ function Get-RepoInfo {
     $branch = (git rev-parse --abbrev-ref HEAD 2>&1) | Select-Object -First 1
     $remote = (git remote get-url origin 2>&1)       | Select-Object -First 1
 
-    $ahead  = 0
+    $ahead = 0
     $behind = 0
     try {
-        $aheadRaw  = (git rev-list --count "origin/$branch..HEAD" 2>&1) | Select-Object -First 1
+        $aheadRaw = (git rev-list --count "origin/$branch..HEAD" 2>&1) | Select-Object -First 1
         $behindRaw = (git rev-list --count "HEAD..origin/$branch" 2>&1) | Select-Object -First 1
-        if ($aheadRaw  -match '^\d+$') { $ahead  = [int]$aheadRaw  }
+        if ($aheadRaw -match '^\d+$') { $ahead = [int]$aheadRaw }
         if ($behindRaw -match '^\d+$') { $behind = [int]$behindRaw }
-    } catch {}
+    }
+    catch {}
 
     $statusLines = @(git status --porcelain 2>&1 | Where-Object { $_ -ne '' })
 
@@ -436,8 +437,38 @@ function Invoke-Push {
         $out | ForEach-Object { Write-Host "  $_" -ForegroundColor Gray }
     }
     else {
-        Write-Err 'Push falhou:'
-        $out | ForEach-Object { Write-Host "  $_" -ForegroundColor Red }
+        $outText = $out -join "`n"
+        if ($outText -match 'non-fast-forward|rejected') {
+            Write-Warn 'Push rejeitado: o remoto tem commits que voce nao tem localmente.'
+            Write-Host ''
+            $resp2 = Read-Host '  Fazer pull --rebase e tentar novamente? (s/N)'
+            if ($resp2 -match '^[sS]$') {
+                Write-Info 'Executando: git pull --rebase origin $($info.Branch)...'
+                $pullOut = git pull --rebase origin $info.Branch 2>&1
+                $pullOut | ForEach-Object { Write-Host "  $_" -ForegroundColor Gray }
+                if ($LASTEXITCODE -ne 0) {
+                    Write-Err 'Rebase falhou. Resolva os conflitos manualmente e tente novamente.'
+                    return
+                }
+                Write-OK 'Rebase concluido. Tentando push novamente...'
+                $out2 = git push origin $info.Branch 2>&1
+                if ($LASTEXITCODE -eq 0) {
+                    Write-OK 'Push concluido com sucesso apos rebase.'
+                    $out2 | ForEach-Object { Write-Host "  $_" -ForegroundColor Gray }
+                }
+                else {
+                    Write-Err 'Push falhou mesmo apos rebase:'
+                    $out2 | ForEach-Object { Write-Host "  $_" -ForegroundColor Red }
+                }
+            }
+            else {
+                Write-Host '  Cancelado. Use a opcao 8 (Sincronizar) para pull + push automatico.' -ForegroundColor DarkGray
+            }
+        }
+        else {
+            Write-Err 'Push falhou:'
+            $out | ForEach-Object { Write-Host "  $_" -ForegroundColor Red }
+        }
     }
 }
 
@@ -487,11 +518,11 @@ function Show-Branches {
 
     Write-Bold 'Branches LOCAIS:'
     git branch --format '%(refname:short) %(upstream:short)' | ForEach-Object {
-        $parts    = ($_ -split '\s+', 2)
-        $local    = $parts[0]
+        $parts = ($_ -split '\s+', 2)
+        $local = $parts[0]
         $upstream = if ($parts.Count -gt 1 -and $parts[1] -ne '') { $parts[1] } else { '(sem tracking remoto)' }
-        $marker   = if ($local -eq $current) { '  * ' } else { '    ' }
-        $color    = if ($local -eq $current) { 'Green' } else { 'White' }
+        $marker = if ($local -eq $current) { '  * ' } else { '    ' }
+        $color = if ($local -eq $current) { 'Green' } else { 'White' }
         Write-Host "$marker$local  ->  $upstream" -ForegroundColor $color
     }
 
@@ -509,11 +540,11 @@ function Switch-Branch {
     Write-Header 'TROCAR DE BRANCH'
     git fetch --quiet 2>&1 | Out-Null
 
-    $current    = (git rev-parse --abbrev-ref HEAD 2>&1) | Select-Object -First 1
-    $localList  = @(git branch --format '%(refname:short)')
+    $current = (git rev-parse --abbrev-ref HEAD 2>&1) | Select-Object -First 1
+    $localList = @(git branch --format '%(refname:short)')
     $remoteList = @(git branch -r --format '%(refname:short)' | Where-Object { $_ -notmatch 'HEAD' })
 
-    $allNames    = [System.Collections.Generic.List[string]]::new()
+    $allNames = [System.Collections.Generic.List[string]]::new()
     $allIsRemote = [System.Collections.Generic.List[bool]]::new()
     $idx = 1
 
@@ -552,9 +583,9 @@ function Switch-Branch {
     $n = [int]$choice - 1
     if ($n -lt 0 -or $n -ge $allNames.Count) { Write-Err 'Opcao invalida.'; return }
 
-    $selectedName     = $allNames[$n]
+    $selectedName = $allNames[$n]
     $selectedIsRemote = $allIsRemote[$n]
-    $branchName       = $selectedName -replace '^origin/', ''
+    $branchName = $selectedName -replace '^origin/', ''
 
     if ($selectedIsRemote) {
         $out = git checkout -b $branchName --track $selectedName 2>&1
@@ -623,7 +654,7 @@ function Show-RepoInfo {
     Write-Header 'INFORMACOES DO REPOSITORIO'
     git fetch --quiet 2>&1 | Out-Null
 
-    $info   = Get-RepoInfo
+    $info = Get-RepoInfo
     $remAll = @(git remote -v 2>&1 | Select-String 'fetch' | ForEach-Object { $_.Line })
 
     Write-Bold "Caminho local     : $($info.LocalPath)"
@@ -660,7 +691,7 @@ function Show-RepoInfo {
 
     Write-Host ''
     Write-Bold 'Configuracoes Git do usuario:'
-    $gitName  = git config user.name  2>&1
+    $gitName = git config user.name  2>&1
     $gitEmail = git config user.email 2>&1
     Write-Host "  user.name  : $gitName"  -ForegroundColor Gray
     Write-Host "  user.email : $gitEmail" -ForegroundColor Gray
@@ -681,7 +712,7 @@ function Invoke-DeployPages {
     }
 
     # Descobrir scripts de deploy disponiveis no package.json
-    $pkgJson    = Get-Content $packageFile -Raw | ConvertFrom-Json
+    $pkgJson = Get-Content $packageFile -Raw | ConvertFrom-Json
     $allScripts = $pkgJson.scripts.PSObject.Properties.Name
 
     $deployOptions = [System.Collections.Generic.List[PSCustomObject]]::new()
@@ -692,7 +723,7 @@ function Invoke-DeployPages {
         $deployOptions.Add([PSCustomObject]@{ Label = 'Dominio proprio (CNAME configurado)'; Script = 'deploy:domain'; Color = 'Yellow' })
     }
     # fallback: qualquer script que comece com 'deploy' e nao seja alias dos dois acima
-    foreach ($s in ($allScripts | Where-Object { $_ -like 'deploy*' -and $_ -notin @('deploy:pages','deploy:domain') })) {
+    foreach ($s in ($allScripts | Where-Object { $_ -like 'deploy*' -and $_ -notin @('deploy:pages', 'deploy:domain') })) {
         $deployOptions.Add([PSCustomObject]@{ Label = $s; Script = $s; Color = 'Cyan' })
     }
 
@@ -705,7 +736,8 @@ function Invoke-DeployPages {
     if ($deployOptions.Count -eq 1) {
         $deployScript = $deployOptions[0].Script
         Write-Info "Usando: $deployScript"
-    } else {
+    }
+    else {
         $letters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'
         Write-Host '  Modalidade de deploy:' -ForegroundColor White
         for ($i = 0; $i -lt $deployOptions.Count; $i++) {
@@ -729,7 +761,8 @@ function Invoke-DeployPages {
 
     if ($Force) {
         Write-Warn 'Modo FORCE: ignorando checagem de arquivos nao commitados.'
-    } else {
+    }
+    else {
         Write-Info 'Verificando se ha alteracoes nao commitadas...'
         $statusLines = @(git status --porcelain 2>&1 | Where-Object { $_ -ne '' })
         if ($statusLines.Count -gt 0) {
@@ -764,7 +797,7 @@ function Invoke-DeployPages {
         if (-not $siteUrl) {
             $remote = (git remote get-url origin 2>&1) | Select-Object -First 1
             if ($remote -match 'github\.com[:/](.+?)(?:\.git)?$') {
-                $slug  = $Matches[1]           # ex: wesleyzilva/dradaianaferraz_gold
+                $slug = $Matches[1]           # ex: wesleyzilva/dradaianaferraz_gold
                 $parts = $slug -split '/'
                 $siteUrl = "https://$($parts[0]).github.io/$($parts[1])/"
             }
@@ -775,11 +808,11 @@ function Invoke-DeployPages {
         Write-Host '  VALIDACOES POS-DEPLOY' -ForegroundColor Cyan
         Write-Host '  ============================================' -ForegroundColor Cyan
         # Coleta dados do commit e repo remoto para exibir nas validacoes
-        $lastCommit  = (git log --oneline -1 2>&1) | Select-Object -First 1
-        $remote      = (git remote get-url origin 2>&1) | Select-Object -First 1
-        $repoSlug    = if ($remote -match 'github\.com[:/](.+?)(?:\.git)?$') { $Matches[1] } else { $null }
-        $actionsUrl  = if ($repoSlug) { "https://github.com/$repoSlug/actions" } else { $null }
-        $commitUrl   = if ($repoSlug -and $lastCommit -match '^([0-9a-f]+)') { "https://github.com/$repoSlug/commit/$($Matches[1])" } else { $null }
+        $lastCommit = (git log --oneline -1 2>&1) | Select-Object -First 1
+        $remote = (git remote get-url origin 2>&1) | Select-Object -First 1
+        $repoSlug = if ($remote -match 'github\.com[:/](.+?)(?:\.git)?$') { $Matches[1] } else { $null }
+        $actionsUrl = if ($repoSlug) { "https://github.com/$repoSlug/actions" } else { $null }
+        $commitUrl = if ($repoSlug -and $lastCommit -match '^([0-9a-f]+)') { "https://github.com/$repoSlug/commit/$($Matches[1])" } else { $null }
 
         if ($siteUrl) {
             Write-Host "  Site publicado em: $siteUrl" -ForegroundColor White
@@ -894,14 +927,16 @@ function Invoke-Rename {
         git push origin ":$currentBranch" 2>&1 | Out-Null
         if ($LASTEXITCODE -eq 0) {
             Write-OK "Branch remota '$currentBranch' removida."
-        } else {
+        }
+        else {
             Write-Warn "Branch remota '$currentBranch' nao encontrada (ignorado)."
         }
 
         $outPush = git push --set-upstream origin $newBranch 2>&1
         if ($LASTEXITCODE -eq 0) {
             Write-OK "Branch '$newBranch' publicada no remoto com tracking configurado."
-        } else {
+        }
+        else {
             Write-Err 'Falha ao publicar nova branch no remoto:'
             $outPush | ForEach-Object { Write-Host "  $_" -ForegroundColor Red }
         }
@@ -910,7 +945,7 @@ function Invoke-Rename {
     # ── Renomear pasta local ─────────────────────────────────────────────────
     if ($choice -in @('B', 'C')) {
         $currentFolder = Split-Path $RepoPath -Leaf
-        $parentFolder  = Split-Path $RepoPath -Parent
+        $parentFolder = Split-Path $RepoPath -Parent
         Write-Host ''
         Write-Host "  Pasta atual: $RepoPath" -ForegroundColor Cyan
         $newFolder = (Read-Host '  Novo nome da pasta (Enter = cancelar)').Trim()
@@ -950,7 +985,8 @@ function Invoke-Rename {
             Write-Host ''
             Write-Warn 'O script sera encerrado pois o caminho mudou.'
             Write-Info "Reabra o terminal em: $newPath\gitCommands"
-        } catch {
+        }
+        catch {
             Write-Err "Falha ao renomear pasta: $_"
             return
         }
@@ -980,15 +1016,15 @@ function Show-Menu {
 
     if (($info.CommitsAhead -eq 0) -and ($info.CommitsBehind -eq 0)) {
         $syncStatus = '[OK] Sincronizado'
-        $syncColor  = 'Green'
+        $syncColor = 'Green'
     }
     elseif ($info.CommitsAhead -gt 0) {
         $syncStatus = "[!] Local +$($info.CommitsAhead) a frente -> PUSH recomendado (opcao 7)"
-        $syncColor  = 'Yellow'
+        $syncColor = 'Yellow'
     }
     else {
         $syncStatus = "[!] Remoto +$($info.CommitsBehind) a frente -> use opcao 5 (pull) ou 8 (sync)"
-        $syncColor  = 'Yellow'
+        $syncColor = 'Yellow'
     }
 
     $uncommitedMsg = ''
@@ -1052,21 +1088,21 @@ while ($true) {
     Write-Host ''
 
     switch ($opcao.Trim()) {
-        '1'  { Show-CompareStatus              }
-        '2'  { Show-RepoInfo                   }
-        '3'  { Show-Branches                   }
-        '4'  { Switch-Branch                   }
-        '5'  { Invoke-Pull                     }
-        '6'  { Invoke-RandomCommit             }
-        '7'  { Invoke-Push                     }
-        '8'  { Invoke-SyncPush                 }
-        '9'  { Invoke-DeployPages              }
-        '10' { Invoke-DeployPages -Force       }
-        '11' { Invoke-CloneAndAddToWorkspace   }
-        '12' { Invoke-RemoveFromWorkspace      }
-        '13' { Invoke-ForcePushToMain          }
-        '14' { Invoke-Rename                   }
-        '0'  { Write-Host "`n  Ate logo!`n" -ForegroundColor Cyan; exit 0 }
+        '1' { Show-CompareStatus }
+        '2' { Show-RepoInfo }
+        '3' { Show-Branches }
+        '4' { Switch-Branch }
+        '5' { Invoke-Pull }
+        '6' { Invoke-RandomCommit }
+        '7' { Invoke-Push }
+        '8' { Invoke-SyncPush }
+        '9' { Invoke-DeployPages }
+        '10' { Invoke-DeployPages -Force }
+        '11' { Invoke-CloneAndAddToWorkspace }
+        '12' { Invoke-RemoveFromWorkspace }
+        '13' { Invoke-ForcePushToMain }
+        '14' { Invoke-Rename }
+        '0' { Write-Host "`n  Ate logo!`n" -ForegroundColor Cyan; exit 0 }
         default { Write-Warn 'Opcao invalida. Digite um numero entre 0 e 14.' }
     }
 
