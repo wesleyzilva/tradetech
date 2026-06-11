@@ -10,9 +10,9 @@
     SL=280 suporta 1.5 candle de oscilacao normal sem ser stopado
     TP=840 exige movimento de ~4.5 candles (tendencia real, nao ruido)
     MAX=12 barras = 60 min maximo em posicao (tempo para TP ser atingido)
-    BE armado com lucro >= 33% do TP = 280 pts (=SL, protege capital)
+    Perfil fiel vencedor: SL/TP/MAX/horario, sem BE, trailing ou stop contra
   Backtest 50k candles 2024-2026 WIN 5min:
-    SL=280 TP=840 MAX=12: WR=40.3% be=25.0% PnL=+38.843 pts (POSITIVO)
+    SL=280 TP2=560 TP3=840 MAX=12: WR=40.3% PnL=+32.720 pts (POSITIVO)
     SL=75  TP=188 MAX=6 : WR=29.3% be=28.5% PnL=-21.446 pts (NEGATIVO)
 
   ============================================================
@@ -32,6 +32,7 @@
   — Sem filtro de medias moveis (reservado para V17)
   — Alerta visual de instabilidade: cyano/fucsia quando zona
     troca >= 3x em 5 candles (nao bloqueia entrada)
+  — Nivel 1 (55-70) fica visual por padrao; som apenas em F>=70
 
   ============================================================
   3. GESTAO DE RISCO — SCALP 5MIN
@@ -39,20 +40,15 @@
   — SL      : 280 pts = R$56/contrato  (1.5x range medio 5min)
   — TP Nivel 2 (forte  70-85) : 560 pts  RR 2.0  (280 x 2.0) = R$112/contrato
   — TP Nivel 3 (exaust >=85)  : 840 pts  RR 3.0  (280 x 3.0) = R$168/contrato
-  — BE      : 33% do TP ativo  (186 pts nv2 / 280 pts nv3)
-  — Trailing: 62% da distancia restante ao TP ativo (apos BE)
+  — BE/Trailing/Stop contra: desligados por padrao no perfil fiel vencedor
   — Sizing  : Capital x Risco% / (SL x PontoValor)  [max 3 contratos]
+  — Reentrada no mesmo candle bloqueada por padrao apos qualquer saida
 
   Saidas antecipadas (ordem de prioridade):
     a) Hard SL intrabar via Low/High  (280 pts)
-    b) Stop candle contra: forca oposta >= 70
-    c) Break-even por cor oposta (candle fecha contra posicao)
-    d) Break-even por 5 candles brancos consecutivos
-    e) Break-even classico: lucro >= 33% do TP (186/280 pts)
-    f) Trailing proporcional apos BE: passo = 62% da dist. restante
-       (piso 10% do TP = 56/84 pts)
-    g) Stop horario: 17h45
-    h) Max barras em posicao: 12 candles (= 60 min)
+    b) Take Profit hard: 560 pts (forte) ou 840 pts (exaustao)
+    c) Stop horario: 17h45
+    d) Max barras em posicao: 12 candles (= 60 min)
 
   === STATUS ===
     Backtesteado 50k candles 2024-2026. Operar em conta demo antes do real.
@@ -69,13 +65,13 @@ input
 
   // === STOP / ALVO — SCALP 5MIN ===
   // SL=280 = 1.5x range medio 5min (187pts) → suporta ruido intracandle
-  // TP2=560 = RR 2.0 | TP3=840 = RR 3.0 → break-even em 25% de acerto
+  // TP2=560 = RR 2.0 | TP3=840 = RR 3.0 → equilibrio estatistico abaixo de 50% WR
   StopMinimo(280.0);
   FatorRangeSL(0.0);
   TakeProfitNivel2(560.0);      // RR 2.0 — zona forte  (70-85) = R$112/contrato
   TakeProfitNivel3(840.0);      // RR 3.0 — zona exaustao (>=85) = R$168/contrato
-  UsarBreakEven(true);
-  BreakEvenRatio(0.333);
+  UsarBreakEven(false);
+  BreakEvenRatio(0.333);        // reservado para testes; desligado no perfil fiel
 
   // === V16: SL menor que valor do sinal ===
   // SCALP: manter false — SL=280 nao deve ser comprimido pelo corpo do candle
@@ -83,9 +79,9 @@ input
   PctSLvsCorpo(0.9);            // ignorado quando UsarSLMenorQueSinal=false
 
   // === V16: Trailing proporcional ===
-  UsarTrailingProporcional(true);
-  TrailingPctInicial(0.62);     // passo = 62% da distancia restante ao TP
-  TrailingPctPiso(0.10);        // piso de 10% do TP
+  UsarTrailingProporcional(false);
+  TrailingPctInicial(0.62);     // reservado para testes
+  TrailingPctPiso(0.10);        // reservado para testes
 
   // === V16: Alertas visuais ===
   UsarAlertaInstabilidade(true);
@@ -94,9 +90,10 @@ input
   UsarAlertaMudancaTardia(false); // OPCIONAL — aproximacao por proximidade da borda
   PctBordaZona(0.10);           // |fForca| dentro de +/-10% do limiar
 
-  // === V16: BE adaptativo ===
-  UsarBEPorCorOposta(true);
-  CandlesBrancosParaBE(5);      // 5 brancos consecutivos -> BE
+  // === V16: BE adaptativo (desligado no perfil fiel) ===
+  UsarBEPorCorOposta(false);
+  ForcaMinimaBECorOposta(70.0); // reservado para testes
+  CandlesBrancosParaBE(0);      // 0 = BE por candles brancos desligado
 
   // === GERENCIAMENTO DE RISCO ===
   CapitalReais(10000.0);
@@ -107,13 +104,15 @@ input
   // === SAIDAS ===
   StopHorario_H(17);
   StopHorario_M(45);
-  UsarStopCandleContra(true);
+  UsarStopCandleContra(false);
   ForcaStopContra(70.0);
-  PermitirReversao(true);
+  PermitirReversao(false);
+  BloquearReentradaMesmoCandle(true); // se saiu neste candle, aguarda o proximo candle para nova entrada
   MaxBarrasEmPosicao(12);       // 12 barras x 5min = 60 min maximo em posicao
 
   // === ALERTAS ===
   MostrarAlertas(true);
+  AlertarNivel1(false);          // false = nao tocar som em 55-70; reduz ruido operacional
   HabilitarOperacoes(true);
 
 var
@@ -121,7 +120,7 @@ var
   fMassa, fAceleracao, fForca, fForcaAbs : float;
   r, g, b : integer;
   iBarras : integer;
-  bDeveOperar, bBreakEven : boolean;
+  bDeveOperar, bBreakEven, bSaiuNesteCandle : boolean;
   fEntrada, fSL, fSLAtivo : float;
   fTPAtivo : float;             // TP ativo definido na entrada (nivel 2 ou 3)
   iQtd : integer;
@@ -135,6 +134,8 @@ var
   fForcaAnterior : float;
 
 begin
+  bSaiuNesteCandle := false;
+
   // ─── Calculos base ────────────────────────────────────────────
   fCorpo := Close - Open;
   fCorpoAbs := abs(fCorpo);
@@ -206,7 +207,7 @@ begin
   if MostrarAlertas and (iZonaAtual <> iZonaAnterior) then
   begin
     // Nivel 1 — chegando (55-70): alerta informativo
-    if (abs(iZonaAtual) = 1) and (iZonaAnterior = 0) then
+    if AlertarNivel1 and (abs(iZonaAtual) = 1) and (iZonaAnterior = 0) then
     begin
       if iZonaAtual > 0 then Alert(RGB(210, 255, 210))   // verde claro: forca chegando compra
       else                    Alert(RGB(255, 220, 220));  // rosa claro: forca chegando venda
@@ -254,7 +255,11 @@ begin
   // ─── Stop horario ─────────────────────────────────────────────
   if Time() >= (StopHorario_H * 10000 + StopHorario_M * 100) then
   begin
-    if IsBought or IsSold then ClosePosition;
+    if IsBought or IsSold then
+    begin
+      ClosePosition;
+      bSaiuNesteCandle := true;
+    end;
     bDeveOperar := false;
   end
   else
@@ -273,7 +278,11 @@ begin
 
   if (MaxBarrasEmPosicao > 0) and (iBarras >= MaxBarrasEmPosicao) then
   begin
-    if IsBought or IsSold then ClosePosition;
+    if IsBought or IsSold then
+    begin
+      ClosePosition;
+      bSaiuNesteCandle := true;
+    end;
     iBarras := 0; bDeveOperar := false;
   end;
 
@@ -281,19 +290,31 @@ begin
   if IsBought and (Low <= fEntrada - fSLAtivo) then
   begin
     ClosePosition;
+    bSaiuNesteCandle := true;
     iBarras := 0;
   end;
   if IsSold and (High >= fEntrada + fSLAtivo) then
   begin
     ClosePosition;
+    bSaiuNesteCandle := true;
     iBarras := 0;
   end;
 
   // ─── Stop candle contra ───────────────────────────────────────
   if UsarStopCandleContra then
   begin
-    if IsBought  and (fForca <= -ForcaStopContra) then begin ClosePosition; iBarras := 0; end;
-    if IsSold    and (fForca >= ForcaStopContra)  then begin ClosePosition; iBarras := 0; end;
+    if IsBought and (fForca <= -ForcaStopContra) then
+    begin
+      ClosePosition;
+      bSaiuNesteCandle := true;
+      iBarras := 0;
+    end;
+    if IsSold and (fForca >= ForcaStopContra) then
+    begin
+      ClosePosition;
+      bSaiuNesteCandle := true;
+      iBarras := 0;
+    end;
   end;
 
   // ─── [V16] BE adaptativo (cor oposta / 5 brancos consecutivos)
@@ -305,11 +326,11 @@ begin
     else
       iCandlesBrancos := 0;
 
-    // BE por cor oposta
+    // BE por forca oposta operacional
     if UsarBEPorCorOposta and (not bBreakEven) then
     begin
-      if IsBought and (iZonaAtual < 0) then bBreakEven := true;
-      if IsSold   and (iZonaAtual > 0) then bBreakEven := true;
+      if IsBought and (fForca <= -ForcaMinimaBECorOposta) then bBreakEven := true;
+      if IsSold   and (fForca >=  ForcaMinimaBECorOposta) then bBreakEven := true;
     end;
 
     // BE por 5 brancos
@@ -327,8 +348,18 @@ begin
       if (fEntrada - Close) >= (fTPAtivo * BreakEvenRatio) then bBreakEven := true;
     if bBreakEven then
     begin
-      if IsBought  and (Close <= fEntrada) then begin ClosePosition; iBarras := 0; end;
-      if IsSold    and (Close >= fEntrada) then begin ClosePosition; iBarras := 0; end;
+      if IsBought and (Close <= fEntrada) then
+      begin
+        ClosePosition;
+        bSaiuNesteCandle := true;
+        iBarras := 0;
+      end;
+      if IsSold and (Close >= fEntrada) then
+      begin
+        ClosePosition;
+        bSaiuNesteCandle := true;
+        iBarras := 0;
+      end;
     end;
   end;
 
@@ -348,31 +379,55 @@ begin
       if Close - fPassoTrail > fTrailingRef then
         fTrailingRef := Close - fPassoTrail;
       if (fTrailingRef > fEntrada) and (Low <= fTrailingRef) then
-        begin ClosePosition; iBarras := 0; end;
+      begin
+        ClosePosition;
+        bSaiuNesteCandle := true;
+        iBarras := 0;
+      end;
     end;
     if IsSold then
     begin
       if (fTrailingRef = 0) or (Close + fPassoTrail < fTrailingRef) then
         fTrailingRef := Close + fPassoTrail;
       if (fTrailingRef < fEntrada) and (High >= fTrailingRef) then
-        begin ClosePosition; iBarras := 0; end;
+      begin
+        ClosePosition;
+        bSaiuNesteCandle := true;
+        iBarras := 0;
+      end;
     end;
   end;
 
   // ─── Take Profit hard ─────────────────────────────────────────
-  if IsBought  and (High >= fEntrada + fTPAtivo) then begin ClosePosition; iBarras := 0; end;
-  if IsSold    and (Low  <= fEntrada - fTPAtivo) then begin ClosePosition; iBarras := 0; end;
+  if IsBought and (High >= fEntrada + fTPAtivo) then
+  begin
+    ClosePosition;
+    bSaiuNesteCandle := true;
+    iBarras := 0;
+  end;
+  if IsSold and (Low <= fEntrada - fTPAtivo) then
+  begin
+    ClosePosition;
+    bSaiuNesteCandle := true;
+    iBarras := 0;
+  end;
 
   // ─── ENTRADAS — sinais de forca exclusivamente ───────────────
-  if HabilitarOperacoes and bDeveOperar then
+  if HabilitarOperacoes and bDeveOperar
+     and ((not BloquearReentradaMesmoCandle) or (not bSaiuNesteCandle)) then
   begin
     // COMPRA — nivel 2 (forte 70-85) ou nivel 3 (exaustao >=85)
     if (fForca >= ForcaMinimaForte)
       and (fForca[1] < ForcaMinimaForte)
       and ((not UsarFiltroVolume) or ((fCorpo > 0) and (Volume >= fVolMedia))) then
     begin
-      if PermitirReversao and IsSold then ClosePosition;
-      if (not IsBought) and (not IsSold) then
+      if PermitirReversao and IsSold then
+      begin
+        ClosePosition;
+        bSaiuNesteCandle := true;
+      end;
+      if ((not BloquearReentradaMesmoCandle) or (not bSaiuNesteCandle))
+        and (not IsBought) and (not IsSold) then
       begin
         if fForca >= ForcaExaustao then
           fTPAtivo := TakeProfitNivel3    // RR 3.0 (280 x 3)
@@ -394,8 +449,13 @@ begin
       and (fForca[1] > -ForcaMinimaForte)
       and ((not UsarFiltroVolume) or ((fCorpo < 0) and (Volume >= fVolMedia))) then
     begin
-      if PermitirReversao and IsBought then ClosePosition;
-      if (not IsBought) and (not IsSold) then
+      if PermitirReversao and IsBought then
+      begin
+        ClosePosition;
+        bSaiuNesteCandle := true;
+      end;
+      if ((not BloquearReentradaMesmoCandle) or (not bSaiuNesteCandle))
+        and (not IsBought) and (not IsSold) then
       begin
         if fForca <= -ForcaExaustao then
           fTPAtivo := TakeProfitNivel3    // RR 3.0 (280 x 3)
