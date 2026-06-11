@@ -41,7 +41,7 @@
   — TP Nivel 3 (exaust >=85)  : 840 pts  RR 3.0  (280 x 3.0) = R$168/contrato
   — BE      : 33% do TP ativo  (186 pts nv2 / 280 pts nv3)
   — Trailing: 62% da distancia restante ao TP ativo (apos BE)
-  — Sizing  : Capital x Risco% / (SL x PontoValor)  [max 5 contratos]
+  — Sizing  : Capital x Risco% / (SL x PontoValor)  [max 3 contratos]
 
   Saidas antecipadas (ordem de prioridade):
     a) Hard SL intrabar via Low/High  (280 pts)
@@ -102,7 +102,7 @@ input
   CapitalReais(10000.0);
   RiscoPorcentagem(1.0);
   PontoValorReais(0.20);
-  MaxContratos(5);
+  MaxContratos(3);              // teto do calculo; configure a quantidade no Profit <= 3
 
   // === SAIDAS ===
   StopHorario_H(17);
@@ -240,9 +240,10 @@ begin
 
   // ─── Sizing por risco ─────────────────────────────────────────
   // iQtd = Capital x Risco% / (SL x PontoValor)
-  // Com Capital=10k, Risco=1%, SL=280, PV=0.20 → iQtd=1 contrato
-  // Nota: BuyAtMarket/SellShortAtMarket sem parametro = 1 contrato (padrao NTSL).
-  // Para multi-contrato, substituir por BuyAtMarket(iQtd) apos validar em demo.
+  // Com Capital=10k, Risco=1%, SL=280, PV=0.20 → iQtd=1 contrato.
+  // Com Risco=2%, iQtd=3 contratos (limitado por MaxContratos=3).
+  // Nota: BuyAtMarket/SellShortAtMarket sem parametro usa a quantidade configurada no Profit.
+  // Configure a quantidade do contrato <= iQtd e nunca acima de 3 ate validar BuyAtMarket(iQtd).
   if (fSL > 0) and (PontoValorReais > 0) then
     iQtd := CapitalReais * (RiscoPorcentagem / 100) / (fSL * PontoValorReais)
   else

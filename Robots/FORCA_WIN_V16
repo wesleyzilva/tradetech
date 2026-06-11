@@ -116,7 +116,7 @@ input
   CapitalReais(10000.0);
   RiscoPorcentagem(1.0);
   PontoValorReais(0.20);
-  MaxContratos(5);
+  MaxContratos(3);              // teto do calculo; configure a quantidade no Profit <= 3
 
   // === SAIDAS ===
   StopHorario_H(17);
@@ -274,7 +274,8 @@ begin
   if iQtd > MaxContratos then iQtd := MaxContratos;
   // NOTA: BuyAtMarket/SellShortAtMarket nesta plataforma usam a quantidade
   // configurada no contrato do robo. Ajuste essa quantidade para o iQtd
-  // calculado acima; ordem parametrizada BuyAtMarket(n) ainda nao confirmada no Profit.
+  // calculado acima e nunca acima de 3; ordem parametrizada BuyAtMarket(n)
+  // ainda nao confirmada no Profit.
 
   // ─── Stop horario ─────────────────────────────────────────────
   if Time() >= (StopHorario_H * 10000 + StopHorario_M * 100) then

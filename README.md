@@ -1,11 +1,11 @@
 <h1 align="center">TradeTech — Daytrade Study & Research Repository</h1>
 
 <p align="center">
-  <em>A structured knowledge base for intraday trading — Dow Theory, technical indicators, price action, and algorithmic strategies applied to the Brazilian futures market (WIN/WDO B3)</em>
+  <em>A structured knowledge base for WIN intraday trading — Dow Theory, technical indicators, price action, and algorithmic strategies applied to the Brazilian mini-index futures market</em>
 </p>
 
 <p align="center">
-  <img src="https://img.shields.io/badge/Market-WIN%20%7C%20WDO%20B3-1B2A4A?style=for-the-badge"/>
+  <img src="https://img.shields.io/badge/Market-WIN%20B3-1B2A4A?style=for-the-badge"/>
   <img src="https://img.shields.io/badge/Approach-Price%20Action%20%2B%20Physics-FF6B35?style=for-the-badge"/>
   <img src="https://img.shields.io/badge/Timeframe-Intraday-27AE60?style=for-the-badge"/>
   <img src="https://img.shields.io/badge/Language-Python%20%7C%20NTSL%20%7C%20NTFL-3776AB?style=for-the-badge"/>
@@ -16,7 +16,9 @@
 
 ## Purpose
 
-This repository documents the systematic study of intraday trading structures applied to the Brazilian equity index futures (WIN) and dollar futures (WDO) on B3. It is organised as a living knowledge base — not a signal service — covering theory, indicator construction, backtesting methodology, and algorithmic robot development.
+This repository documents the systematic study of intraday trading structures applied to the Brazilian equity index futures (WIN) on B3. It is organised as a living knowledge base — not a signal service — covering theory, indicator construction, backtesting methodology, and algorithmic robot development.
+
+> **Operational focus:** current strategy work is exclusively WIN. The active manual, calibration and risk rules below are WIN-only.
 
 The core research hypothesis: **physics-derived force models (F = M × A) applied to candlestick structure provide a more objective measure of trend strength than standard oscillators.**
 
@@ -121,10 +123,8 @@ Robots and indicators developed on Neologica Profit platform targeting WIN B3:
 
 | Robot | Asset | TF | SL | TP | RR | Break-even | Status |
 |-------|-------|----|----|----|----|------------|--------|
-| `FORCA_SEMAFORO_CORES_SOM` | WDO/WIN | qualquer | fixo | configurável | configurável | ❌ | ✅ v9.0 — referência, não modificar |
+| `FORCA_SEMAFORO_CORES_SOM` | WIN | qualquer | fixo | configurável | configurável | ❌ | ✅ v9.0 — referência visual, não modificar |
 | `FORCA_SEMAFORO_V10` | qualquer | qualquer | dinâmico `max(fixo, range×0.75)` | configurável | configurável | ✅ `ratio=0.5` | ✅ v10 |
-| `FORCA_WDO_V11` | **WDO** | **15min** `60/30/15` | dinâmico `max(20, range×1.5)` | **60 pts** | **3.0** | ✅ `ratio=0.5` | ✅ v11 calibrado |
-| `FORCA_WDO_V11` | **WDO** | **5min** `30/15/5` | dinâmico `max(12, range×2.0)` | **36 pts** | **3.0** | ✅ `ratio=0.5` | ✅ v11 calibrado |
 | `FORCA_WIN_V11` | **WIN** | **15min** `60/30/15` | dinâmico `max(822, range×2.0)` | **2466 pts** | **3.0** | ✅ `ratio=0.5` | ✅ baseline calibrado |
 | `FORCA_WIN_V14` | **WIN** | **15min** | dinâmico `max(822, range×2.0)` | **2466 pts** | **3.0** | ✅ `ratio=0.5` | 🧪 V11 + filtro 1º candle + hard SL intrabar |
 | `FORCA_WIN_V16` | **WIN** | **15min** MA5/MA20 | **75 pts** | **150 pts** | **2.0** | ✅ `ratio=0.333` + adaptativo | 🧪 swing curto, não rebacktestado |
@@ -139,9 +139,8 @@ All robots share the same core formula **F = M × A**. What differs is **when to
 
 | Robot | Asset | Entry filter | Break-even | RR | Observação |
 |-------|-------|-------------|------------|-----|------------|
-| `FORCA_SEMAFORO_CORES_SOM` | WDO/WIN | F ≥ 55 degradê | ❌ não tem | config | Referência visual — **não modificar** |
+| `FORCA_SEMAFORO_CORES_SOM` | WIN | F ≥ 55 degradê | ❌ não tem | config | Referência visual — **não modificar** |
 | `FORCA_SEMAFORO_V10` | qualquer | F ≥ 55 ou F ≥ 70 (toggle) | ✅ `BreakEvenRatio=0.5` | config | Genérico — configure por ativo/TF |
-| `FORCA_WDO_V11` | WDO | F ≥ 70 (fraco descartado) | ✅ `BreakEvenRatio=0.5` | **3.0** | 47.786 candles · win 39.5% |
 | `FORCA_WIN_V11` | WIN | F ≥ 70 (fraco descartado) | ✅ `BreakEvenRatio=0.5` | **3.0** | Baseline estatístico; exaustão win 44.6% |
 | `FORCA_WIN_V16` | WIN 15min | F ≥ 70 no 1º candle + MA5/MA20 + volume | ✅ `0.333` + cor oposta + 5 brancos | **2.0** | Swing curto; não rebacktestado |
 | **`FORCA_WIN_V16_scalper_sinaisForca`** | **WIN 5min** | **F ≥ 70 no 1º candle + volume direcional** | ✅ **`0.333` + cor oposta + 5 brancos** | **2.0 (forte) / 3.0 (exaustão)** | 🎯 **FOCO ATUAL — WR 40.3% · +38.843 pts · 50k candles** |
@@ -171,6 +170,18 @@ All robots share the same core formula **F = M × A**. What differs is **when to
 4. **Gatilho de entrada:** `fForca >= 70 AND fForca[1] < 70` (1º candle da força) + `fCorpo > 0 AND Volume >= MediaVolume(20)` (compra); simétrico para venda.
 5. **TP dinâmico por zona:** exaustão (F ≥ 85) → TP3 = 840 pts (RR 3.0); forte (70–85) → TP2 = 560 pts (RR 2.0).
 6. **Gestão de risco:** SL=280 pts · BE em 33% do TP ativo · trailing proporcional 62% após BE · máximo 12 barras (60 min).
+
+### Melhor estratégia de saída: BE primeiro, trailing depois
+
+Para o WIN 5min, a melhor estratégia operacional é **break-even como trava defensiva primeiro** e **trailing stop apenas depois que o BE já estiver armado**. Trailing desde a entrada tende a cortar vencedor cedo demais; BE puro protege capital, mas devolve lucro quando o movimento continua. A combinação atual resolve os dois lados:
+
+| Fase | Regra | Por quê |
+|------|-------|---------|
+| Entrada até BE | SL fixo 280 pts + stop candle contra | Dá espaço para o ruído normal do 5min |
+| BE armado | Lucro ≥ 33% do TP ativo, cor oposta, ou 5 candles brancos | Remove risco quando o trade já provou deslocamento |
+| Pós-BE | Trailing proporcional 62% da distância restante ao TP, piso 10% | Preserva lucro sem sufocar o movimento antes da confirmação |
+
+> Decisão: **não usar trailing antes do break-even**. Para estas operações, o trailing é ferramenta de captura após confirmação; o BE é a primeira proteção.
 
 ### Manual de operação — passo a passo
 
@@ -205,9 +216,9 @@ All robots share the same core formula **F = M × A**. What differs is **when to
 | Capital | Risco | SL | Risco/contrato | Contratos |
 |---------|-------|----|---------------|-----------|
 | R$10k | 1% = R$100 | 280 pts × R$0.20 = R$56 | R$56 | **1 contrato** ✅ |
-| R$10k | 2% = R$200 | 280 pts × R$0.20 = R$56 | R$56 | **3 contratos** ✅ |
+| R$10k | 2% = R$200 | 280 pts × R$0.20 = R$56 | R$56 | **3 contratos (teto)** ✅ |
 
-> Com `CapitalReais=10000`, `RiscoPorcentagem=1`, `SL=280`, `PontoValorReais=0.20` → `iQtd = 1` contrato. O robô calcula mas a quantidade é configurada no contrato da plataforma.
+> Com `CapitalReais=10000`, `RiscoPorcentagem=1`, `SL=280`, `PontoValorReais=0.20` → `iQtd = 1` contrato. Com risco de 2%, `iQtd` fica limitado a **3 contratos** por `MaxContratos=3`. A ordem NTSL ainda usa a quantidade configurada no Profit; configure a quantidade do contrato **<= iQtd e nunca acima de 3** até validar ordem parametrizada (`BuyAtMarket(iQtd)`).
 
 ### Status dos gaps
 
@@ -229,11 +240,6 @@ Análise visual / aprendizado
 
 Qualquer ativo ou TF personalizado
   └─► FORCA_SEMAFORO_V10 — configure SL/TP/thresholds por ativo
-
-WDO (mini-dólar) — execução automática
-  └─► FORCA_WDO_V11
-        15min (tripleta 60/30/15): iJanelaDir=2 · iJanelaCtx=4 · SL=20 · TP=60
-         5min (tripleta 30/15/5) : iJanelaDir=3 · iJanelaCtx=6 · SL=12 · TP=36
 
 WIN (mini-índice) — execução automática
   ├─► FORCA_WIN_V11 — baseline estatístico calibrado
@@ -269,9 +275,8 @@ V14+ execution robots use the newer green/red intensity palette. In V16, cyano/f
 ```
 tradetech/
 ├── Robots/                        NTSL/NTFL robot and indicator source code
-│   ├── FORCA_SEMAFORO_CORES_SOM   v9.0 — original rainbow semaphore (WDO/WIN)
+│   ├── FORCA_SEMAFORO_CORES_SOM   v9.0 — original rainbow semaphore (referência visual)
 │   ├── FORCA_SEMAFORO_V10         v10  — genérico, SL dinâmico, break-even, qualquer TF
-│   ├── FORCA_WDO_V11              v11  — WDO · SL=20(15min)/12(5min) · TP RR3 · BE=0.5
 │   ├── FORCA_WIN_V11              v11  — WIN · baseline estatístico
 │   ├── FORCA_WIN_V14..V17         versões experimentais WIN
 │   ├── CHANGELOG.md               histórico de decisões por versão
@@ -290,75 +295,41 @@ tradetech/
 
 ---
 
-## Market Calibration — 2026 Data
+## Market Calibration — WIN 2026 Data
 
-Calibrated on **47,786 candles (WDO) and 47,787 candles (WIN)** · full historical series 2012–2026.
+Operational calibration is WIN-only. The current execution robot is `FORCA_WIN_V16_scalper_sinaisForca` on the 5min chart.
 
 ### Current Range Reference (2026 actual vs historical)
 
-| Asset | TF | Historical avg range | **2026 avg range** | Change | Multiplier used |
-|-------|----|--------------------|-------------------|--------|----------------|
-| **WDO** | 15 min | 13.3 pts | **~17 pts** | +28% | 1.5× range |
-| **WDO** | 5 min | 6.1 pts | **~7.5 pts** | +23% | 2.0× range |
-| **WIN** | 15 min | 411 pts | **~480 pts** | +17% | 2.0× range |
-| **WIN** | 5 min | 171 pts | **~200 pts** | +17% | 2.0× range |
+| Asset | TF | Range reference | Scalper multiplier | SL used |
+|-------|----|----------------|--------------------|---------|
+| **WIN** | **5min** | **~187 pts** | **1.5× range** | **280 pts** |
+| **WIN** | 15min | ~480 pts | Context only in current workflow | No execution manual here |
 
-> ⚠️ **2026 context:** BRL fiscal/political uncertainty has pushed ranges **15–30% above** the historical average used in backtests. The robots' default SL values were calibrated on historical ranges — in a high-volatility regime they become too tight, causing more noise-based stops and degraded win rate.
+> ⚠️ **2026 context:** use the scalper's 280-point SL on WIN 5min. Do not compress the stop to increase contracts; the older 75-point setup tested negative on 5min.
 
 ---
 
-### 2026 SL/TP Adjustment — Recalibrate to Current Ranges
+### WIN Scalper 2026 — SL/TP/Contratos
 
-> **Rule:** SL must always equal `historical_multiplier × CURRENT range`. Never use historical SL on a higher-volatility environment.
-
-| Asset | TF | Backtest SL | 2026 Range avg | **2026 Adjusted SL** | **2026 TP (RR=3)** | Min capital for 1 contract |
-|-------|----|----|---|---|---|---|
-| WDO | 15 min | 20 pts | 17 pts | **25 pts** (+25%) | **75 pts** | R$25k @ 1% / R$12.5k @ 2% |
-| WDO | 5 min | 12 pts | 7.5 pts | **15 pts** (+25%) | **45 pts** | R$15k @ 1% / **R$7.5k @ 2%** |
-| WIN | 15 min | 822 pts | 480 pts | **960 pts** (+17%) | **2.880 pts** | R$19.2k @ 1% / **R$9.6k @ 2%** |
-| WIN | 5 min | 342 pts | 200 pts | **400 pts** (+17%) | **1.200 pts** | **R$8k @ 1%** / R$4k @ 2% |
-
-> **Do NOT reduce SL to get more contracts.** A tighter SL on the same timeframe = more premature stops = lower win rate = negative edge. If capital is the constraint, the solution is a **shorter timeframe** (smaller absolute SL) or **more capital**, never a compressed stop.
-
----
-
-### How much to adjust and with how many contracts — 2026 guide
-
-**The adjustment is always UPWARD, not downward:**
-
-- Historical SL was calibrated on avg range × multiplier (1.5× WDO, 2.0× WIN)
-- In 2026 ranges are ~17–28% larger → apply the **same multiplier to the current range**
-- Result: SL increases ~17–28% from the default robot values
-- TP follows (RR=3 is maintained)
-- Win rate should **improve or stay the same** because SL no longer clips on normal noise
+**Rule:** keep the 280-point SL and let position size adapt down/up within the 3-contract cap.
 
 ```
-2026 recalibration formula:
-  SL_2026 = ceil(current_range_avg × multiplier / 5) × 5   ← round to nearest 5pts
-  TP_2026 = SL_2026 × 3
-  contracts = floor(capital × risk% / (SL_2026 × point_value))
+WIN scalper sizing:
+  SL = 280 pts
+  TP2 = 560 pts (F 70-85, RR 2.0)
+  TP3 = 840 pts (F >=85, RR 3.0)
+  contracts = min(3, floor(capital × risk% / (280 × 0.20)))
 ```
 
-**Example with R$10k — 2026 adjusted:**
+**Example with R$10k:**
 
-| Capital | Risk | Asset | TF | SL 2026 | Risk/contract | Contracts |
-|---------|------|-------|----|----|---------------|----------|
-| R$10k | 1% = R$100 | **WIN** | **5 min** | 400 pts × R$0.20 = **R$80** | R$80 | **1 contract** ✅ |
-| R$10k | 2% = R$200 | WIN | 5 min | 400 pts × R$0.20 = R$80 | R$80 | **2 contracts** ✅ |
-| R$10k | 2% = R$200 | WDO | 5 min | 15 pts × R$10 = **R$150** | R$150 | **1 contract** ✅ |
-| R$10k | 1% = R$100 | WDO | 5 min | 15 pts × R$10 = R$150 | R$150 | 0 contracts ❌ |
-| R$10k | 2% = R$200 | WIN | 15 min | 960 pts × R$0.20 = **R$192** | R$192 | **1 contract** ✅ |
-| R$10k | 1% = R$100 | WIN | 15 min | 960 pts × R$0.20 = R$192 | R$192 | 0 contracts ❌ |
-| R$10k | any | WDO | 15 min | 25 pts × R$10 = R$250 | R$250 | ❌ needs R$12.5k+ |
+| Capital | Risk | Asset | TF | SL | Risk/contract | Dynamic cap |
+|---------|------|-------|----|----|---------------|-------------|
+| R$10k | 1% = R$100 | **WIN** | **5min** | 280 pts × R$0.20 | R$56 | **1 contrato** |
+| R$10k | 2% = R$200 | **WIN** | **5min** | 280 pts × R$0.20 | R$56 | **3 contratos (teto)** |
 
-**Best option in 2026 with R$10k:**
-
-| Rank | Option | SL | Actual risk | Contracts | Notes |
-|------|--------|----|------------|-----------|-------|
-| 🥇 1st | **WIN 5min @ 1%** | 400 pts · R$80 | R$80 (~0.8%) | 1 | Best risk/reward — WIN exaustão 44.6% win |
-| 🥈 2nd | **WIN 5min @ 2%** | 400 pts · R$80 | R$80 | 2 | 2 contracts if you accept 1.6% actual risk |
-| 🥉 3rd | **WIN 15min @ 2%** | 960 pts · R$192 | R$192 (~1.9%) | 1 | Fewer trades, more reliable signal |
-| 4th | WDO 5min @ 2% | 15 pts · R$150 | R$150 (~1.5%) | 1 | WDO has lower win% than WIN at exhaustion |
+> **Important:** the calculation is dynamic, but execution quantity is still controlled by the Profit contract setup because the current NTSL order calls use `BuyAtMarket` / `SellShortAtMarket` without quantity parameter. Until `BuyAtMarket(iQtd)` is validated in demo, set the Profit quantity manually to the calculated size and never above 3.
 
 ---
 
@@ -445,7 +416,6 @@ Robot documentation lives in `Robots/`. Older versions have individual `.md` fil
 | Robot | Documentation | Purpose |
 |-------|--------------|---------|
 | `INDICADOR_FORCA_V1` | [INDICADOR_FORCA_V1.md](Robots/INDICADOR_FORCA_V1.md) | Visual indicator — 7 cores, doji, volume gold |
-| `FORCA_WDO_V11` | [FORCA_WDO_V11.md](Robots/FORCA_WDO_V11.md) | WDO-calibrated robot — SL=20, TP=60, RR3 |
 | `FORCA_WIN_V11` | [FORCA_WIN_V11.md](Robots/FORCA_WIN_V11.md) | WIN-calibrated robot — SL=822, TP=2466, RR3 |
 | **`FORCA_WIN_V16_scalper_sinaisForca`** | [MAPA_FORCA_WIN.md](Robots/MAPA_FORCA_WIN.md), [RAID_LOG.md](Robots/RAID_LOG.md), [CHANGELOG.md](Robots/CHANGELOG.md) | 🎯 **FOCO ATUAL** — scalp 5min, SL=280, TP2/3 dinâmico, alertas multi-nível, BE adaptativo |
 | `FORCA_WIN_V16` | [FORCA_WIN_V14plus.md](Robots/FORCA_WIN_V14plus.md) | Swing curto 15min — MA5/MA20, SL=75, TP=150 |
@@ -507,7 +477,7 @@ TradeTech (this repository)
 ![Neologica NTSL](https://img.shields.io/badge/Neologica-NTSL-1B2A4A?style=flat-square)
 ![Neologica NTFL](https://img.shields.io/badge/Neologica-NTFL-2C3E50?style=flat-square)
 ![Jupyter](https://img.shields.io/badge/Jupyter-F37626?style=flat-square&logo=jupyter&logoColor=white)
-![B3 WIN](https://img.shields.io/badge/B3-WIN%20%7C%20WDO-003087?style=flat-square)
+![B3 WIN](https://img.shields.io/badge/B3-WIN-003087?style=flat-square)
 
 ---
 
