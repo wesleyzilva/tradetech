@@ -384,7 +384,7 @@ begin
         iBarras        := 0;
         bBreakEven     := false;
         iCandlesBrancos := 0;
-        if MostrarAlertas then Alert(RGB(0, 200, 0));
+        // som ja emitido no bloco de ALERTA por nivel acima (evita beep duplicado)
       end;
     end;
 
@@ -407,7 +407,7 @@ begin
         iBarras        := 0;
         bBreakEven     := false;
         iCandlesBrancos := 0;
-        if MostrarAlertas then Alert(RGB(200, 0, 0));
+        // som ja emitido no bloco de ALERTA por nivel acima (evita beep duplicado)
       end;
     end;
   end;

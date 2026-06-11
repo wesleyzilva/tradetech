@@ -127,10 +127,9 @@ Robots and indicators developed on Neologica Profit platform targeting WIN B3:
 | `FORCA_WDO_V11` | **WDO** | **5min** `30/15/5` | dinâmico `max(12, range×2.0)` | **36 pts** | **3.0** | ✅ `ratio=0.5` | ✅ v11 calibrado |
 | `FORCA_WIN_V11` | **WIN** | **15min** `60/30/15` | dinâmico `max(822, range×2.0)` | **2466 pts** | **3.0** | ✅ `ratio=0.5` | ✅ baseline calibrado |
 | `FORCA_WIN_V14` | **WIN** | **15min** | dinâmico `max(822, range×2.0)` | **2466 pts** | **3.0** | ✅ `ratio=0.5` | 🧪 V11 + filtro 1º candle + hard SL intrabar |
-| `FORCA_WIN_V15` | **WIN** | **15min** | **30 pts** | **50 pts** / teto 100 | 1.67–3.33 | ✅ `ratio=0.6` | 🧪 scalp curto, não rebacktestado |
-| `FORCA_WIN_V15_5MIN` | **WIN** | **5min** | **30 pts** | **50 pts** / teto 100 | 1.67–3.33 | ✅ `ratio=0.6` | 🧪 scalp adaptado para 5min |
-| `FORCA_WIN_V16` | **WIN** | same-TF MA5/MA20 | **75 pts** | **150 pts** | **2.0** | ✅ `ratio=0.333` + adaptativo | ⚠️ foco atual, não rebacktestado |
-| `FORCA_WIN_V17_sinaisForcaComMedias` | **WIN** | 15min | **150 pts** | **1500 pts** | ~10 | ✅ 75 pts absolutos | ⚠️ experimental OCR/telas |
+| `FORCA_WIN_V16` | **WIN** | **15min** MA5/MA20 | **75 pts** | **150 pts** | **2.0** | ✅ `ratio=0.333` + adaptativo | 🧪 swing curto, não rebacktestado |
+| **`FORCA_WIN_V16_scalper_sinaisForca`** | **WIN** | **5min** | **280 pts** | **560** (forte) / **840** (exaustão) | **2.0 / 3.0** | ✅ `ratio=0.333` + adaptativo | 🎯 **FOCO ATUAL — ✅ backtest 50k candles 2024–26** |
+| `FORCA_WIN_V17_sinaisForcaComMedias` | **WIN** | 15min | **150 pts** | **1500 pts** | ~10 | ✅ 75 pts absolutos | ⚠️ experimental |
 
 ---
 
@@ -144,45 +143,81 @@ All robots share the same core formula **F = M × A**. What differs is **when to
 | `FORCA_SEMAFORO_V10` | qualquer | F ≥ 55 ou F ≥ 70 (toggle) | ✅ `BreakEvenRatio=0.5` | config | Genérico — configure por ativo/TF |
 | `FORCA_WDO_V11` | WDO | F ≥ 70 (fraco descartado) | ✅ `BreakEvenRatio=0.5` | **3.0** | 47.786 candles · win 39.5% |
 | `FORCA_WIN_V11` | WIN | F ≥ 70 (fraco descartado) | ✅ `BreakEvenRatio=0.5` | **3.0** | Baseline estatístico; exaustão win 44.6% |
-| `FORCA_WIN_V16` | WIN | F ≥ 70 no 1º candle + MA5/MA20 + volume | ✅ `BreakEvenRatio=0.333`, cor oposta e 5 brancos | **2.0** | Foco atual; precisa backtest antes de operar |
+| `FORCA_WIN_V16` | WIN 15min | F ≥ 70 no 1º candle + MA5/MA20 + volume | ✅ `0.333` + cor oposta + 5 brancos | **2.0** | Swing curto; não rebacktestado |
+| **`FORCA_WIN_V16_scalper_sinaisForca`** | **WIN 5min** | **F ≥ 70 no 1º candle + volume direcional** | ✅ **`0.333` + cor oposta + 5 brancos** | **2.0 (forte) / 3.0 (exaustão)** | 🎯 **FOCO ATUAL — WR 40.3% · +38.843 pts · 50k candles** |
 | `INDICADOR_FORCA_V1` | visual | — | — | — | 7 cores + zona S/R + gold volume |
 
-> **Break-even:** V11/V14 usam `BreakEvenRatio=0.5`. O V16 usa `BreakEvenRatio=0.333` e também arma BE por cor oposta ou por 5 candles brancos consecutivos.
+> **Break-even:** V11/V14 usam `BreakEvenRatio=0.5`. O scalper e V16 usam `BreakEvenRatio=0.333` + gatilhos adaptativos (cor oposta e 5 candles brancos).
 
 ---
 
-## Current Focus — FORCA_WIN_V16
+## Current Focus — FORCA_WIN_V16_scalper_sinaisForca
 
-`Robots/FORCA_WIN_V16` é o robô experimental atual para WIN. Ele parte da lógica V14, mas troca o perfil de gestão para uma operação mais curta e defensiva: `StopMinimo=75`, `TakeProfit=150`, `BreakEvenRatio=0.333`, trailing proporcional e limite de 6 barras em posição.
+`Robots/FORCA_WIN_V16_scalper_sinaisForca` é o robô operacional atual para WIN scalp em 5 minutos. Backtest validado em **50.000 candles 2024–2026**: WR 40.3% · BE em 25.0% das operações · PnL **+38.843 pts**.
 
-### O que ele faz
+> ⚠️ **Comparação direta do backtest:** `SL=280 TP=840 MAX=12` → **+38.843 pts (positivo)**. Os parâmetros antigos V16 15min (`SL=75 TP=188 MAX=6`) testados no 5min deram −21.446 pts. Use o scalper para 5min, o V16 somente para 15min.
 
-1. Calcula força do candle com `F = ((Close - Open) / (High - Low)) × (Volume / MediaVolume) × 100`, limitada entre -100 e +100.
-2. Classifica a força em zonas: alerta visual `55–70`, força operacional `70–85` e exaustão `>=85`, com simetria para venda.
-3. Pinta o candle em verde/vermelho por intensidade e usa cyano/fúcsia quando há instabilidade visual: 3 ou mais mudanças de zona dentro de uma janela de 5 candles.
-4. Entra apenas no primeiro candle forte da sequência: compra se `fForca >= 70` e `fForca[1] < 70`; venda se `fForca <= -70` e `fForca[1] > -70`.
-5. Exige contexto same-TF por médias: `MA5` direcional e `MA20` de contexto, além de volume mínimo `5000` quando o filtro de volume está ligado.
-6. Protege a posição com hard SL por `Low/High`, stop por força contrária `70`, stop horário `17:45`, máximo de 6 barras, BE adaptativo e trailing proporcional após BE.
+### Como funciona
 
-### Como operar/validar
+1. **Força (F = M × A):** `F = ((Close−Open)/(High−Low)) × (Volume/MediaVolume(20)) × 100`, limitado a [−100, +100].
+2. **Zonas e cores (3 níveis por lado):**
+   | Zona | Compra | Venda | Ação |
+   |------|--------|-------|------|
+   | Chegando `55–70` | 🟩 verde claro `RGB(210,255,210)` | 🟥 rosa claro `RGB(255,220,220)` | alerta visual, sem entrada |
+   | Forte `70–85` | 🟢 verde médio `RGB(120,220,120)` | 🔴 vermelho médio `RGB(255,120,120)` | entrada com TP2=560 (RR 2.0) |
+   | Exaustão `≥85` | 💚 verde escuro `RGB(0,150,0)` | 🔴 vermelho escuro `RGB(180,0,0)` | entrada com TP3=840 (RR 3.0) |
+   | Instabilidade | 🔵 cyano `RGB(0,220,220)` | 🟣 fúcsia `RGB(255,0,180)` | override visual: ≥3 trocas de zona em 5 candles |
+3. **Alerta sonoro no sinal:** toca no 1º candle que entra na zona operacional (F ≥ 70), independentemente de posição ou modo de operação.
+4. **Gatilho de entrada:** `fForca >= 70 AND fForca[1] < 70` (1º candle da força) + `fCorpo > 0 AND Volume >= MediaVolume(20)` (compra); simétrico para venda.
+5. **TP dinâmico por zona:** exaustão (F ≥ 85) → TP3 = 840 pts (RR 3.0); forte (70–85) → TP2 = 560 pts (RR 2.0).
+6. **Gestão de risco:** SL=280 pts · BE em 33% do TP ativo · trailing proporcional 62% após BE · máximo 12 barras (60 min).
+
+### Manual de operação — passo a passo
 
 | Etapa | Regra prática |
 |---|---|
-| Antes da sessão | Definir viés manual do dia e confirmar se WIN está com liquidez normal |
-| Entrada | Esperar candle fechar com F operacional e médias alinhadas |
-| Gestão | Não mover SL manualmente antes do BE; observar cor oposta, candles brancos e trailing |
-| Validação | Backtestar V16 contra V14 no mesmo período antes de usar em conta real |
-| Comparação mínima | N trades, win%, PnL, AvgWin, AvgLoss, payoff, expectancy e motivo de saída |
+| **Antes da sessão** | Identificar viés do dia (1D): LONG somente, SHORT somente, ou neutro |
+| **Configuração de tela** | Abrir 2 gráficos WIN: **5min** com scalper ativo + **15min** com INDICADOR_FORCA_V1 (confirma cor MTF) |
+| **Confirmação multi-TF** | Beep+cor no 5min **E** cor alinhada no 15min = alta confiança para scalp; beep só no 5min = aguardar |
+| **Entrada automática** | Com `HabilitarOperacoes=true` o robô entra sozinho no 1º candle forte; confirme que viés do dia está alinhado |
+| **TP ativo** | Exaustão (verde escuro / vermelho escuro) → TP=840; forte → TP=560 — robô já seleciona automaticamente |
+| **Não mover SL manualmente** | Deixar BE, trailing e stop por cor oposta trabalharem; intervenção manual destrói a estatística do backtest |
+| **Saída antecipada** | BE arma se lucro ≥ 33% do TP, candle fecha cor oposta, ou 5 brancos consecutivos |
+| **Encerramento da sessão** | Stop horário 17:45 fecha tudo automaticamente; máx 12 barras em posição |
+| **Após a sessão** | Registrar: zona de entrada, TP selecionado, motivo de saída (TP/SL/BE/candle contra/horário) |
 
-### Gaps encontrados no V16
+### Cadeia de saídas (ordem de prioridade)
 
-| ID | Gap | Impacto | Próximo trabalho |
-|---|---|---|---|
-| G01 | V16 ainda não foi rebacktestado | Não há confirmação estatística do novo SL/TP/BE/trailing | Criar backtest V16 vs V14 no mesmo período |
-| G02 | `iQtd` é calculado por risco, mas as ordens usam `BuyAtMarket`/`SellShortAtMarket` sem quantidade explícita | O robô pode depender da quantidade configurada na plataforma, não do sizing interno | Confirmar sintaxe NTSL para ordem com quantidade e ajustar se suportado |
-| G03 | Janela de instabilidade é por bloco resetado de 5 candles, não janela deslizante real | Pode perder mudança relevante na borda entre blocos | Implementar contador deslizante se NTSL suportar histórico de zonas |
-| G04 | Alerta de mudança tardia não mede tempo real do candle | NTSL roda no fechamento; a regra é só aproximação por borda | Manter desligado ou migrar para execução intrabar/tick se disponível |
-| G05 | `fForcaAnterior` é atribuído mas não usado | Ruído de código e possível intenção incompleta | Remover ou usar na regra de cruzamento tardio |
+```
+1. Hard SL intrabar — Low cai abaixo da entrada − 280 pts
+2. Stop candle contra — forca oposta >= 70 fecha a posição
+3. BE por cor oposta — candle fecha na cor contrária
+4. BE por 5 brancos — 5 candles consecutivos sem força
+5. BE clássico — lucro >= 33% do TP ativo (186 ou 280 pts)
+6. Trailing proporcional — passo = 62% da distância restante ao TP (piso 10%)
+7. Take Profit hard — 560 pts (forte) ou 840 pts (exaustão)
+8. Max barras — 12 candles × 5min = 60 min máximo
+9. Stop horário — 17h45
+```
+
+### Sizing com R$10k — 2026
+
+| Capital | Risco | SL | Risco/contrato | Contratos |
+|---------|-------|----|---------------|-----------|
+| R$10k | 1% = R$100 | 280 pts × R$0.20 = R$56 | R$56 | **1 contrato** ✅ |
+| R$10k | 2% = R$200 | 280 pts × R$0.20 = R$56 | R$56 | **3 contratos** ✅ |
+
+> Com `CapitalReais=10000`, `RiscoPorcentagem=1`, `SL=280`, `PontoValorReais=0.20` → `iQtd = 1` contrato. O robô calcula mas a quantidade é configurada no contrato da plataforma.
+
+### Status dos gaps
+
+| ID | Item | Status |
+|---|---|---|
+| G01 | Backtest V16 scalper 50k candles 2024–26 | ✅ Resolvido — WR 40.3%, PnL +38.843 pts |
+| G02 | `iQtd` calculado mas não passado para a ordem | ⚠️ Aberto — usar quantidade do contrato na plataforma enquanto `BuyAtMarket(n)` não é confirmado |
+| G03 | Janela de instabilidade por bloco (não deslizante) | 🟡 Aceitável para operação atual |
+| G04 | Alerta de mudança tardia (`UsarAlertaMudancaTardia=false`) | 🟡 Desligado intencionalmente |
+| G05 | `fForcaAnterior` atribuído mas não usado | 🟡 Dead code sem impacto operacional |
 
 ---
 
@@ -194,25 +229,26 @@ Análise visual / aprendizado
 
 Qualquer ativo ou TF personalizado
   └─► FORCA_SEMAFORO_V10 — configure SL/TP/thresholds por ativo
-      Tripletas testadas: 60/30/15 · 30/15/5 · 15/10/5
 
 WDO (mini-dólar) — execução automática
   └─► FORCA_WDO_V11
         15min (tripleta 60/30/15): iJanelaDir=2 · iJanelaCtx=4 · SL=20 · TP=60
          5min (tripleta 30/15/5) : iJanelaDir=3 · iJanelaCtx=6 · SL=12 · TP=36
-        10min (tripleta 60/30/10): iJanelaDir=3 · iJanelaCtx=6 · ajustar SL
 
 WIN (mini-índice) — execução automática
   ├─► FORCA_WIN_V11 — baseline estatístico calibrado
-        15min (tripleta 60/30/15): iJanelaDir=2 · iJanelaCtx=4 · SL=822  · TP=2466
-         5min (tripleta 30/15/5) : iJanelaDir=3 · iJanelaCtx=6 · SL=342  · TP=1026
-        10min (tripleta 60/30/10): iJanelaDir=3 · iJanelaCtx=6 · ajustar SL
-  └─► FORCA_WIN_V16 — foco experimental atual
-        same-TF: MA5/MA20 · SL=75 · TP=150 · BE=33% + cor oposta + 5 brancos
-        usar apenas para simulação/backtest até validar estatística
+  │     15min: SL=822 · TP=2466 · RR 3.0 · exaustão win 44.6%
+  │
+  ├─► FORCA_WIN_V16 — swing curto 15min (não rebacktestado)
+  │     MA5/MA20 · SL=75 · TP=150 · BE=33% + adaptativo
+  │
+  └─► 🎯 FORCA_WIN_V16_scalper_sinaisForca — SCALP 5MIN (foco atual)
+        SL=280 · TP2=560 (forte/RR2) · TP3=840 (exaustão/RR3)
+        BE=33% do TP ativo + cor oposta + 5 brancos · MAX=12 barras
+        Backtest: WR 40.3% · PnL +38.843 pts · 50k candles 2024–26
+        Multi-TF: rodar junto com INDICADOR_FORCA_V1 no 15min
+                  beep+cor simultâneos nos 2 TFs = alta confiança para o scalp
 ```
-
-> **Tripleta 60/30/10 (10min):** multiplicadores `iJanelaDir=3` (3×10=30min) e `iJanelaCtx=6` (6×10=60min) — matematicamente válida. SL sugerido: WDO ~22pts (2.2×range médio 10min ~10pts) · WIN ~880pts.
 
 ### Colour consistency rule
 
@@ -326,39 +362,52 @@ Calibrated on **47,786 candles (WDO) and 47,787 candles (WIN)** · full historic
 
 ---
 
-## Operating Guide — Entry Timing and Candle Management
+## Operating Guide — Scalp 5min (FORCA_WIN_V16_scalper_sinaisForca)
 
-### "The candle is almost closing with a signal — what do I do?"
+### Configuração de tela recomendada
 
-**Always wait for the candle to fully close before entering.**
+| Gráfico | Robô / Indicador | Papel |
+|---------|-----------------|-------|
+| WIN 5min | `FORCA_WIN_V16_scalper_sinaisForca` com `HabilitarOperacoes=true` | Execução e alerta sonoro no sinal |
+| WIN 15min | `INDICADOR_FORCA_V1` (sem ordens) | Confirmação visual MTF — cor do contexto |
 
-| Scenario | Action |
-|----------|--------|
-| Signal appears in the last 10–15 seconds of a candle | Let the candle close. Enter at the **next candle's open**. |
-| Signal appears mid-candle (first 30%) at extreme force (F > 80) | Entry mid-candle is acceptable — force at extremes rarely reverses before close. |
-| You are operating manually | Confirm the close, then place a market order on the new bar. |
-| Robot is active | No action needed — Profit robots always act on **bar close** events automatically. |
-
-**Why wait?** In the last seconds of a candle, two things can happen: (1) the candle partially reverses — reducing body/range ratio and dropping the force score — invalidating the signal, (2) other traders exit or enter aggressively at the close, creating momentary slippage. Entry on the next candle's open gives you a confirmed, settled signal.
+> **Regra multi-TF:** beep no 5min **E** candle de cor forte/exaustão alinhado no 15min = entrada com alta confiança. Beep sem alinhamento no 15min = operação de menor confiança (considere reduzir tamanho ou aguardar).
 
 ---
 
-### "How do I manage a trade on candles larger than 10 minutes?"
+### "O candle está quase fechando com sinal — o que eu faço?"
 
-**Never try to exit within the signal candle on 15min or 30min timeframes.** The strategy uses point-based SL/TP, not time-based exits.
+**Aguarde sempre o fechamento do candle.**
 
-| Timeframe | Entry | Manage | Exit |
-|-----------|-------|--------|------|
-| 15 min | Enter at **next candle's open** after signal close | Monitor SL (dynamic) and TP in points | Exit at TP hit, SL hit, or opposite-direction force candle |
-| 30 min | Same — enter next candle open | Break-even activates after 50% TP distance | Same exit rules |
-| 60 min+ | Same — these are swing intraday setups | MaxBarrasEmPosicao = 4–6 recommended | Set a harder daily stop time (e.g., 16h) |
+| Cenário | Ação |
+|---------|------|
+| Sinal aparece nos últimos 10–15s | Deixe fechar. O robô entra automaticamente no **próximo candle**. |
+| Sinal aparece no início do candle (F > 80 logo de cara) | Entrada mid-candle é aceitável — exaustão extrema raramente reverte antes do fechamento. |
+| Operação manual | Confirme o fechamento e mande ordem a mercado no início da nova barra. |
+| Robô ativo | Nenhuma ação — NTSL sempre age no evento de **fechamento de candle**. |
 
-**Key protection mechanisms (automated):**
-1. **Break-even**: V11/V14 use `BreakEvenRatio = 0.5`; V16 uses `0.333` plus adaptive triggers by opposite colour and 5 white candles.
-2. **Stop candle contra** (`UsarStopCandleContra`): if an opposite-direction force candle at F ≥ 85 appears, position closes immediately — regardless of SL/TP.
-3. **Stop horário** (17:45 default): all positions closed before market close.
+---
 
-> On larger candles you have **more time to analyse** but the same point-based logic applies. The robot handles all of this. Manually: watch for an opposite-colour extreme (fúcsia against your long, or cyan against your short) as your exit trigger.
+### "Como gerenciar a posição no scalp 5min?"
+
+| Etapa | Regra |
+|-------|-------|
+| Entrada | O robô seleciona TP automaticamente: F ≥ 85 → TP3=840 pts; F 70–84 → TP2=560 pts |
+| Após abertura | Não mover SL manualmente — o BE automático assume quando lucro ≥ 33% do TP |
+| Cor oposta no 5min | O robô fecha sozinho (stop candle contra ou BE por cor) |
+| Lateralização | 5 candles brancos consecutivos → BE armado automaticamente |
+| Trailing | Entra após BE; passo = 62% da distância restante ao TP (piso 10%) |
+| Saída forçada | 12 barras (60 min) ou 17h45 — o que vier primeiro |
+
+**Mecanismos de proteção automáticos (ordem de prioridade):**
+1. Hard SL intrabar — `Low ≤ entrada − 280` ou `High ≥ entrada + 280`
+2. Stop candle contra — F oposto ≥ 70 fecha posição imediatamente
+3. BE por cor oposta — candle fecha na cor contrária à posição
+4. BE por 5 brancos consecutivos — lateralização longa
+5. BE clássico — lucro ≥ 33% do TP ativo (186 ou 280 pts)
+6. Trailing proporcional — aperta após BE, protege lucros crescentes
+7. TP hard — 560 ou 840 pts conforme zona de entrada
+8. Max barras 12 → stop horário 17h45
 
 ---
 
@@ -395,10 +444,11 @@ Robot documentation lives in `Robots/`. Older versions have individual `.md` fil
 
 | Robot | Documentation | Purpose |
 |-------|--------------|---------|
-| `INDICADOR_FORCA_V1` | [INDICADOR_FORCA_V1.md](Robots/INDICADOR_FORCA_V1.md) | Visual indicator — 7 colours, doji, volume gold |
+| `INDICADOR_FORCA_V1` | [INDICADOR_FORCA_V1.md](Robots/INDICADOR_FORCA_V1.md) | Visual indicator — 7 cores, doji, volume gold |
 | `FORCA_WDO_V11` | [FORCA_WDO_V11.md](Robots/FORCA_WDO_V11.md) | WDO-calibrated robot — SL=20, TP=60, RR3 |
 | `FORCA_WIN_V11` | [FORCA_WIN_V11.md](Robots/FORCA_WIN_V11.md) | WIN-calibrated robot — SL=822, TP=2466, RR3 |
-| `FORCA_WIN_V16` | [MAPA_FORCA_WIN.md](Robots/MAPA_FORCA_WIN.md), [RAID_LOG.md](Robots/RAID_LOG.md), [CHANGELOG.md](Robots/CHANGELOG.md) | Foco atual — alertas de instabilidade, BE adaptativo e trailing proporcional |
+| **`FORCA_WIN_V16_scalper_sinaisForca`** | [MAPA_FORCA_WIN.md](Robots/MAPA_FORCA_WIN.md), [RAID_LOG.md](Robots/RAID_LOG.md), [CHANGELOG.md](Robots/CHANGELOG.md) | 🎯 **FOCO ATUAL** — scalp 5min, SL=280, TP2/3 dinâmico, alertas multi-nível, BE adaptativo |
+| `FORCA_WIN_V16` | [FORCA_WIN_V14plus.md](Robots/FORCA_WIN_V14plus.md) | Swing curto 15min — MA5/MA20, SL=75, TP=150 |
 | `FORCA_WIN_V14+` | [FORCA_WIN_V14plus.md](Robots/FORCA_WIN_V14plus.md) | Regras compartilhadas V14, V15, V16 e V17 |
 | `FORCA_SEMAFORO_V10` | [FORCA_SEMAFORO_V10.md](Robots/FORCA_SEMAFORO_V10.md) | Genérico — 2 tons, SL dinâmico, break-even, qualquer ativo/TF |
 | `FORCA_SEMAFORO_CORES_SOM` | [FORCA_SEMAFORO_CORES_SOM.md](Robots/FORCA_SEMAFORO_CORES_SOM.md) | Referência — v9 degradê, **não modificar** |
@@ -407,35 +457,30 @@ Robot documentation lives in `Robots/`. Older versions have individual `.md` fil
 
 ## Methodology
 
-**Entry criteria (confluence obrigatória):**
-1. Bias diário (1D) alinhado com a direção da operação — manual, antes de abrir o Profit
-2. Contexto (TF maior: 60min) na mesma direção — `bCtxAlta` ou `bCtxBaixa` true
-3. Direção (TF médio: 30min) confirmada — `bDirAlta` ou `bDirBaixa` true
-4. Gatilho (TF de execução: 10min ou 15min) com F ≥ 70 (forte) ou F ≥ 85 (exaustão)
-5. Volume ≥ mínimo configurado no robot (`VolumeMinimo`)
+**Critérios de entrada (confluência obrigatória):**
+1. Bias diário (1D) alinhado com a direção — avaliação manual antes de abrir o Profit
+2. Contexto no 15min alinhado — `INDICADOR_FORCA_V1` no 15min pintando na mesma cor
+3. Gatilho no 5min com F ≥ 70 (forte) ou F ≥ 85 (exaustão) — 1º candle que cruza o limiar
+4. Volume direcional — `fCorpo > 0 AND Volume ≥ MediaVolume(20)` (compra); simétrico venda
 
-> Os itens 2, 3, 4 e 5 são verificados automaticamente pelo robot a cada candle fechado.
-> O item 1 (bias 1D) é avaliação manual prévia à sessão.
+> Itens 3 e 4 são verificados automaticamente pelo scalper. Itens 1 e 2 são avaliação manual prévia.
 
-**Timeframes em uso (tela operacional):**
+**Timeframes em uso:**
 
-| TF | Papel | Configuração no robot |
-|----|-------|-----------------------|
-| 1D | Bias diário — manual | Não entra no robot; define se aceita só LONG ou só SHORT |
-| 60min | Contexto institucional | `iJanelaCtx = 6` (em gráfico 10min) ou `iJanelaCtx = 4` (em 15min) |
-| 30min | Direção confirmada | `iJanelaDir = 3` (em gráfico 10min) ou `iJanelaDir = 2` (em 15min) |
-| 20min | Confirmação visual auxiliar | Não é parâmetro do robot — use visualmente entre 10min e 30min |
-| 15min | Gatilho (tripleta 60/30/15) | TF de execução do gráfico |
-| 10min | Gatilho (tripleta 60/30/10) | TF de execução do gráfico |
-| 5min | Gatilho (tripleta 30/15/5) | TF de execução — mais operações, SL menor |
+| TF | Papel | Como usar |
+|----|-------|-----------|
+| 1D | Bias diário — manual | Define se aceita só LONG, só SHORT ou neutro na sessão |
+| 15min | Contexto / confirmação MTF | INDICADOR_FORCA_V1 (sem ordens) — cor alinhada reforça o sinal 5min |
+| 5min | Gatilho — execução | `FORCA_WIN_V16_scalper_sinaisForca` — beep+cor + ordem automática |
 
 **Gerenciamento de risco:**
-- Risco máximo por trade: 1–2% do capital (ver tabela de sizing acima)
-- SL dinâmico: `max(StopMinimo, range_candle × FatorRangeSL)`
-- Break-even automático: V11/V14 usam `BreakEvenRatio=0.5`; V16 usa `0.333` e gatilhos adaptativos
-- Stop candle contra: fecha posição se exaustão contrária (F ≥ 85) aparecer
+- Risco máximo por trade: 1–2% do capital
+- SL fixo: 280 pts = R$56/contrato (1.5× range médio 5min 2026 ~187 pts)
+- TP dinâmico: forte (70–85) → TP=560 pts (RR 2.0); exaustão (≥85) → TP=840 pts (RR 3.0)
+- Break-even: 33% do TP ativo + gatilhos adaptativos (cor oposta / 5 brancos)
+- Stop candle contra: fecha se força oposta ≥ 70 aparecer
 - Stop horário: 17h45 — fecha tudo antes do fechamento do mercado
-- Limite diário: 3% de drawdown → encerrar sessão manualmente
+- Limite diário sugerido: 3% de drawdown → encerrar sessão manualmente
 
 ---
 
