@@ -1,6 +1,6 @@
 # MAPA DE REGRAS — FORCA_WIN_V16
 
-> Árvore de decisão por candle fechado. Para rastreamento no Figma.
+> Árvore de decisão por candle fechado, sincronizada com o fonte `FORCA_WIN_V16`.
 > Legenda: ✅ implementado · 🔘 reservado/desligado · ⬜ pendente · 🧪 validar
 
 ---
@@ -11,29 +11,30 @@ CANDLE FECHADO
 ├── A. CALCULAR
 │   ├── ✅ fForca = ((Close-Open)/(High-Low)) × (Volume/fVolMedia) × 100  clamped ±100
 │   ├── ✅ Zona atual
-│   │       ├──  2  F ≥ 85   exaustão compra
-│   │       ├──  1  F 70–84  força compra
-│   │       ├──  0  |F| < 70 neutro
-│   │       ├── -1  F -70–84 força venda
-│   │       └── -2  F ≤ -85  exaustão venda
-│   ├── ✅ bCtxAlta / bCtxBaixa  (proxy 60min — iJanelaCtx=4)
-│   └── ✅ bDirAlta / bDirBaixa  (proxy 30min — iJanelaDir=2)
+│   │       ├──  3  F ≥ 85       exaustão compra
+│   │       ├──  2  F 70–84      força compra operacional
+│   │       ├──  1  F 55–69      alerta compra visual, sem entrada
+│   │       ├──  0  |F| < 55     neutro/branco
+│   │       ├── -1  F -55–-69    alerta venda visual, sem entrada
+│   │       ├── -2  F -70–-84    força venda operacional
+│   │       └── -3  F ≤ -85      exaustão venda
+│   ├── ✅ bCtxAlta / bCtxBaixa  (same-TF MA20 — iJanelaCtx=20)
+│   └── ✅ bDirAlta / bDirBaixa  (same-TF MA5 contra MA20 — iJanelaDir=5)
 │
 ├── B. PINTAR CANDLE
-│   ├── ✅ Contar mudanças de zona na janela (5 candles, máx 3)
-│   │       └── bAlertaInstavel = true se ≥ 3 mudanças
+│   ├── ✅ Contar mudanças de zona em bloco de 5 candles
+│   │       └── bAlertaInstavel = true se ≥ 3 mudanças antes do reset do bloco
 │   │
-│   ├── ✅ Volume < fVolMedia?
-│   │       └── SIM → BRANCO (sem cor de sinal)
+│   ├── ✅ Aplicar cor por zona
+│   │       ├── Zona  3 → Verde forte      RGB(0,150,0)
+│   │       ├── Zona  2 → Verde fraco      RGB(120,220,120)
+│   │       ├── Zona  1 → Verde alerta     RGB(210,255,210)
+│   │       ├── Zona  0 → Branco           RGB(255,255,255)
+│   │       ├── Zona -1 → Vermelho alerta  RGB(255,220,220)
+│   │       ├── Zona -2 → Vermelho fraco   RGB(255,120,120)
+│   │       └── Zona -3 → Vermelho forte   RGB(180,0,0)
 │   │
-│   ├── ✅ Volume ≥ fVolMedia → aplicar cor por zona
-│   │       ├── Zona  2 → Verde forte  RGB(0,150,0)
-│   │       ├── Zona  1 → Verde fraco  RGB(120,220,120)
-│   │       ├── Zona  0 → Branco       RGB(255,255,255)
-│   │       ├── Zona -1 → Verm. fraco  RGB(255,120,120)
-│   │       └── Zona -2 → Verm. forte  RGB(180,0,0)
-│   │
-│   └── ✅ bAlertaInstavel? (override sobre qualquer cor)
+│   └── ✅ bAlertaInstavel ou bAlertaTardio? (override sobre qualquer cor)
 │           ├── Zona > 0 → Cyano  RGB(0,220,220)
 │           ├── Zona < 0 → Fúcsia RGB(255,0,180)
 │           └── Zona = 0 → mantém branco
@@ -51,8 +52,9 @@ CANDLE FECHADO
 │       │       └── ✅ iBarras ≥ 6 → FECHAR
 │       │
 │       ├── D2. HARD SL INTRABAR
-│       │       ├── ✅ Comprado: Low  ≤ fEntrada − 150 → FECHAR
-│       │       └── ✅ Vendido:  High ≥ fEntrada + 150 → FECHAR
+│       │       ├── ✅ Comprado: Low  ≤ fEntrada − fSLAtivo → FECHAR
+│       │       └── ✅ Vendido:  High ≥ fEntrada + fSLAtivo → FECHAR
+│       │               └── padrão atual: StopMinimo=75 e FatorRangeSL=0
 │       │
 │       ├── D3. STOP CANDLE CONTRA
 │       │       ├── ✅ Comprado: fForca ≤ −70 → FECHAR
@@ -61,46 +63,41 @@ CANDLE FECHADO
 │       ├── D4. ARMAR BREAK-EVEN (bBreakEven)
 │       │       ├── ✅ Cor oposta aparece → bBreakEven = true
 │       │       ├── ✅ 5 brancos consecutivos → bBreakEven = true
-│       │       └── ✅ Lucro ≥ fTPAtivo × 0.333 → bBreakEven = true
-│       │               ├── Zona ±2 (100pts): BE arma em ~33pts
-│       │               └── Zona ±1  (50pts): BE arma em ~17pts
+│       │       └── ✅ Lucro ≥ TakeProfit × 0.333 → bBreakEven = true
+│       │               └── TakeProfit=150 → BE arma em ~50 pts
 │       │
 │       ├── D5. EXECUTAR BREAK-EVEN
 │       │       └── ✅ bBreakEven = true AND Close voltou à entrada → FECHAR
 │       │
-│       ├── D6. TRAILING (somente iZonaEntrada = ±2)
+│       ├── D6. TRAILING PROPORCIONAL
 │       │       ├── ✅ Pré-condição: bBreakEven = true
-│       │       ├── ✅ fPassoTrail = (fTPAtivo − lucro) × 0.62
-│       │       │       └── mínimo: fTPAtivo × 0.10
+│       │       ├── ✅ fPassoTrail = (TakeProfit − lucro) × 0.62
+│       │       │       └── mínimo: TakeProfit × 0.10
 │       │       └── ✅ Low/High cruza fTrailingRef → FECHAR
 │       │
 │       └── D7. TAKE PROFIT HARD
-│               ├── ✅ Zona ±2: High/Low alcança fEntrada ± 100pts → FECHAR
-│               └── ✅ Zona ±1: High/Low alcança fEntrada ±  50pts → FECHAR
+│               └── ✅ High/Low alcança fEntrada ± TakeProfit(150) → FECHAR
 │
 └── E. FORA DE POSIÇÃO — VERIFICAR ENTRADA
     │
     ├── E1. COMPRA
     │       ├── ✅ fForca ≥ 70  AND  fForca[1] < 70   (1º candle de força)
-    │       ├── ✅ bCtxAlta AND bDirAlta               (MTF alinhado)
-    │       ├── ✅ Volume ≥ 5000                        (filtro absoluto)
-    │       └── ENTRAR
-    │               ├── ✅ Zona  2 → fTPAtivo = 100pts · trailing ativo após BE
-    │               └── ✅ Zona  1 → fTPAtivo =  50pts · apenas BE, sem trailing
+    │       ├── ✅ bCtxAlta AND bDirAlta               (MA20 subindo + MA5 acima da MA20)
+    │       ├── ✅ Volume ≥ 5000                        (filtro absoluto, se ligado)
+    │       └── ENTRAR LONG com fEntrada=Close, fSLAtivo=fSL, fTrailingRef=Close−fSL
     │
     └── E2. VENDA
             ├── ✅ fForca ≤ −70  AND  fForca[1] > −70  (1º candle de força)
-            ├── ✅ bCtxBaixa AND bDirBaixa              (MTF alinhado)
-            ├── ✅ Volume ≥ 5000                         (filtro absoluto)
-            └── ENTRAR
-                    ├── ✅ Zona −2 → fTPAtivo = 100pts · trailing ativo após BE
-                    └── ✅ Zona −1 → fTPAtivo =  50pts · apenas BE, sem trailing
+            ├── ✅ bCtxBaixa AND bDirBaixa              (MA20 caindo + MA5 abaixo da MA20)
+            ├── ✅ Volume ≥ 5000                         (filtro absoluto, se ligado)
+            └── ENTRAR SHORT com fEntrada=Close, fSLAtivo=fSL, fTrailingRef=Close+fSL
 
 
 BACKLOG
-    ├── ⬜ Backtest com TP dinâmico por zona
-    ├── 🧪 Validar RR: SL=150 vs TP=100/50 — winrate mínimo necessário ~60–75%
-    ├── ⬜ Guard fTPAtivo > 0 no cálculo de BE (I03 do RAID)
+    ├── ⬜ Backtest V16 vs V14 no mesmo período
+    ├── 🧪 Validar RR 2:1: SL=75 vs TP=150, BE em ~50pts e max 6 barras
+    ├── ⬜ Confirmar se NTSL permite BuyAtMarket/SellShortAtMarket com quantidade calculada iQtd
+    ├── ⬜ Avaliar janela deslizante real para instabilidade, em vez de blocos resetados
     └── 🔘 UsarAlertaMudancaTardia — reservado para ativação futura
 ```
 

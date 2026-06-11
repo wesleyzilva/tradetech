@@ -125,8 +125,12 @@ Robots and indicators developed on Neologica Profit platform targeting WIN B3:
 | `FORCA_SEMAFORO_V10` | qualquer | qualquer | dinâmico `max(fixo, range×0.75)` | configurável | configurável | ✅ `ratio=0.5` | ✅ v10 |
 | `FORCA_WDO_V11` | **WDO** | **15min** `60/30/15` | dinâmico `max(20, range×1.5)` | **60 pts** | **3.0** | ✅ `ratio=0.5` | ✅ v11 calibrado |
 | `FORCA_WDO_V11` | **WDO** | **5min** `30/15/5` | dinâmico `max(12, range×2.0)` | **36 pts** | **3.0** | ✅ `ratio=0.5` | ✅ v11 calibrado |
-| `FORCA_WIN_V11` | **WIN** | **15min** `60/30/15` | dinâmico `max(822, range×2.0)` | **2466 pts** | **3.0** | ✅ `ratio=0.5` | ✅ v11 calibrado |
-| `FORCA_WIN_V11` | **WIN** | **5min** `30/15/5` | dinâmico `max(342, range×2.0)` | **1026 pts** | **3.0** | ✅ `ratio=0.5` | ✅ v11 calibrado |
+| `FORCA_WIN_V11` | **WIN** | **15min** `60/30/15` | dinâmico `max(822, range×2.0)` | **2466 pts** | **3.0** | ✅ `ratio=0.5` | ✅ baseline calibrado |
+| `FORCA_WIN_V14` | **WIN** | **15min** | dinâmico `max(822, range×2.0)` | **2466 pts** | **3.0** | ✅ `ratio=0.5` | 🧪 V11 + filtro 1º candle + hard SL intrabar |
+| `FORCA_WIN_V15` | **WIN** | **15min** | **30 pts** | **50 pts** / teto 100 | 1.67–3.33 | ✅ `ratio=0.6` | 🧪 scalp curto, não rebacktestado |
+| `FORCA_WIN_V15_5MIN` | **WIN** | **5min** | **30 pts** | **50 pts** / teto 100 | 1.67–3.33 | ✅ `ratio=0.6` | 🧪 scalp adaptado para 5min |
+| `FORCA_WIN_V16` | **WIN** | same-TF MA5/MA20 | **75 pts** | **150 pts** | **2.0** | ✅ `ratio=0.333` + adaptativo | ⚠️ foco atual, não rebacktestado |
+| `FORCA_WIN_V17_sinaisForcaComMedias` | **WIN** | 15min | **150 pts** | **1500 pts** | ~10 | ✅ 75 pts absolutos | ⚠️ experimental OCR/telas |
 
 ---
 
@@ -139,10 +143,48 @@ All robots share the same core formula **F = M × A**. What differs is **when to
 | `FORCA_SEMAFORO_CORES_SOM` | WDO/WIN | F ≥ 55 degradê | ❌ não tem | config | Referência visual — **não modificar** |
 | `FORCA_SEMAFORO_V10` | qualquer | F ≥ 55 ou F ≥ 70 (toggle) | ✅ `BreakEvenRatio=0.5` | config | Genérico — configure por ativo/TF |
 | `FORCA_WDO_V11` | WDO | F ≥ 70 (fraco descartado) | ✅ `BreakEvenRatio=0.5` | **3.0** | 47.786 candles · win 39.5% |
-| `FORCA_WIN_V11` | WIN | F ≥ 70 (fraco descartado) | ✅ `BreakEvenRatio=0.5` | **3.0** | Exaustão: win 44.6% · melhor robot |
+| `FORCA_WIN_V11` | WIN | F ≥ 70 (fraco descartado) | ✅ `BreakEvenRatio=0.5` | **3.0** | Baseline estatístico; exaustão win 44.6% |
+| `FORCA_WIN_V16` | WIN | F ≥ 70 no 1º candle + MA5/MA20 + volume | ✅ `BreakEvenRatio=0.333`, cor oposta e 5 brancos | **2.0** | Foco atual; precisa backtest antes de operar |
 | `INDICADOR_FORCA_V1` | visual | — | — | — | 7 cores + zona S/R + gold volume |
 
-> **Break-even (`BreakEvenRatio=0.5`):** quando o preço percorre 50% do caminho ao TP, o SL é movido automaticamente para o preço de entrada. O trade nunca vira prejuízo após essa marca.
+> **Break-even:** V11/V14 usam `BreakEvenRatio=0.5`. O V16 usa `BreakEvenRatio=0.333` e também arma BE por cor oposta ou por 5 candles brancos consecutivos.
+
+---
+
+## Current Focus — FORCA_WIN_V16
+
+`Robots/FORCA_WIN_V16` é o robô experimental atual para WIN. Ele parte da lógica V14, mas troca o perfil de gestão para uma operação mais curta e defensiva: `StopMinimo=75`, `TakeProfit=150`, `BreakEvenRatio=0.333`, trailing proporcional e limite de 6 barras em posição.
+
+### O que ele faz
+
+1. Calcula força do candle com `F = ((Close - Open) / (High - Low)) × (Volume / MediaVolume) × 100`, limitada entre -100 e +100.
+2. Classifica a força em zonas: alerta visual `55–70`, força operacional `70–85` e exaustão `>=85`, com simetria para venda.
+3. Pinta o candle em verde/vermelho por intensidade e usa cyano/fúcsia quando há instabilidade visual: 3 ou mais mudanças de zona dentro de uma janela de 5 candles.
+4. Entra apenas no primeiro candle forte da sequência: compra se `fForca >= 70` e `fForca[1] < 70`; venda se `fForca <= -70` e `fForca[1] > -70`.
+5. Exige contexto same-TF por médias: `MA5` direcional e `MA20` de contexto, além de volume mínimo `5000` quando o filtro de volume está ligado.
+6. Protege a posição com hard SL por `Low/High`, stop por força contrária `70`, stop horário `17:45`, máximo de 6 barras, BE adaptativo e trailing proporcional após BE.
+
+### Como operar/validar
+
+| Etapa | Regra prática |
+|---|---|
+| Antes da sessão | Definir viés manual do dia e confirmar se WIN está com liquidez normal |
+| Entrada | Esperar candle fechar com F operacional e médias alinhadas |
+| Gestão | Não mover SL manualmente antes do BE; observar cor oposta, candles brancos e trailing |
+| Validação | Backtestar V16 contra V14 no mesmo período antes de usar em conta real |
+| Comparação mínima | N trades, win%, PnL, AvgWin, AvgLoss, payoff, expectancy e motivo de saída |
+
+### Gaps encontrados no V16
+
+| ID | Gap | Impacto | Próximo trabalho |
+|---|---|---|---|
+| G01 | V16 ainda não foi rebacktestado | Não há confirmação estatística do novo SL/TP/BE/trailing | Criar backtest V16 vs V14 no mesmo período |
+| G02 | `iQtd` é calculado por risco, mas as ordens usam `BuyAtMarket`/`SellShortAtMarket` sem quantidade explícita | O robô pode depender da quantidade configurada na plataforma, não do sizing interno | Confirmar sintaxe NTSL para ordem com quantidade e ajustar se suportado |
+| G03 | Janela de instabilidade é por bloco resetado de 5 candles, não janela deslizante real | Pode perder mudança relevante na borda entre blocos | Implementar contador deslizante se NTSL suportar histórico de zonas |
+| G04 | Alerta de mudança tardia não mede tempo real do candle | NTSL roda no fechamento; a regra é só aproximação por borda | Manter desligado ou migrar para execução intrabar/tick se disponível |
+| G05 | `fForcaAnterior` é atribuído mas não usado | Ruído de código e possível intenção incompleta | Remover ou usar na regra de cruzamento tardio |
+
+---
 
 ### Key decision: which robot to use?
 
@@ -161,10 +203,13 @@ WDO (mini-dólar) — execução automática
         10min (tripleta 60/30/10): iJanelaDir=3 · iJanelaCtx=6 · ajustar SL
 
 WIN (mini-índice) — execução automática
-  └─► FORCA_WIN_V11
+  ├─► FORCA_WIN_V11 — baseline estatístico calibrado
         15min (tripleta 60/30/15): iJanelaDir=2 · iJanelaCtx=4 · SL=822  · TP=2466
          5min (tripleta 30/15/5) : iJanelaDir=3 · iJanelaCtx=6 · SL=342  · TP=1026
         10min (tripleta 60/30/10): iJanelaDir=3 · iJanelaCtx=6 · ajustar SL
+  └─► FORCA_WIN_V16 — foco experimental atual
+        same-TF: MA5/MA20 · SL=75 · TP=150 · BE=33% + cor oposta + 5 brancos
+        usar apenas para simulação/backtest até validar estatística
 ```
 
 > **Tripleta 60/30/10 (10min):** multiplicadores `iJanelaDir=3` (3×10=30min) e `iJanelaCtx=6` (6×10=60min) — matematicamente válida. SL sugerido: WDO ~22pts (2.2×range médio 10min ~10pts) · WIN ~880pts.
@@ -179,27 +224,31 @@ All V11 robots and INDICADOR_FORCA_V1 use the **same RGB values**:
 
 SEMÁFORO_V10 uses its own 2-tone scheme (verde claro/escuro, verm claro/escuro) — **this is intentional and correct**.
 
+V14+ execution robots use the newer green/red intensity palette. In V16, cyano/fúcsia are no longer exhaustion colours; they are instability overrides when zones change too often inside the configured window.
+
 ---
 
 ## Study Structure
 
 ```
 tradetech/
-├── robos/                         NTSL/NTFL robot and indicator source code
+├── Robots/                        NTSL/NTFL robot and indicator source code
 │   ├── FORCA_SEMAFORO_CORES_SOM   v9.0 — original rainbow semaphore (WDO/WIN)
 │   ├── FORCA_SEMAFORO_V10         v10  — genérico, SL dinâmico, break-even, qualquer TF
 │   ├── FORCA_WDO_V11              v11  — WDO · SL=20(15min)/12(5min) · TP RR3 · BE=0.5
-│   └── FORCA_WIN_V11              v11  — WIN · SL=822(15min)/342(5min) · TP RR3 · BE=0.5
-├── DadosCandlesBacktest/          Raw CSVs (WIN/WDO 2012–2026, multi-TF)
-│   ├── detector_areas.py          Detects S/R zones from candle data
-│   ├── analise_forca_sl.py        Full statistical analysis (zone dist., SL grid)
-│   ├── tabela_cenarios.py         Entry sequence comparison (verde/fúcsia)
-│   ├── instructions.md            Agent spec for zone detection
-│   └── DadosCandlesBacktest.md    Dataset documentation
+│   ├── FORCA_WIN_V11              v11  — WIN · baseline estatístico
+│   ├── FORCA_WIN_V14..V17         versões experimentais WIN
+│   ├── CHANGELOG.md               histórico de decisões por versão
+│   ├── MAPA_FORCA_WIN.md          mapa de regras V16
+│   └── RAID_LOG.md                riscos, premissas, issues e decisões
+├── CandlesHistoryDatas/           dados históricos de candles
+├── DailyNotesOperations/          notas de operação diária
+├── ScreenToStudy_MaterOfTrades/   telas usadas para estudo visual e OCR
+├── Notes/                         notas gerais de pesquisa
 ├── teoria/                        Theory notes — Dow, Price Action, indicators
 ├── indicadores/                   Custom indicator logic and formulas
-├── anotacoes/                     Session review notes — what worked, what failed
 ├── referencias/                   External papers, books, and resources
+├── gitCommands/                   comandos auxiliares de Git
 └── rodar_analise.bat              Run all analysis scripts (Task Scheduler ready)
 ```
 
@@ -305,7 +354,7 @@ Calibrated on **47,786 candles (WDO) and 47,787 candles (WIN)** · full historic
 | 60 min+ | Same — these are swing intraday setups | MaxBarrasEmPosicao = 4–6 recommended | Set a harder daily stop time (e.g., 16h) |
 
 **Key protection mechanisms (automated):**
-1. **Break-even** (`BreakEvenRatio = 0.5`): after price moves 50% toward TP, SL moves to entry price → trade becomes risk-free.
+1. **Break-even**: V11/V14 use `BreakEvenRatio = 0.5`; V16 uses `0.333` plus adaptive triggers by opposite colour and 5 white candles.
 2. **Stop candle contra** (`UsarStopCandleContra`): if an opposite-direction force candle at F ≥ 85 appears, position closes immediately — regardless of SL/TP.
 3. **Stop horário** (17:45 default): all positions closed before market close.
 
@@ -342,15 +391,17 @@ All three aligned = **enter**. Only 2 aligned = **skip or reduce size by 50%**.
 
 ## Robot Documentation (individual files)
 
-Each robot has its own `.md` file in `robos/`:
+Robot documentation lives in `Robots/`. Older versions have individual `.md` files; V14+ also use shared decision docs.
 
 | Robot | Documentation | Purpose |
 |-------|--------------|---------|
-| `INDICADOR_FORCA_V1` | [INDICADOR_FORCA_V1.md](robos/INDICADOR_FORCA_V1.md) | Visual indicator — 7 colours, doji, volume gold |
-| `FORCA_WDO_V11` | [FORCA_WDO_V11.md](robos/FORCA_WDO_V11.md) | WDO-calibrated robot — SL=20, TP=60, RR3 |
-| `FORCA_WIN_V11` | [FORCA_WIN_V11.md](robos/FORCA_WIN_V11.md) | WIN-calibrated robot — SL=822, TP=2466, RR3 |
-| `FORCA_SEMAFORO_V10` | [FORCA_SEMAFORO_V10.md](robos/FORCA_SEMAFORO_V10.md) | Genérico — 2 tons, SL dinâmico, break-even, qualquer ativo/TF |
-| `FORCA_SEMAFORO_CORES_SOM` | [FORCA_SEMAFORO_CORES_SOM.md](robos/FORCA_SEMAFORO_CORES_SOM.md) | Referência — v9 degradê, **não modificar** |
+| `INDICADOR_FORCA_V1` | [INDICADOR_FORCA_V1.md](Robots/INDICADOR_FORCA_V1.md) | Visual indicator — 7 colours, doji, volume gold |
+| `FORCA_WDO_V11` | [FORCA_WDO_V11.md](Robots/FORCA_WDO_V11.md) | WDO-calibrated robot — SL=20, TP=60, RR3 |
+| `FORCA_WIN_V11` | [FORCA_WIN_V11.md](Robots/FORCA_WIN_V11.md) | WIN-calibrated robot — SL=822, TP=2466, RR3 |
+| `FORCA_WIN_V16` | [MAPA_FORCA_WIN.md](Robots/MAPA_FORCA_WIN.md), [RAID_LOG.md](Robots/RAID_LOG.md), [CHANGELOG.md](Robots/CHANGELOG.md) | Foco atual — alertas de instabilidade, BE adaptativo e trailing proporcional |
+| `FORCA_WIN_V14+` | [FORCA_WIN_V14plus.md](Robots/FORCA_WIN_V14plus.md) | Regras compartilhadas V14, V15, V16 e V17 |
+| `FORCA_SEMAFORO_V10` | [FORCA_SEMAFORO_V10.md](Robots/FORCA_SEMAFORO_V10.md) | Genérico — 2 tons, SL dinâmico, break-even, qualquer ativo/TF |
+| `FORCA_SEMAFORO_CORES_SOM` | [FORCA_SEMAFORO_CORES_SOM.md](Robots/FORCA_SEMAFORO_CORES_SOM.md) | Referência — v9 degradê, **não modificar** |
 
 ---
 
@@ -381,7 +432,7 @@ Each robot has its own `.md` file in `robos/`:
 **Gerenciamento de risco:**
 - Risco máximo por trade: 1–2% do capital (ver tabela de sizing acima)
 - SL dinâmico: `max(StopMinimo, range_candle × FatorRangeSL)`
-- Break-even automático: `BreakEvenRatio=0.5` — SL vai para entrada após 50% do TP percorrido
+- Break-even automático: V11/V14 usam `BreakEvenRatio=0.5`; V16 usa `0.333` e gatilhos adaptativos
 - Stop candle contra: fecha posição se exaustão contrária (F ≥ 85) aparecer
 - Stop horário: 17h45 — fecha tudo antes do fechamento do mercado
 - Limite diário: 3% de drawdown → encerrar sessão manualmente

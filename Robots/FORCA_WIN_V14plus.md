@@ -128,7 +128,8 @@ Se Time() >= 17:45 → ClosePosition, bDeveOperar := false
 ```
 Se MaxBarrasEmPosicao > 0  E  iBarras >= MaxBarrasEmPosicao → ClosePosition
 ```
-- V14/V16/V17: `MaxBarrasEmPosicao = 0` (desligado)  
+- V14/V17: `MaxBarrasEmPosicao = 0` (desligado)
+- V16: `MaxBarrasEmPosicao = 6`
 - V15 / V15_5MIN: `MaxBarrasEmPosicao = 3` (15min) / `6` (5min)
 
 ### 6.3 Hard Stop Loss via Low/High intrabar *(V14 — bug fix vs V11)*
@@ -167,7 +168,7 @@ SHORT: Close >= fEntrada → ClosePosition
 | V14 | **Desligado** | Intencional — V12 com trailing derrubou AvgWin 45% |
 | V15 | Ligado — passo fixo 15 pts | Ativa após BE; teto hard 100 pts |
 | V15_5MIN | Ligado — passo fixo 15 pts | Igual V15 |
-| V16 | Proporcional: `passo = (TP − lucroAtual) × 10%` (piso 2% TP) | Ativa após BE |
+| V16 | Proporcional: `passo = (TP − lucroAtual) × 62%` (piso 10% TP) | Ativa após BE |
 | V17 | Fixo 280 pts | Ativa após BE armado |
 
 ### 6.7 Take Profit
@@ -193,7 +194,7 @@ TP3 (resto)       : trailing 280 pts ou TakeProfit hard (1500 pts)
 fSL := StopMinimo
 Se (fRange × FatorRangeSL) > fSL → fSL := fRange × FatorRangeSL
 
-V16 extra: Se UsarSLMenorQueSinal → fSL := min(fSL, |Corpo| × 0.90)
+V16 extra: se `UsarSLMenorQueSinal=true` → fSL := min(fSL, |Corpo| × 0.90). No snapshot atual da V16, a flag está desligada.
 V17      : FatorRangeSL = 0 → SL sempre fixo em StopMinimo (150 pts)
 ```
 
@@ -218,19 +219,19 @@ Máximo: MaxContratos (5)
 | Parâmetro | V14 | V15 (15min) | V15_5MIN | V16 | V17 |
 |-----------|-----|-------------|----------|-----|-----|
 | **Timeframe** | 15min | 15min | 5min | 15min | 15min |
-| **Tripleta** | 60/30/15 | 60/30/15 | 30/15/5 | 60/30/15 | 60/30/15 |
+| **Tripleta** | 60/30/15 | 60/30/15 | 30/15/5 | same-TF MA5/MA20 | 60/30/15 |
 | **ForcaMinimaForte** | 70 | 70 | 70 | 70 | **65** |
 | **ForcaExaustao** | 85 | 85 | 85 | 85 | **90** |
-| **StopMinimo** | 822 | 30 | 30 | 822 | **150** |
-| **FatorRangeSL** | 2.0 | 0.0 | 0.0 | 2.0 | **0.0** |
-| **TakeProfit** | 2466 | 50 | 50 | 2466 | **1500** |
-| **BreakEven gatilho** | 50% TP (1233 pts) | 60% TP (30 pts) | 60% TP (30 pts) | 50% TP + cor + brancos | **75 pts absolutos** |
-| **Trailing** | ❌ OFF | ✅ passo 15 pts + teto 100 | ✅ passo 15 pts + teto 100 | ✅ proporcional 10% | ✅ **fixo 280 pts** |
+| **StopMinimo** | 822 | 30 | 30 | **75** | **150** |
+| **FatorRangeSL** | 2.0 | 0.0 | 0.0 | **0.0** | **0.0** |
+| **TakeProfit** | 2466 | 50 | 50 | **150** | **1500** |
+| **BreakEven gatilho** | 50% TP (1233 pts) | 60% TP (30 pts) | 60% TP (30 pts) | 33% TP (~50 pts) + cor + brancos | **75 pts absolutos** |
+| **Trailing** | ❌ OFF | ✅ passo 15 pts + teto 100 | ✅ passo 15 pts + teto 100 | ✅ proporcional 62% / piso 10% | ✅ **fixo 280 pts** |
 | **ForcaStopContra** | 70 | 70 | 70 | 70 | 70 |
-| **MaxBarrasEmPosicao** | 0 (∞) | 3 | 6 | 0 (∞) | 0 (∞) |
-| **SL < Corpo** | ❌ | ❌ | ❌ | ✅ 90% do corpo | ❌ |
+| **MaxBarrasEmPosicao** | 0 (∞) | 3 | 6 | **6** | 0 (∞) |
+| **SL < Corpo** | ❌ | ❌ | ❌ | ❌ flag desligada | ❌ |
 | **Saídas parciais** | ❌ | ❌ | ❌ | ❌ | ⚙️ flag off |
-| **RR nominal** | 3.0 | 1.67 a 3.33 | 1.67 a 3.33 | 3.0 | ~10 (ajustar) |
+| **RR nominal** | 3.0 | 1.67 a 3.33 | 1.67 a 3.33 | **2.0** | ~10 (ajustar) |
 | **Status backtest** | ⚠️ filtro 1º candle pendente | ❌ não testado | ❌ não testado | ❌ não testado | ❌ não testado |
 
 ---

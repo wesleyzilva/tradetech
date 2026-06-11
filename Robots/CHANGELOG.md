@@ -64,16 +64,21 @@ Todos os PNGs foram processados com OCR sem Tesseract, extraindo valores visíve
 |---|---|---|---|
 | 1 | **Alerta de instabilidade** — candle vira cyano (compra) ou fúcsia (venda) quando a cor muda muito | Janela rolante de 5 candles; ≥3 mudanças de zona = alerta | `JanelaInstabilidade=5`, `MaxMudancasCor=3` |
 | 2 | **Alerta de mudança tardia** (opcional, off por padrão) | Aproximação: zona mudou neste candle E `|F|` está a ±10% do limiar (borda instável) | `UsarAlertaMudancaTardia=false`, `PctBordaZona=0.10` |
-| 3 | **SL sempre menor que o sinal** | `fSL ≤ |corpo_candle_entrada| × 0.9` | `UsarSLMenorQueSinal=true`, `PctSLvsCorpo=0.9` |
-| 4 | **Trailing proporcional** — passo = 10% da distância restante ao TP, aperta conforme avança | Piso de 2% do TP. Ativa só após BE armado | `TrailingPctInicial=0.10`, `TrailingPctPiso=0.02` |
+| 3 | **SL menor que o sinal** — regra disponível, mas desligada no snapshot atual | Se ligada: `fSL ≤ |corpo_candle_entrada| × 0.9` | `UsarSLMenorQueSinal=false`, `PctSLvsCorpo=0.9` |
+| 4 | **Trailing proporcional** — passo = 62% da distância restante ao TP, aperta conforme avança | Piso de 10% do TP. Ativa só após BE armado | `TrailingPctInicial=0.62`, `TrailingPctPiso=0.10` |
 | 5 | **BE por cor oposta** — candle contrário arma BE imediato | LONG + candle vermelho → BE; SHORT + candle verde → BE | `UsarBEPorCorOposta=true` |
 | 6 | **BE por 5 brancos consecutivos** | Conta `|F| < 70` durante posição aberta | `CandlesBrancosParaBE=5` |
 
 ### Limitação técnica conhecida
 - **Mudança tardia (regra 2):** NTSL roda no fechamento do candle. Detectar "últimos 10% do tempo" exigiria modo de execução intrabar/tick. A regra usa uma **aproximação por proximidade da borda da zona** — não é o "10% do tempo restante" literal. Por isso vem **desligada** por padrão.
 
-### O que permaneceu do V14
-Filtro 1º candle de força · MTF 60/30/15 · Hard SL intrabar · `ForcaStopContra=70` · BE clássico por % do TP · TP=2466 · SL piso 822 · Cores padrão verde/vermelho fraco/forte (override por cyano/fúcsia só em alerta).
+### Snapshot ativo do fonte atual
+Filtro 1º candle de força · contexto same-TF MA5/MA20 · Hard SL intrabar · `ForcaStopContra=70` · BE clássico por % do TP + BE adaptativo · `StopMinimo=75` · `TakeProfit=150` · `BreakEvenRatio=0.333` · `MaxBarrasEmPosicao=6` · cores padrão verde/vermelho com nível de alerta em `55` e override por cyano/fúcsia só em instabilidade.
+
+### Gaps abertos
+- Não rebacktestado contra V14.
+- `iQtd` é calculado por risco, mas o fonte atual chama `BuyAtMarket`/`SellShortAtMarket` sem quantidade explícita.
+- A janela de instabilidade é resetada em blocos de 5 candles; ainda não é uma janela deslizante real.
 
 ---
 

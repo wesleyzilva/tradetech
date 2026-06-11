@@ -21,17 +21,17 @@
      — Limitacao: NTSL roda no fechamento do candle. Deteccao precisa de
        "ultimos 10% do tempo" exige modo de execucao intrabar/tick.
 
-  3. SL SEMPRE MENOR QUE O VALOR DO SINAL
+    3. SL MENOR QUE O VALOR DO SINAL [disponivel, desligado por padrao]
      — Define teto para fSL como o corpo do candle de entrada (|Close-Open|).
      — Garante que o stop nunca seja maior que o proprio movimento que gerou
        o sinal de forca (evita risco assimetrico em candles pequenos).
      — Calculo: fSL := min(fSL, |fCorpo| * 0.9) quando UsarSLMenorQueSinal=true.
 
-  4. TRAILING PROPORCIONAL (10% inicial, aperta com o avanco)
-     — Passo do trailing = (TakeProfit - lucroAtual) * TrailingPctInicial (10%).
-     — No inicio (lucro=0): passo = 10% do TP largo.
+    4. TRAILING PROPORCIONAL (62% inicial, aperta com o avanco)
+      — Passo do trailing = (TakeProfit - lucroAtual) * TrailingPctInicial (62%).
+      — No inicio (lucro=0): passo = 62% do TP largo.
      — Conforme o lucro avanca: passo diminui proporcionalmente -> trava mais perto.
-     — Piso: 2% do TP para nao colar no preco.
+      — Piso: 10% do TP para nao colar no preco.
      — Ativa apenas apos BE armado.
 
   5. BREAK-EVEN POR COR OPOSTA (saida defensiva)
@@ -45,12 +45,23 @@
      — Se atingir CandlesBrancosParaBE (5) com posicao aberta -> arma BE.
      — Protege contra lateralizacoes longas que erodem o lucro.
 
-  === RESTANTE: IDENTICO AO V14 ===
+  7. ALERTA SONORO/COR NO SINAL (confirmacao multi-TF p/ scalp)
+     — Toca som + cor no 1o candle de forca confirmado, INDEPENDENTE de
+       executar ordem (vale em modo estudo e mesmo ja posicionado).
+     — Com ExigirMTFnoAlerta=true, so toca quando contexto+direcao do TF
+       estao alinhados: um beep = setup valido NAQUELE timeframe.
+     — Rodando o robo em 2+ graficos (ex.: 5min e 15min), beep+cor
+       simultaneos nos TFs = maior confianca para o scalp.
+     — AlertarSomenteExaustao=true restringe o som a F>=85 / F<=-85.
+     — Tons: exaustao compra RGB(0,255,0) / forte compra RGB(0,200,0) /
+       exaustao venda RGB(255,80,80) / forte venda RGB(200,0,0).
+
+  === BASE PRESERVADA / AJUSTES SOBRE V14 ===
     - Filtro 1o candle de forca (fForca[1] < limiar)
     - Contexto same-TF: MA5 (iJanelaDir=5) / MA20 (iJanelaCtx=20)
     - Hard SL intrabar via Low/High
     - ForcaStopContra = 70
-    - BE classico por % do TP (BreakEvenRatio=0.5)
+    - BE classico por % do TP (BreakEvenRatio=0.333)
     - TakeProfit hard em 150 pts, StopMinimo=75, FatorRangeSL=0.0, BE=33%
     - Cores padrao: 3 niveis verde/vermelho (alerta@55, forte@70, exaustao@85)
       override por cyano/fucsia em alerta de instabilidade
@@ -117,6 +128,9 @@ input
 
   // === ALERTAS ===
   MostrarAlertas(true);
+  AlertarSinal(true);              // som/cor no SINAL confirmado (independe de execucao) — base p/ confirmacao multi-TF
+  ExigirMTFnoAlerta(true);         // so alerta quando contexto+direcao alinhados neste TF (beep = setup valido)
+  AlertarSomenteExaustao(false);   // se true, alerta apenas em exaustao (F>=85 / F<=-85) — filtro mais duro p/ scalp
   HabilitarOperacoes(true);
 
 var
@@ -124,6 +138,7 @@ var
   fMassa, fAceleracao, fForca, fForcaAbs : float;
   fMediaDir, fMediaCtx : float;
   bCtxAlta, bCtxBaixa, bDirAlta, bDirBaixa : boolean;
+  bSinalCompra, bSinalVenda : boolean;
   r, g, b : integer;
   iBarras : integer;
   bDeveOperar, bBreakEven : boolean;
@@ -214,6 +229,31 @@ begin
   end;
   PaintBar(RGB(r, g, b));
 
+  // ─── [V16] Sinal confirmado neste candle (1o candle de forca) ─
+  bSinalCompra := (fForca >= ForcaMinimaForte) and (fForca[1] < ForcaMinimaForte);
+  bSinalVenda  := (fForca <= -ForcaMinimaForte) and (fForca[1] > -ForcaMinimaForte);
+
+  // ─── [V16] Alerta sonoro/cor no SINAL (independe de execucao) ─
+  // Base p/ confirmacao multi-TF: rode em 5min e 15min; beep+cor
+  // simultaneos = setup consistente para o scalp.
+  if MostrarAlertas and AlertarSinal then
+  begin
+    if bSinalCompra
+       and ((not ExigirMTFnoAlerta) or (bCtxAlta and bDirAlta))
+       and ((not AlertarSomenteExaustao) or (fForca >= ForcaExaustao)) then
+    begin
+      if fForca >= ForcaExaustao then Alert(RGB(0, 255, 0))   // exaustao compradora
+      else Alert(RGB(0, 200, 0));                             // forte compradora
+    end;
+    if bSinalVenda
+       and ((not ExigirMTFnoAlerta) or (bCtxBaixa and bDirBaixa))
+       and ((not AlertarSomenteExaustao) or (fForca <= -ForcaExaustao)) then
+    begin
+      if fForca <= -ForcaExaustao then Alert(RGB(255, 80, 80)) // exaustao vendedora
+      else Alert(RGB(200, 0, 0));                              // forte vendedora
+    end;
+  end;
+
   // ─── SL dinamico ──────────────────────────────────────────────
   fSL := StopMinimo;
   if (fRange * FatorRangeSL) > fSL then fSL := fRange * FatorRangeSL;
@@ -232,6 +272,9 @@ begin
     iQtd := 1;
   if iQtd < 1 then iQtd := 1;
   if iQtd > MaxContratos then iQtd := MaxContratos;
+  // NOTA: BuyAtMarket/SellShortAtMarket nesta plataforma usam a quantidade
+  // configurada no contrato do robo. Ajuste essa quantidade para o iQtd
+  // calculado acima; ordem parametrizada BuyAtMarket(n) ainda nao confirmada no Profit.
 
   // ─── Stop horario ─────────────────────────────────────────────
   if Time() >= (StopHorario_H * 10000 + StopHorario_M * 100) then
@@ -363,7 +406,7 @@ begin
         iBarras        := 0;
         bBreakEven     := false;
         iCandlesBrancos := 0;
-        if MostrarAlertas then Alert(RGB(0, 200, 0));
+        // som ja emitido no bloco de SINAL acima (evita beep duplicado)
       end;
     end;
 
@@ -383,7 +426,7 @@ begin
         iBarras        := 0;
         bBreakEven     := false;
         iCandlesBrancos := 0;
-        if MostrarAlertas then Alert(RGB(200, 0, 0));
+        // som ja emitido no bloco de SINAL acima (evita beep duplicado)
       end;
     end;
   end;
