@@ -1,0 +1,357 @@
+{
+  Robo  : FORCA_WIN_V16_scalpercurto
+  Tipo  : NTSL (estrategia/robo executavel)
+  Ativo : WIN (mini-indice) - SCALP CURTO 5 MIN
+  Versao: 16.2-scalpercurto
+
+  Objetivo:
+    Capturar a energia dissipada logo apos o sinal de forca e zerar rapido
+    quando o trade perde tracao. Esta versao fica separada do scalper fiel
+    para nao misturar o perfil curto com o perfil SL/TP/MAX de 560/840 pts.
+
+  Base estatistica WIN 5min 2024-2026 (50.851 candles):
+    Sinal medio 55-70 : n=1.632 | toca 75 pts em 65% ate 15min
+    Sinal forte 70-85 : n=1.786 | toca 75 pts em 67% ate 15min
+    Exaustao >=85     : n=5.415 | toca 100 pts em 63% ate 15min
+
+  Perfil operacional recomendado:
+    - usar como setup tatico, nao como robo principal
+    - operar somente em dias muito liquidos e direcionais
+    - validar no replay antes de qualquer uso real
+    - operar forte/exaustao por padrao, com 1 contrato
+    - medio fica opcional/desligado por padrao por ter edge fino
+    - TP medio 75 pts, TP forte 75 pts, TP exaustao 100 pts
+    - BE absoluto em +30 pts
+    - SL 280 pts, max 3 candles de 5min
+
+  Backtest rapido dos candidatos com BE +30, SL 280, max 3 candles:
+    Medio  TP100: TP 36.1% | SL 7.9% | BE 43.0% | exp +3.7 pts/trade
+    Forte  TP75 : TP 50.1% | SL 6.2% | BE 30.3% | exp +8.9 pts/trade
+    Forte  TP100: TP 37.5% | SL 6.2% | BE 42.8% | exp +8.9 pts/trade
+    Forte+ TP100: TP 42.2% | SL 10.2%| BE 37.4% | exp +4.1 pts/trade
+
+  Observacao:
+    Nao existe "sem perda". O BE so protege depois que o preco anda
+    pelo menos BreakEvenPontos a favor. Antes disso, o SL continua ativo.
+}
+
+input
+  // === FORCA ===
+  ForcaMinimaForte(70.0);
+  ForcaExaustao(85.0);
+  ForcaAlerta(55.0);            // nivel medio: opcional para scalp curto
+  PeriodoMediaVolume(20);
+  UsarFiltroVolume(true);
+
+  // === ENTRADAS CURTAS ===
+  OperarSinalMedio(false);      // false por padrao: medio tem edge fino
+  OperarSinalForte(true);
+  OperarSinalExaustao(true);
+
+  // === STOP / ALVO - SCALPER CURTO 5MIN ===
+  StopMinimo(280.0);            // mantem ruido normal do WIN 5min fora do stop prematuro
+  FatorRangeSL(0.0);
+  TakeProfitMedio(75.0);        // sinal 55-70, opcional
+  TakeProfitForte(75.0);        // sinal 70-85: melhor equilibrio TP/BE nos dados
+  TakeProfitExaustao(100.0);    // sinal >=85: energia maior, alvo curto um pouco maior
+  UsarBreakEven(true);
+  BreakEvenPontos(30.0);        // arma protecao em +30 pts
+
+  // === V16: SL menor que valor do sinal ===
+  UsarSLMenorQueSinal(false);
+  PctSLvsCorpo(0.9);
+
+  // === V16: Alertas visuais ===
+  UsarAlertaInstabilidade(true);
+  JanelaInstabilidade(5);
+  MaxMudancasCor(3);
+  UsarAlertaMudancaTardia(false);
+  PctBordaZona(0.10);
+
+  // === GERENCIAMENTO DE RISCO ===
+  CapitalReais(10000.0);
+  RiscoPorcentagem(1.0);
+  PontoValorReais(0.20);
+  MaxContratos(1);              // setup tatico: configure 1 contrato no Profit
+
+  // === SAIDAS ===
+  StopHorario_H(17);
+  StopHorario_M(45);
+  PermitirReversao(false);
+  BloquearReentradaMesmoCandle(true);
+  MaxBarrasEmPosicao(3);        // 3 candles x 5min = janela curta de dissipacao
+
+  // === ALERTAS ===
+  MostrarAlertas(true);
+  AlertarNivel1(false);         // medio nao toca som por padrao
+  HabilitarOperacoes(true);
+
+var
+  fCorpo, fCorpoAbs, fRange, fVolMedia : float;
+  fMassa, fAceleracao, fForca, fForcaAbs : float;
+  r, g, b : integer;
+  iBarras : integer;
+  bDeveOperar, bBreakEven, bSaiuNesteCandle : boolean;
+  fEntrada, fSL, fSLAtivo : float;
+  fTPAtivo : float;
+  iQtd : integer;
+
+  iZonaAtual, iZonaAnterior : integer;
+  iMudancasJanela, iBarrasJanela : integer;
+  bAlertaInstavel, bAlertaTardio : boolean;
+  fForcaAnterior : float;
+
+begin
+  bSaiuNesteCandle := false;
+
+  // Calculos base
+  fCorpo := Close - Open;
+  fCorpoAbs := abs(fCorpo);
+  fRange := High - Low;
+  if fRange <= 0 then fRange := 0.0001;
+  fVolMedia := Media(PeriodoMediaVolume, Volume);
+  if fVolMedia <= 0 then fVolMedia := 1;
+
+  // F = M x A
+  fMassa      := fCorpo / fRange;
+  fAceleracao := Volume / fVolMedia;
+  fForca      := fMassa * fAceleracao * 100;
+  if fForca >  100 then fForca :=  100;
+  if fForca < -100 then fForca := -100;
+  fForcaAbs := abs(fForca);
+
+  // Zona de forca (3/2/1/0/-1/-2/-3)
+  if fForca >= ForcaExaustao then iZonaAtual := 3
+  else if fForca >= ForcaMinimaForte then iZonaAtual := 2
+  else if fForca >= ForcaAlerta then iZonaAtual := 1
+  else if fForca <= -ForcaExaustao then iZonaAtual := -3
+  else if fForca <= -ForcaMinimaForte then iZonaAtual := -2
+  else if fForca <= -ForcaAlerta then iZonaAtual := -1
+  else iZonaAtual := 0;
+
+  // Janela de instabilidade
+  iBarrasJanela := iBarrasJanela + 1;
+  if iZonaAtual <> iZonaAnterior then
+    iMudancasJanela := iMudancasJanela + 1;
+  bAlertaInstavel := UsarAlertaInstabilidade and (iMudancasJanela >= MaxMudancasCor);
+  if iBarrasJanela >= JanelaInstabilidade then
+  begin
+    iBarrasJanela   := 0;
+    iMudancasJanela := 0;
+  end;
+
+  bAlertaTardio := false;
+  if UsarAlertaMudancaTardia and (iZonaAtual <> iZonaAnterior) then
+  begin
+    if (fForcaAbs >= ForcaMinimaForte * (1 - PctBordaZona))
+       and (fForcaAbs <= ForcaMinimaForte * (1 + PctBordaZona)) then
+      bAlertaTardio := true;
+    if (fForcaAbs >= ForcaExaustao * (1 - PctBordaZona))
+       and (fForcaAbs <= ForcaExaustao * (1 + PctBordaZona)) then
+      bAlertaTardio := true;
+  end;
+
+  // Cores padrao
+  r := 255; g := 255; b := 255;
+  if fForca >= ForcaExaustao then begin r := 0;   g := 150; b := 0;   end
+  else if fForca >= ForcaMinimaForte then begin r := 120; g := 220; b := 120; end
+  else if fForca >= ForcaAlerta then begin r := 210; g := 255; b := 210; end
+  else if fForca <= -ForcaExaustao then begin r := 180; g := 0;   b := 0;   end
+  else if fForca <= -ForcaMinimaForte then begin r := 255; g := 120; b := 120; end
+  else if fForca <= -ForcaAlerta then begin r := 255; g := 220; b := 220; end;
+
+  if bAlertaInstavel or bAlertaTardio then
+  begin
+    if iZonaAtual > 0 then begin r := 0;   g := 220; b := 220; end
+    else if iZonaAtual < 0 then begin r := 255; g := 0;   b := 180; end;
+  end;
+  PaintBar(RGB(r, g, b));
+
+  // Alertas por transicao de zona
+  if MostrarAlertas and (iZonaAtual <> iZonaAnterior) then
+  begin
+    if AlertarNivel1 and (abs(iZonaAtual) = 1) and (iZonaAnterior = 0) then
+    begin
+      if iZonaAtual > 0 then Alert(RGB(210, 255, 210))
+      else                    Alert(RGB(255, 220, 220));
+    end;
+    if abs(iZonaAtual) = 2 then
+    begin
+      if iZonaAtual > 0 then Alert(RGB(120, 220, 120))
+      else                    Alert(RGB(255, 120, 120));
+    end;
+    if abs(iZonaAtual) = 3 then
+    begin
+      if iZonaAtual > 0 then Alert(RGB(0, 150, 0))
+      else                    Alert(RGB(180, 0, 0));
+    end;
+  end;
+
+  // SL e sizing
+  fSL := StopMinimo;
+  if (fRange * FatorRangeSL) > fSL then fSL := fRange * FatorRangeSL;
+  if UsarSLMenorQueSinal and (fCorpoAbs > 0) then
+  begin
+    if fSL > (fCorpoAbs * PctSLvsCorpo) then
+      fSL := fCorpoAbs * PctSLvsCorpo;
+  end;
+
+  if (fSL > 0) and (PontoValorReais > 0) then
+    iQtd := CapitalReais * (RiscoPorcentagem / 100) / (fSL * PontoValorReais)
+  else
+    iQtd := 1;
+  if iQtd < 1 then iQtd := 1;
+  if iQtd > MaxContratos then iQtd := MaxContratos;
+
+  // Stop horario
+  if Time() >= (StopHorario_H * 10000 + StopHorario_M * 100) then
+  begin
+    if IsBought or IsSold then
+    begin
+      ClosePosition;
+      bSaiuNesteCandle := true;
+    end;
+    bDeveOperar := false;
+  end
+  else
+    bDeveOperar := true;
+
+  // Controle de tempo em posicao
+  if IsBought or IsSold then
+    iBarras := iBarras + 1
+  else begin
+    iBarras    := 0;
+    bBreakEven := false;
+    fTPAtivo   := 0;
+  end;
+
+  if (MaxBarrasEmPosicao > 0) and (iBarras >= MaxBarrasEmPosicao) then
+  begin
+    if IsBought or IsSold then
+    begin
+      ClosePosition;
+      bSaiuNesteCandle := true;
+    end;
+    iBarras := 0; bDeveOperar := false;
+  end;
+
+  // Hard SL intrabar
+  if IsBought and (Low <= fEntrada - fSLAtivo) then
+  begin
+    ClosePosition;
+    bSaiuNesteCandle := true;
+    iBarras := 0;
+  end;
+  if IsSold and (High >= fEntrada + fSLAtivo) then
+  begin
+    ClosePosition;
+    bSaiuNesteCandle := true;
+    iBarras := 0;
+  end;
+
+  // Take Profit curto
+  if IsBought and (High >= fEntrada + fTPAtivo) then
+  begin
+    ClosePosition;
+    bSaiuNesteCandle := true;
+    iBarras := 0;
+  end;
+  if IsSold and (Low <= fEntrada - fTPAtivo) then
+  begin
+    ClosePosition;
+    bSaiuNesteCandle := true;
+    iBarras := 0;
+  end;
+
+  // Break-even absoluto em pontos
+  if UsarBreakEven and (IsBought or IsSold) then
+  begin
+    if IsBought and (not bBreakEven) then
+      if High >= fEntrada + BreakEvenPontos then bBreakEven := true;
+    if IsSold and (not bBreakEven) then
+      if Low <= fEntrada - BreakEvenPontos then bBreakEven := true;
+
+    if bBreakEven then
+    begin
+      if IsBought and (Low <= fEntrada) then
+      begin
+        ClosePosition;
+        bSaiuNesteCandle := true;
+        iBarras := 0;
+      end;
+      if IsSold and (High >= fEntrada) then
+      begin
+        ClosePosition;
+        bSaiuNesteCandle := true;
+        iBarras := 0;
+      end;
+    end;
+  end;
+
+  // Entradas - tiros curtos de forca
+  if HabilitarOperacoes and bDeveOperar
+     and ((not BloquearReentradaMesmoCandle) or (not bSaiuNesteCandle)) then
+  begin
+    // COMPRA media 55-70: opcional, sem som por padrao
+    if OperarSinalMedio
+      and (fForca >= ForcaAlerta) and (fForca < ForcaMinimaForte)
+      and (fForca[1] < ForcaAlerta)
+      and ((not UsarFiltroVolume) or ((fCorpo > 0) and (Volume >= fVolMedia))) then
+    begin
+      if (not IsBought) and (not IsSold) then
+      begin
+        fTPAtivo := TakeProfitMedio;
+        BuyAtMarket;
+        fEntrada := Close; fSLAtivo := fSL; iBarras := 0; bBreakEven := false;
+      end;
+    end;
+
+    // COMPRA forte/exaustao
+    if (not IsBought) and (not IsSold)
+      and (((OperarSinalForte and (fForca >= ForcaMinimaForte) and (fForca < ForcaExaustao))
+            or (OperarSinalExaustao and (fForca >= ForcaExaustao)))
+      and (fForca[1] < ForcaMinimaForte)
+      and ((not UsarFiltroVolume) or ((fCorpo > 0) and (Volume >= fVolMedia))) then
+    begin
+      if fForca >= ForcaExaustao then
+        fTPAtivo := TakeProfitExaustao
+      else
+        fTPAtivo := TakeProfitForte;
+      BuyAtMarket;
+      fEntrada := Close; fSLAtivo := fSL; iBarras := 0; bBreakEven := false;
+    end;
+
+    // VENDA media 55-70: opcional, sem som por padrao
+    if OperarSinalMedio
+      and (fForca <= -ForcaAlerta) and (fForca > -ForcaMinimaForte)
+      and (fForca[1] > -ForcaAlerta)
+      and ((not UsarFiltroVolume) or ((fCorpo < 0) and (Volume >= fVolMedia))) then
+    begin
+      if (not IsBought) and (not IsSold) then
+      begin
+        fTPAtivo := TakeProfitMedio;
+        SellShortAtMarket;
+        fEntrada := Close; fSLAtivo := fSL; iBarras := 0; bBreakEven := false;
+      end;
+    end;
+
+    // VENDA forte/exaustao
+    if (not IsBought) and (not IsSold)
+      and (((OperarSinalForte and (fForca <= -ForcaMinimaForte) and (fForca > -ForcaExaustao))
+            or (OperarSinalExaustao and (fForca <= -ForcaExaustao)))
+      and (fForca[1] > -ForcaMinimaForte)
+      and ((not UsarFiltroVolume) or ((fCorpo < 0) and (Volume >= fVolMedia))) then
+    begin
+      if fForca <= -ForcaExaustao then
+        fTPAtivo := TakeProfitExaustao
+      else
+        fTPAtivo := TakeProfitForte;
+      SellShortAtMarket;
+      fEntrada := Close; fSLAtivo := fSL; iBarras := 0; bBreakEven := false;
+    end;
+  end;
+
+  iZonaAnterior  := iZonaAtual;
+  fForcaAnterior := fForca;
+
+end;

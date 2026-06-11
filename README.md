@@ -129,6 +129,7 @@ Robots and indicators developed on Neologica Profit platform targeting WIN B3:
 | `FORCA_WIN_V14` | **WIN** | **15min** | dinâmico `max(822, range×2.0)` | **2466 pts** | **3.0** | ✅ `ratio=0.5` | 🧪 V11 + filtro 1º candle + hard SL intrabar |
 | `FORCA_WIN_V16` | **WIN** | **15min** MA5/MA20 | **75 pts** | **150 pts** | **2.0** | ✅ `ratio=0.333` + adaptativo | 🧪 swing curto, não rebacktestado |
 | **`FORCA_WIN_V16_scalper_sinaisForca`** | **WIN** | **5min** | **280 pts** | **560** (forte) / **840** (exaustão) | **2.0 / 3.0** | ❌ desligado no perfil fiel | 🎯 **FOCO ATUAL — ✅ backtest fiel 50k candles 2024–26** |
+| `FORCA_WIN_V16_scalpercurto` | **WIN** | **5min** | **280 pts** | **75** (forte) / **100** (exaustão) | curto | ✅ BE absoluto +30 pts | 🧪 setup tático/replay — 1 contrato |
 | `FORCA_WIN_V17_sinaisForcaComMedias` | **WIN** | 15min | **150 pts** | **1500 pts** | ~10 | ✅ 75 pts absolutos | ⚠️ experimental |
 
 ---
@@ -144,6 +145,7 @@ All robots share the same core formula **F = M × A**. What differs is **when to
 | `FORCA_WIN_V11` | WIN | F ≥ 70 (fraco descartado) | ✅ `BreakEvenRatio=0.5` | **3.0** | Baseline estatístico; exaustão win 44.6% |
 | `FORCA_WIN_V16` | WIN 15min | F ≥ 70 no 1º candle + MA5/MA20 + volume | ✅ `0.333` + cor oposta + 5 brancos | **2.0** | Swing curto; não rebacktestado |
 | **`FORCA_WIN_V16_scalper_sinaisForca`** | **WIN 5min** | **F ≥ 70 no 1º candle + volume direcional** | ❌ **desligado por padrão** | **2.0 (forte) / 3.0 (exaustão)** | 🎯 **FOCO ATUAL — WR 40.3% · +32.720 pts · backtest fiel 50k candles** |
+| `FORCA_WIN_V16_scalpercurto` | WIN 5min | F ≥ 70 no 1º candle + volume direcional; médio opcional | ✅ +30 pts absoluto | curto | Setup tático: TP forte=75, exaustão=100, max 3 candles, 1 contrato |
 | `INDICADOR_FORCA_V1` | visual | — | — | — | 7 cores + zona S/R + gold volume |
 
 > **Break-even:** V11/V14 usam `BreakEvenRatio=0.5`. No scalper, BE/trailing/stop contra ficam desligados por padrão porque o backtest fiel do WIN 5min favoreceu o perfil simples `SL/TP/MAX/horario`.
@@ -183,6 +185,40 @@ Para o WIN 5min, o comparativo fiel por motivo de saída mostrou que a melhor es
 | **SL/TP/MAX/horário puro** | **+32.720 pts** | **perfil vencedor nos dados locais** |
 
 > Decisão: **BE, trailing, stop candle contra e reversão automática ficam desligados por padrão**. Reative apenas para experimento controlado e rode `CandlesHistoryDatas/backtest_win_scalper_fiel.py` antes de operar.
+
+---
+
+## Experimental — FORCA_WIN_V16_scalpercurto
+
+`Robots/FORCA_WIN_V16_scalpercurto` é a variação de tiro curto para tentar capturar a energia dissipada logo após o sinal. Ela não substitui o scalper fiel; é um **setup tático de replay/estudo**, pensado para dias muito líquidos e direcionais, com **1 contrato**. Pela relação risco-retorno nominal, não é a versão priorizada para dinheiro real.
+
+### Parâmetros padrão
+
+| Item | Valor | Motivo |
+|---|---:|---|
+| Sinal médio `55–70` | desligado | chega no alvo, mas a expectativa ficou fina |
+| Sinal forte `70–85` | ligado | melhor equilíbrio entre frequência e resultado |
+| Sinal exaustão `>=85` | ligado | maior energia, aceita alvo um pouco maior |
+| TP médio | 75 pts | usar só em teste controlado |
+| TP forte | 75 pts | maior taxa de TP nos dados curtos |
+| TP exaustão | 100 pts | exaustão tem MFE maior |
+| BE | +30 pts | trava defensiva rápida depois que o trade anda |
+| SL | 280 pts | evita stop por ruído normal do WIN 5min |
+| Max barras | 3 candles | janela de 15min para dissipação |
+| Contratos | 1 | limite tático; não escalar antes de novo backtest com custos |
+
+### Probabilidade de tocar alvo após o sinal
+
+| Sinal | Alvo | Até 15min | Até 30min | Até 60min |
+|---|---:|---:|---:|---:|
+| Médio `55–70` | 75 pts | 65% | 74% | 80% |
+| Médio `55–70` | 100 pts | 56% | 67% | 74% |
+| Forte `70–85` | 75 pts | 67% | 75% | 80% |
+| Forte `70–85` | 100 pts | 56% | 68% | 75% |
+| Exaustão `>=85` | 75 pts | 71% | 78% | 84% |
+| Exaustão `>=85` | 100 pts | 63% | 72% | 79% |
+
+> Leitura operacional: para tiro curto, o default conservador é **forte/exaustão apenas**, **1 contrato**, e uso em replay ou sessão muito líquida/direcional. O sinal médio pode ser ligado (`OperarSinalMedio=true`) para experimento, mas não deve entrar no padrão sem novo backtest com custos.
 
 ### Manual de operação — passo a passo
 
