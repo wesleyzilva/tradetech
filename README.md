@@ -265,6 +265,7 @@ Para o WIN 5min, o comparativo fiel por motivo de saída mostrou que a melhor es
 | G05 | `fForcaAnterior` atribuído mas não usado | 🟡 Dead code sem impacto operacional |
 | G06 | Backtest fiel por motivo de saída | ✅ Script criado em `CandlesHistoryDatas/backtest_win_scalper_fiel.py`; usar para medir BE/trailing/TP/SL com a lógica completa |
 | G07 | Risco real no simulador maior que SL teórico | 🧪 Ajustado — `UsarOrdensProtecaoReal=true`, `OffsetStopReal=30`; rerodar simulador e comparar perdas máximas |
+| G08 | Stop horário não bloqueava trades após 17:45 | ✅ Ajustado — `Time()` tratado como HHMM (`1745`), não HHMMSS (`174500`); resultados anteriores tinham operações overnight |
 
 ---
 
