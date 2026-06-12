@@ -154,7 +154,7 @@ All robots share the same core formula **F = M × A**. What differs is **when to
 
 ## Current Focus — FORCA_WIN_V16_scalper_sinaisForca
 
-`Robots/FORCA_WIN_V16_scalper_sinaisForca` é o robô operacional atual para WIN scalp em 5 minutos. Backtest fiel validado em **50.000 candles 2024–2026**: WR 40.3% · PnL **+32.720 pts** no perfil `SL/TP/MAX/horario`, sem BE/trailing/stop contra. Após o teste no simulador, o robô passou a usar proteção real por ordens `limit/stop-limit`: gatilho de SL em **280 pts**, offset de execução em **30 pts** e risco real planejado de **310 pts**.
+`Robots/FORCA_WIN_V16_scalper_sinaisForca/FORCA_WIN_V16_scalper_sinaisForca` é a versão viva do robô operacional atual para WIN scalp em 5 minutos. Backtest fiel validado em **50.000 candles 2024–2026**: WR 40.3% · PnL **+32.720 pts** no perfil `SL/TP/MAX/horario`, sem BE/trailing/stop contra. Após o teste no simulador, o robô passou a usar proteção real por ordens `limit/stop-limit`: gatilho de SL em **280 pts**, offset de execução em **30 pts** e risco real planejado de **310 pts**.
 
 > ⚠️ **Comparação direta do backtest:** `SL=280 TP2=560 TP3=840 MAX=12` → **+32.720 pts (positivo)** no backtest fiel. Os parâmetros antigos V16 15min (`SL=75 TP=188 MAX=6`) testados no 5min deram −21.446 pts. Use o scalper para 5min, o V16 somente para 15min.
 
@@ -451,7 +451,7 @@ Robot documentation lives in `Robots/`. Older versions have individual `.md` fil
 |-------|--------------|---------|
 | `INDICADOR_FORCA_V1` | [INDICADOR_FORCA_V1.md](Robots/INDICADOR_FORCA_V1.md) | Visual indicator — 7 cores, doji, volume gold |
 | `FORCA_WIN_V11` | [FORCA_WIN_V11.md](Robots/FORCA_WIN_V11.md) | WIN-calibrated robot — SL=822, TP=2466, RR3 |
-| **`FORCA_WIN_V16_scalper_sinaisForca`** | [MAPA_FORCA_WIN.md](Robots/MAPA_FORCA_WIN.md), [RAID_LOG.md](Robots/RAID_LOG.md), [CHANGELOG.md](Robots/CHANGELOG.md) | 🎯 **FOCO ATUAL** — scalp 5min, SL=280, TP2/3 dinâmico, alertas multi-nível, gestão simples fiel ao backtest |
+| **`FORCA_WIN_V16_scalper_sinaisForca`** | [versão viva](Robots/FORCA_WIN_V16_scalper_sinaisForca/FORCA_WIN_V16_scalper_sinaisForca), [MAPA_FORCA_WIN.md](Robots/MAPA_FORCA_WIN.md), [RAID_LOG.md](Robots/RAID_LOG.md), [CHANGELOG.md](Robots/CHANGELOG.md) | 🎯 **FOCO ATUAL** — scalp 5min, SL gatilho=280, risco planejado=310, TP2/3 dinâmico, alertas multi-nível, gestão por ordens reais |
 | `FORCA_WIN_V16` | [FORCA_WIN_V14plus.md](Robots/FORCA_WIN_V14plus.md) | Swing curto 15min — MA5/MA20, SL=75, TP=150 |
 | `FORCA_WIN_V14+` | [FORCA_WIN_V14plus.md](Robots/FORCA_WIN_V14plus.md) | Regras compartilhadas V14, V15, V16 e V17 |
 | `FORCA_SEMAFORO_V10` | [FORCA_SEMAFORO_V10.md](Robots/FORCA_SEMAFORO_V10.md) | Genérico — 2 tons, SL dinâmico, break-even, qualquer ativo/TF |
