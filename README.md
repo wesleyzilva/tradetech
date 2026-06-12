@@ -128,7 +128,7 @@ Robots and indicators developed on Neologica Profit platform targeting WIN B3:
 | `FORCA_WIN_V11` | **WIN** | **15min** `60/30/15` | dinâmico `max(822, range×2.0)` | **2466 pts** | **3.0** | ✅ `ratio=0.5` | ✅ baseline calibrado |
 | `FORCA_WIN_V14` | **WIN** | **15min** | dinâmico `max(822, range×2.0)` | **2466 pts** | **3.0** | ✅ `ratio=0.5` | 🧪 V11 + filtro 1º candle + hard SL intrabar |
 | `FORCA_WIN_V16` | **WIN** | **15min** MA5/MA20 | **75 pts** | **150 pts** | **2.0** | ✅ `ratio=0.333` + adaptativo | 🧪 swing curto, não rebacktestado |
-| **`FORCA_WIN_V16_scalper_sinaisForca`** | **WIN** | **5min** | **280 pts** | **560** (forte) / **840** (exaustão) | **2.0 / 3.0** | ❌ desligado no perfil fiel | 🎯 **FOCO ATUAL — ✅ backtest fiel 50k candles 2024–26** |
+| **`FORCA_WIN_V16_scalper_sinaisForca`** | **WIN** | **5min** | **280 pts** gatilho / **310 pts** planejado | **560** (forte) / **840** (exaustão) | **1.81 / 2.71 real** | ❌ desligado no perfil fiel | 🎯 **FOCO ATUAL — ✅ backtest fiel 50k candles 2024–26** |
 | `FORCA_WIN_V16_scalpercurto` | **WIN** | **5min** | **280 pts** | **75** (forte) / **100** (exaustão) | curto | ✅ BE absoluto +30 pts | 🧪 setup tático/replay — 1 contrato |
 | `FORCA_WIN_V17_sinaisForcaComMedias` | **WIN** | 15min | **150 pts** | **1500 pts** | ~10 | ✅ 75 pts absolutos | ⚠️ experimental |
 
@@ -154,7 +154,7 @@ All robots share the same core formula **F = M × A**. What differs is **when to
 
 ## Current Focus — FORCA_WIN_V16_scalper_sinaisForca
 
-`Robots/FORCA_WIN_V16_scalper_sinaisForca` é o robô operacional atual para WIN scalp em 5 minutos. Backtest fiel validado em **50.000 candles 2024–2026**: WR 40.3% · PnL **+32.720 pts** no perfil `SL/TP/MAX/horario`, sem BE/trailing/stop contra.
+`Robots/FORCA_WIN_V16_scalper_sinaisForca` é o robô operacional atual para WIN scalp em 5 minutos. Backtest fiel validado em **50.000 candles 2024–2026**: WR 40.3% · PnL **+32.720 pts** no perfil `SL/TP/MAX/horario`, sem BE/trailing/stop contra. Após o teste no simulador, o robô passou a usar proteção real por ordens `limit/stop-limit`: gatilho de SL em **280 pts**, offset de execução em **30 pts** e risco real planejado de **310 pts**.
 
 > ⚠️ **Comparação direta do backtest:** `SL=280 TP2=560 TP3=840 MAX=12` → **+32.720 pts (positivo)** no backtest fiel. Os parâmetros antigos V16 15min (`SL=75 TP=188 MAX=6`) testados no 5min deram −21.446 pts. Use o scalper para 5min, o V16 somente para 15min.
 
@@ -165,13 +165,13 @@ All robots share the same core formula **F = M × A**. What differs is **when to
    | Zona | Compra | Venda | Ação |
    |------|--------|-------|------|
    | Chegando `55–70` | 🟩 verde claro `RGB(210,255,210)` | 🟥 rosa claro `RGB(255,220,220)` | alerta visual, sem entrada |
-   | Forte `70–85` | 🟢 verde médio `RGB(120,220,120)` | 🔴 vermelho médio `RGB(255,120,120)` | entrada com TP2=560 (RR 2.0) |
-   | Exaustão `≥85` | 💚 verde escuro `RGB(0,150,0)` | 🔴 vermelho escuro `RGB(180,0,0)` | entrada com TP3=840 (RR 3.0) |
+  | Forte `70–85` | 🟢 verde médio `RGB(120,220,120)` | 🔴 vermelho médio `RGB(255,120,120)` | entrada com TP2=560 (RR real ~1.81) |
+  | Exaustão `≥85` | 💚 verde escuro `RGB(0,150,0)` | 🔴 vermelho escuro `RGB(180,0,0)` | entrada com TP3=840 (RR real ~2.71) |
    | Instabilidade | 🔵 cyano `RGB(0,220,220)` | 🟣 fúcsia `RGB(255,0,180)` | override visual: ≥3 trocas de zona em 5 candles |
 3. **Alerta sonoro no sinal:** toca no 1º candle que entra na zona operacional (F ≥ 70). Nível 1 (`55–70`) fica visual por padrão (`AlertarNivel1=false`) para reduzir ruído.
 4. **Gatilho de entrada:** `fForca >= 70 AND fForca[1] < 70` (1º candle da força) + `fCorpo > 0 AND Volume >= MediaVolume(20)` (compra); simétrico para venda.
-5. **TP dinâmico por zona:** exaustão (F ≥ 85) → TP3 = 840 pts (RR 3.0); forte (70–85) → TP2 = 560 pts (RR 2.0).
-6. **Gestão de risco:** SL=280 pts · TP2=560 ou TP3=840 · máximo 12 barras (60 min) · stop horário 17h45 · BE/trailing/stop contra desligados por padrão · bloqueio de reentrada no mesmo candle.
+5. **TP dinâmico por zona:** exaustão (F ≥ 85) → TP3 = 840 pts (RR real ~2.71); forte (70–85) → TP2 = 560 pts (RR real ~1.81).
+6. **Gestão de risco real:** SL gatilho=280 pts · offset stop-limit=30 pts · risco planejado=310 pts · TP2=560 ou TP3=840 por ordem limite · máximo 12 barras (60 min) · stop horário 17h45 · BE/trailing/stop contra desligados por padrão · bloqueio de reentrada no mesmo candle.
 
 ### Melhor estratégia de saída: simples e fiel ao backtest
 
@@ -240,19 +240,19 @@ Para o WIN 5min, o comparativo fiel por motivo de saída mostrou que a melhor es
 ```
 1. Stop horário — 17h45
 2. Max barras — 12 candles × 5min = 60 min máximo
-3. Hard SL intrabar — Low/High rompe 280 pts contra a entrada
-4. Take Profit hard — 560 pts (forte) ou 840 pts (exaustão)
+3. Ordem limite de alvo — 560 pts (forte) ou 840 pts (exaustão)
+4. Ordem stop-limit — gatilho 280 pts, limite planejado 310 pts
 5. Bloqueio de reentrada — se saiu neste candle, só avalia nova entrada no próximo candle
 ```
 
 ### Sizing com R$10k — 2026
 
-| Capital | Risco | SL | Risco/contrato | Contratos |
-|---------|-------|----|---------------|-----------|
-| R$10k | 1% = R$100 | 280 pts × R$0.20 = R$56 | R$56 | **1 contrato** ✅ |
-| R$10k | 2% = R$200 | 280 pts × R$0.20 = R$56 | R$56 | **3 contratos (teto)** ✅ |
+| Capital | Risco | Risco real planejado | Risco/contrato | Contratos |
+|---------|-------|----------------------|---------------|-----------|
+| R$10k | 1% = R$100 | (280 + 30) pts × R$0.20 | R$62 | **1 contrato** ✅ |
+| R$10k | 2% = R$200 | (280 + 30) pts × R$0.20 | R$62 | **3 contratos (teto)** ✅ |
 
-> Com `CapitalReais=10000`, `RiscoPorcentagem=1`, `SL=280`, `PontoValorReais=0.20` → `iQtd = 1` contrato. Com risco de 2%, `iQtd` fica limitado a **3 contratos** por `MaxContratos=3`. A ordem NTSL ainda usa a quantidade configurada no Profit; configure a quantidade do contrato **<= iQtd e nunca acima de 3** até validar ordem parametrizada (`BuyAtMarket(iQtd)`).
+> Com `CapitalReais=10000`, `RiscoPorcentagem=1`, `SL=280`, `OffsetStopReal=30`, `PontoValorReais=0.20` → `iQtd = 1` contrato. Com risco de 2%, `iQtd` fica limitado a **3 contratos** por `MaxContratos=3`. A ordem NTSL ainda usa a quantidade configurada no Profit; configure a quantidade do contrato **<= iQtd e nunca acima de 3** até validar ordem parametrizada (`BuyAtMarket(iQtd)`).
 
 ### Status dos gaps
 
@@ -264,6 +264,7 @@ Para o WIN 5min, o comparativo fiel por motivo de saída mostrou que a melhor es
 | G04 | Alerta de mudança tardia (`UsarAlertaMudancaTardia=false`) | 🟡 Desligado intencionalmente |
 | G05 | `fForcaAnterior` atribuído mas não usado | 🟡 Dead code sem impacto operacional |
 | G06 | Backtest fiel por motivo de saída | ✅ Script criado em `CandlesHistoryDatas/backtest_win_scalper_fiel.py`; usar para medir BE/trailing/TP/SL com a lógica completa |
+| G07 | Risco real no simulador maior que SL teórico | 🧪 Ajustado — `UsarOrdensProtecaoReal=true`, `OffsetStopReal=30`; rerodar simulador e comparar perdas máximas |
 
 ---
 
@@ -284,7 +285,7 @@ WIN (mini-índice) — execução automática
   │     MA5/MA20 · SL=75 · TP=150 · BE=33% + adaptativo
   │
   └─► 🎯 FORCA_WIN_V16_scalper_sinaisForca — SCALP 5MIN (foco atual)
-        SL=280 · TP2=560 (forte/RR2) · TP3=840 (exaustão/RR3)
+        SL gatilho=280 · risco planejado=310 · TP2=560 (forte/RR real ~1.81) · TP3=840 (exaustão/RR real ~2.71)
         Sem BE/trailing/stop contra no perfil padrão · MAX=12 barras
         Backtest fiel: WR 40.3% · PnL +32.720 pts · 50k candles 2024–26
         Multi-TF: rodar junto com INDICADOR_FORCA_V1 no 15min
@@ -351,18 +352,20 @@ Operational calibration is WIN-only. The current execution robot is `FORCA_WIN_V
 
 ```
 WIN scalper sizing:
-  SL = 280 pts
-  TP2 = 560 pts (F 70-85, RR 2.0)
-  TP3 = 840 pts (F >=85, RR 3.0)
-  contracts = min(3, floor(capital × risk% / (280 × 0.20)))
+  SL trigger = 280 pts
+  stop-limit offset = 30 pts
+  planned real risk = 310 pts
+  TP2 = 560 pts (F 70-85, RR real ~1.81)
+  TP3 = 840 pts (F >=85, RR real ~2.71)
+  contracts = min(3, floor(capital × risk% / (310 × 0.20)))
 ```
 
 **Example with R$10k:**
 
-| Capital | Risk | Asset | TF | SL | Risk/contract | Dynamic cap |
-|---------|------|-------|----|----|---------------|-------------|
-| R$10k | 1% = R$100 | **WIN** | **5min** | 280 pts × R$0.20 | R$56 | **1 contrato** |
-| R$10k | 2% = R$200 | **WIN** | **5min** | 280 pts × R$0.20 | R$56 | **3 contratos (teto)** |
+| Capital | Risk | Asset | TF | Planned real risk | Risk/contract | Dynamic cap |
+|---------|------|-------|----|-------------------|---------------|-------------|
+| R$10k | 1% = R$100 | **WIN** | **5min** | 310 pts × R$0.20 | R$62 | **1 contrato** |
+| R$10k | 2% = R$200 | **WIN** | **5min** | 310 pts × R$0.20 | R$62 | **3 contratos (teto)** |
 
 > **Important:** the calculation is dynamic, but execution quantity is still controlled by the Profit contract setup because the current NTSL order calls use `BuyAtMarket` / `SellShortAtMarket` without quantity parameter. Until `BuyAtMarket(iQtd)` is validated in demo, set the Profit quantity manually to the calculated size and never above 3.
 
@@ -406,9 +409,9 @@ WIN scalper sizing:
 | Saída forçada | 12 barras (60 min) ou 17h45 — o que vier primeiro |
 
 **Mecanismos de proteção automáticos (ordem de prioridade):**
-1. Hard SL intrabar — `Low ≤ entrada − 280` ou `High ≥ entrada + 280`
-2. TP hard — 560 ou 840 pts conforme zona de entrada
-3. Max barras 12 → stop horário 17h45
+1. Alvo por ordem limite — 560 ou 840 pts conforme zona de entrada
+2. Stop por ordem stop-limit — gatilho de 280 pts e limite de 310 pts
+3. ClosePosition a mercado apenas para max barras 12 ou stop horário 17h45
 
 ---
 
@@ -476,7 +479,7 @@ Robot documentation lives in `Robots/`. Older versions have individual `.md` fil
 **Gerenciamento de risco:**
 - Risco máximo por trade: 1–2% do capital
 - SL fixo: 280 pts = R$56/contrato (1.5× range médio 5min 2026 ~187 pts)
-- TP dinâmico: forte (70–85) → TP=560 pts (RR 2.0); exaustão (≥85) → TP=840 pts (RR 3.0)
+- TP dinâmico: forte (70–85) → TP=560 pts (RR real ~1.81); exaustão (≥85) → TP=840 pts (RR real ~2.71)
 - Break-even/trailing/stop contra: desligados por padrão no scalper fiel
 - Stop horário: 17h45 — fecha tudo antes do fechamento do mercado
 - Limite diário sugerido: 3% de drawdown → encerrar sessão manualmente

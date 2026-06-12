@@ -14,6 +14,10 @@
   Backtest 50k candles 2024-2026 WIN 5min:
     SL=280 TP2=560 TP3=840 MAX=12: WR=40.3% PnL=+32.720 pts (POSITIVO)
     SL=75  TP=188 MAX=6 : WR=29.3% be=28.5% PnL=-21.446 pts (NEGATIVO)
+  Ajuste simulador 2026-06:
+    UsarOrdensProtecaoReal=true envia alvo limite e stop stop-limit nativos.
+    Risco real calibrado = StopMinimo + OffsetStopReal (280 + 30 = 310 pts).
+    Sizing usa o risco real planejado, nao apenas o gatilho do stop.
 
   ============================================================
   1. GATILHO
@@ -38,17 +42,19 @@
   3. GESTAO DE RISCO — SCALP 5MIN
   ============================================================
   — SL      : 280 pts = R$56/contrato  (1.5x range medio 5min)
-  — TP Nivel 2 (forte  70-85) : 560 pts  RR 2.0  (280 x 2.0) = R$112/contrato
-  — TP Nivel 3 (exaust >=85)  : 840 pts  RR 3.0  (280 x 3.0) = R$168/contrato
+  — SL real : 310 pts maximo planejado com OffsetStopReal=30 no stop-limit
+  — TP Nivel 2 (forte  70-85) : 560 pts  RR real ~1.81  (560 / 310) = R$112/contrato
+  — TP Nivel 3 (exaust >=85)  : 840 pts  RR real ~2.71  (840 / 310) = R$168/contrato
+  — Execucao: ordens reais SellToCover/BuyToCover Stop+Limit por padrao
   — BE/Trailing/Stop contra: desligados por padrao no perfil fiel vencedor
-  — Sizing  : Capital x Risco% / (SL x PontoValor)  [max 3 contratos]
+  — Sizing  : Capital x Risco% / ((SL + offset) x PontoValor)  [max 3 contratos]
   — Reentrada no mesmo candle bloqueada por padrao apos qualquer saida
 
-  Saidas antecipadas (ordem de prioridade):
-    a) Hard SL intrabar via Low/High  (280 pts)
-    b) Take Profit hard: 560 pts (forte) ou 840 pts (exaustao)
-    c) Stop horario: 17h45
-    d) Max barras em posicao: 12 candles (= 60 min)
+  Saidas e protecoes:
+    a) Alvo por ordem limite nativa: 560 pts (forte) ou 840 pts (exaustao)
+    b) Stop por ordem stop-limit nativa: gatilho 280 pts, limite 310 pts
+    c) ClosePosition a mercado apenas para stop horario, max barras ou fallback
+    d) Stop horario: 17h45 | Max barras: 12 candles (= 60 min)
 
   === STATUS ===
     Backtesteado 50k candles 2024-2026. Operar em conta demo antes do real.
@@ -65,11 +71,13 @@ input
 
   // === STOP / ALVO — SCALP 5MIN ===
   // SL=280 = 1.5x range medio 5min (187pts) → suporta ruido intracandle
-  // TP2=560 = RR 2.0 | TP3=840 = RR 3.0 → equilibrio estatistico abaixo de 50% WR
+  // TP2=560 = RR nominal 2.0 / real ~1.81 | TP3=840 = nominal 3.0 / real ~2.71
   StopMinimo(280.0);
   FatorRangeSL(0.0);
-  TakeProfitNivel2(560.0);      // RR 2.0 — zona forte  (70-85) = R$112/contrato
-  TakeProfitNivel3(840.0);      // RR 3.0 — zona exaustao (>=85) = R$168/contrato
+  TakeProfitNivel2(560.0);      // RR real ~1.81 — zona forte  (70-85) = R$112/contrato
+  TakeProfitNivel3(840.0);      // RR real ~2.71 — zona exaustao (>=85) = R$168/contrato
+  UsarOrdensProtecaoReal(true); // true = SL/TP via ordens nativas, nao ClosePosition a mercado
+  OffsetStopReal(30.0);         // stop 280, limite 310; risco real planejado = 310 pts
   UsarBreakEven(false);
   BreakEvenRatio(0.333);        // reservado para testes; desligado no perfil fiel
 
@@ -123,6 +131,8 @@ var
   bDeveOperar, bBreakEven, bSaiuNesteCandle : boolean;
   fEntrada, fSL, fSLAtivo : float;
   fTPAtivo : float;             // TP ativo definido na entrada (nivel 2 ou 3)
+  fRiscoReal, fOffsetStopReal : float;
+  fStopPreco, fStopLimite, fAlvoPreco : float;
   iQtd : integer;
 
   // V16
@@ -239,14 +249,20 @@ begin
       fSL := fCorpoAbs * PctSLvsCorpo;
   end;
 
+  fOffsetStopReal := OffsetStopReal;
+  if fOffsetStopReal < 0 then fOffsetStopReal := 0;
+  fRiscoReal := fSL;
+  if UsarOrdensProtecaoReal then
+    fRiscoReal := fSL + fOffsetStopReal;
+
   // ─── Sizing por risco ─────────────────────────────────────────
-  // iQtd = Capital x Risco% / (SL x PontoValor)
-  // Com Capital=10k, Risco=1%, SL=280, PV=0.20 → iQtd=1 contrato.
+  // iQtd = Capital x Risco% / (RiscoReal x PontoValor)
+  // Com Capital=10k, Risco=1%, SL=280, offset=30, PV=0.20 → iQtd=1 contrato.
   // Com Risco=2%, iQtd=3 contratos (limitado por MaxContratos=3).
   // Nota: BuyAtMarket/SellShortAtMarket sem parametro usa a quantidade configurada no Profit.
   // Configure a quantidade do contrato <= iQtd e nunca acima de 3 ate validar BuyAtMarket(iQtd).
-  if (fSL > 0) and (PontoValorReais > 0) then
-    iQtd := CapitalReais * (RiscoPorcentagem / 100) / (fSL * PontoValorReais)
+  if (fRiscoReal > 0) and (PontoValorReais > 0) then
+    iQtd := CapitalReais * (RiscoPorcentagem / 100) / (fRiscoReal * PontoValorReais)
   else
     iQtd := 1;
   if iQtd < 1 then iQtd := 1;
@@ -286,18 +302,43 @@ begin
     iBarras := 0; bDeveOperar := false;
   end;
 
-  // ─── Hard SL intrabar (V14) ───────────────────────────────────
-  if IsBought and (Low <= fEntrada - fSLAtivo) then
+  // ─── Ordens reais de protecao/alvo ───────────────────────────
+  if UsarOrdensProtecaoReal and (IsBought or IsSold)
+     and (fEntrada > 0) and (fSLAtivo > 0) and (fTPAtivo > 0) then
   begin
-    ClosePosition;
-    bSaiuNesteCandle := true;
-    iBarras := 0;
+    if IsBought then
+    begin
+      fAlvoPreco  := fEntrada + fTPAtivo;
+      fStopPreco  := fEntrada - fSLAtivo;
+      fStopLimite := fStopPreco - fOffsetStopReal;
+      SellToCoverLimit(fAlvoPreco);
+      SellToCoverStop(fStopPreco, fStopLimite);
+    end;
+    if IsSold then
+    begin
+      fAlvoPreco  := fEntrada - fTPAtivo;
+      fStopPreco  := fEntrada + fSLAtivo;
+      fStopLimite := fStopPreco + fOffsetStopReal;
+      BuyToCoverLimit(fAlvoPreco);
+      BuyToCoverStop(fStopPreco, fStopLimite);
+    end;
   end;
-  if IsSold and (High >= fEntrada + fSLAtivo) then
+
+  // ─── Hard SL intrabar fallback: saida a mercado ───────────────
+  if not UsarOrdensProtecaoReal then
   begin
-    ClosePosition;
-    bSaiuNesteCandle := true;
-    iBarras := 0;
+    if IsBought and (Low <= fEntrada - fSLAtivo) then
+    begin
+      ClosePosition;
+      bSaiuNesteCandle := true;
+      iBarras := 0;
+    end;
+    if IsSold and (High >= fEntrada + fSLAtivo) then
+    begin
+      ClosePosition;
+      bSaiuNesteCandle := true;
+      iBarras := 0;
+    end;
   end;
 
   // ─── Stop candle contra ───────────────────────────────────────
@@ -398,18 +439,21 @@ begin
     end;
   end;
 
-  // ─── Take Profit hard ─────────────────────────────────────────
-  if IsBought and (High >= fEntrada + fTPAtivo) then
+  // ─── Take Profit fallback: saida a mercado ────────────────────
+  if not UsarOrdensProtecaoReal then
   begin
-    ClosePosition;
-    bSaiuNesteCandle := true;
-    iBarras := 0;
-  end;
-  if IsSold and (Low <= fEntrada - fTPAtivo) then
-  begin
-    ClosePosition;
-    bSaiuNesteCandle := true;
-    iBarras := 0;
+    if IsBought and (High >= fEntrada + fTPAtivo) then
+    begin
+      ClosePosition;
+      bSaiuNesteCandle := true;
+      iBarras := 0;
+    end;
+    if IsSold and (Low <= fEntrada - fTPAtivo) then
+    begin
+      ClosePosition;
+      bSaiuNesteCandle := true;
+      iBarras := 0;
+    end;
   end;
 
   // ─── ENTRADAS — sinais de forca exclusivamente ───────────────
@@ -430,9 +474,9 @@ begin
         and (not IsBought) and (not IsSold) then
       begin
         if fForca >= ForcaExaustao then
-          fTPAtivo := TakeProfitNivel3    // RR 3.0 (280 x 3)
+          fTPAtivo := TakeProfitNivel3    // RR real ~2.71 (840 / 310)
         else
-          fTPAtivo := TakeProfitNivel2;   // RR 2.0 (280 x 2)
+          fTPAtivo := TakeProfitNivel2;   // RR real ~1.81 (560 / 310)
         BuyAtMarket;
         fEntrada       := Close;
         fSLAtivo       := fSL;
@@ -458,9 +502,9 @@ begin
         and (not IsBought) and (not IsSold) then
       begin
         if fForca <= -ForcaExaustao then
-          fTPAtivo := TakeProfitNivel3    // RR 3.0 (280 x 3)
+          fTPAtivo := TakeProfitNivel3    // RR real ~2.71 (840 / 310)
         else
-          fTPAtivo := TakeProfitNivel2;   // RR 2.0 (280 x 2)
+          fTPAtivo := TakeProfitNivel2;   // RR real ~1.81 (560 / 310)
         SellShortAtMarket;
         fEntrada       := Close;
         fSLAtivo       := fSL;
