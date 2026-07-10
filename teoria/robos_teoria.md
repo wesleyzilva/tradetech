@@ -253,4 +253,70 @@ O problema não é o filtro de entrada (win% já está ótimo em V12/V13). O pro
 
 ---
 
-*Arquivo de teoria. Atualizar após cada nova versão ou backtest significativo.*
+## Linha do Tempo V14 → V17
+
+```
+V14  → Base recuperada. Retorno ao RR saudável com filtro MTF (MA5/MA20) e hard SL intrabar.
+V15  → Experimentos de scalper curto (arquivo separado).
+V16  → 7 novas features: alerta instabilidade (cyano/fucsia), trailing proporcional 62%,
+        BE por cor oposta, BE por N candles brancos, alerta sonoro multi-TF,
+        SL menor que sinal, alerta mudança tardia.
+V17  → Incorpora V16 + 3 saídas rápidas em movimentos contrários (patch V16.1 integrado):
+         • UsarSaidaForcaContrariaRapida (limiar 55, antes do stop-candle-contra em 70)
+         • MaxCandlesContra=3 (N candles consecutivos fechando contra)
+         • UsarStopRapidoEntrada (50% do SL nos primeiros 3 candles)
+        Lógica de entrada e filtros de contexto: idênticos ao V14 (sem alteração).
+```
+
+### Hipótese do V17
+
+Os 3 mecanismos de saída rápida visam reduzir a **perda média** em entradas erradas sem alterar o edge de entradas corretas. O backtest deve confirmar:
+
+- Perda média caiu vs V16? → saídas rápidas funcionando
+- Ganho médio caiu também? → saídas estão cortando winners → ajustar PctStopRapido / ForcaContrariaRapida
+- PF e edge subiram? → V17 é melhoria real
+
+### Parâmetros-chave do V17 (5min — foco principal)
+
+| Parâmetro | Valor padrão | Observação |
+|---|---|---|
+| ForcaMinimaForte | 70 | Limiar de entrada |
+| StopMinimo | 75 pts | SL base |
+| TakeProfit | 150 pts | TP hard |
+| BreakEvenRatio | 0.333 | BE aos 33% do TP |
+| ForcaContrariaRapida | 55 | Saída rápida — abaixo do StopContra=70 |
+| MaxCandlesContra | 3 | Candles consecutivos contra → sai |
+| PctStopRapido | 0.50 | 50% do SL nos primeiros 3 candles → sai |
+| MaxBarrasStopRapido | 3 | Janela do stop rápido de entrada |
+
+### Estrutura de resultados V17
+
+```
+Robots/Results/FORCA_WIN_V17/
+  1/
+    FORCA_WIN_V17_YYYYMMDD_HHMM     ← snapshot do código da rodada
+    FORCA_WIN_V17_5.csv
+    FORCA_WIN_V17_10.csv
+    FORCA_WIN_V17_15.csv
+    FORCA_WIN_V17_20.csv
+    ...
+```
+
+---
+
+## Premissa operacional permanente
+
+> **Garantir rentabilidade sem zerar o que já foi ganho.**
+>
+> Isso se traduz em: RR alto o suficiente para que uma sequência realista de perdas
+> não consuma o lucro acumulado. Com RR 1.8 e win% 45%:
+> - Breakeven = 1/(1+1.8) = 35.7%
+> - Edge = 45% − 35.7% = **+9.3 pp** → robusto
+>
+> Com RR 1.04 e win% 50% (V13):
+> - Breakeven = 49%
+> - Edge = 50% − 49% = **+1 pp** → qualquer custo operacional elimina
+
+---
+
+*Arquivo de teoria. Atualizar após cada novo backtest significativo.*

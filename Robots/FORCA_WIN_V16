@@ -278,7 +278,9 @@ begin
   // ainda nao confirmada no Profit.
 
   // ─── Stop horario ─────────────────────────────────────────────
-  if Time() >= (StopHorario_H * 10000 + StopHorario_M * 100) then
+  // Time() em NTSL retorna HHMM (ex: 1745), nao HHMMSS.
+  // Formula correta: H*100+M = 1745. Errado: H*10000+M*100 = 174500 (nunca atingido).
+  if Time() >= (StopHorario_H * 100 + StopHorario_M) then
   begin
     if IsBought or IsSold then ClosePosition;
     bDeveOperar := false;

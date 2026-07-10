@@ -130,7 +130,8 @@ begin
   if iQtd > MaxContratos then iQtd := MaxContratos;
 
   // ─── Stop horario ─────────────────────────────────────────────
-  if Time() >= (StopHorario_H * 10000 + StopHorario_M * 100) then
+  // Profit usa HHMM em Time(): 17:45 = 1745, nao 174500.
+  if Time() >= (StopHorario_H * 100 + StopHorario_M) then
   begin
     if IsBought or IsSold then ClosePosition;
     bDeveOperar := false;
