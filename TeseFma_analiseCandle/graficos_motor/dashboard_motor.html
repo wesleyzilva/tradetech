@@ -1,0 +1,81 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Motor F=m*a — dashboard HTML</title>
+  <style>
+    body { font-family: Arial, sans-serif; margin: 0; background: #f4f6fb; color: #1d2736; }
+    h1 { margin: 0 0 12px; }
+    h2 { margin: 28px 0 12px; }
+    .wrap { max-width: 1400px; margin: 0 auto; padding: 24px; }
+    .intro { background: #ffffff; border-radius: 12px; padding: 20px; box-shadow: 0 2px 8px rgba(0,0,0,0.06); }
+    .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(420px, 1fr)); gap: 20px; }
+    .card { background: #fff; border-radius: 12px; padding: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.06); }
+    .card img { width: 100%; height: auto; border-radius: 8px; background: #fafcff; }
+    .label { font-weight: 700; margin-bottom: 8px; }
+    .tiny { font-size: 12px; color: #59657a; }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <div class="intro">
+      <h1>Motor F = m * a * k</h1>
+      <p>Dashboard de inspeção visual do motor por parte: massa, aceleração, força e hipóteses principais.</p>
+      <p class="tiny">Uso orientativo: estas visualizações documentam o comportamento do motor e não substituem decisão operacional isolada.</p>
+    </div>
+
+    <section>
+      <h2>Massa, aceleração e força</h2>
+      <div class="grid">
+        <div class="card">
+          <div class="label">06_massa_aceleracao_forca.png</div>
+          <img src="06_massa_aceleracao_forca.png" alt="06_massa_aceleracao_forca.png" />
+        </div>
+      </div>
+    </section>
+
+    <section>
+      <h2>Distribuição de força</h2>
+      <div class="grid">
+        <div class="card">
+          <div class="label">01_distribuicao_forca.png</div>
+          <img src="01_distribuicao_forca.png" alt="01_distribuicao_forca.png" />
+        </div>
+        <div class="card">
+          <div class="label">02_estados_por_tf.png</div>
+          <img src="02_estados_por_tf.png" alt="02_estados_por_tf.png" />
+        </div>
+      </div>
+    </section>
+
+    <section>
+      <h2>H29 / absorção e persistência</h2>
+      <div class="grid">
+        <div class="card">
+          <div class="label">03_h29_absorcao_vs_controle.png</div>
+          <img src="03_h29_absorcao_vs_controle.png" alt="03_h29_absorcao_vs_controle.png" />
+        </div>
+        <div class="card">
+          <div class="label">04_h29_persistencia.png</div>
+          <img src="04_h29_persistencia.png" alt="04_h29_persistencia.png" />
+        </div>
+      </div>
+    </section>
+
+    <section>
+      <h2>H27 / H28 / hipóteses</h2>
+      <div class="grid">
+        <div class="card">
+          <div class="label">05_h27_h28.png</div>
+          <img src="05_h27_h28.png" alt="05_h27_h28.png" />
+        </div>
+        <div class="card">
+          <div class="label">07_hipoteses_resumo.png</div>
+          <img src="07_hipoteses_resumo.png" alt="07_hipoteses_resumo.png" />
+        </div>
+      </div>
+    </section>
+  </div>
+</body>
+</html>

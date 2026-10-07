@@ -1,0 +1,65 @@
+Analise Outubro 2026.
+Premissa: Sem comentário sem ignição ou saturação.
+Formato:
+Timeframe|Candle|Limiar|Operação
+
+01
+02
+03
+04 - Eleição
+05
+GAP enorme
+Diário: Motor com ignição de venda no candle 120
+06
+Diário: Motor neutro venda no candle 121
+Dia 07
+Diário: Motor neutro compra no candle 122
+60m: Ignição de venda no candle 2
+20m:
+1, Ignição venda
+2, Saturação compra
+3, neutro
+4, Saturação compra
+5, Saturação venda
+
+10|1|Ignição|Venda
+10|2|Neutro|Venda
+10|3|Saturação|Compra
+10|4|Ignição|Compra
+10|5, 6, 7|Neutro
+10|8|Ignição|Compra
+
+5|1|Saturação|Venda
+5|5|Ignição|Compra
+
+Olhando para o motor com foco em
+Bollinger: Será que é um bom parametro de entrada de operação?
+Qual o comportamento do volume nos limiares?
+Qual o comportamento do preço do candle nos limiares e proximo ao zero?
+
+Olhando a quantidade de candles entre as cores o que podemos concluir?
+Olhando no mesmo timeframe os candles com cores com relação a variação do preço da máxima entre eles e do fechamento entre eles o que podemos analisar?
+
+Quando tenho candles de cor divergentes (um de compra outro de venda ) é sinal de reversão?
+Quantos candles no máximo podemos ter entre as cores?
+Se temos candle de ignição de venda ou saturação e na sequencia temos candles de venda o quanto podemos confiar na queda e até quando?
+
+
+Buscar no motor e em bollinger quais os periodos de horas olhando de 1 em 1 hora que é mais interessante operar.
+
+Preciso perceber em Bollinger o aumento do volume que empurra o preço e faz a abertura dos limites
+
+Quais estratégias que devo analisar para o motor?
+Se andar x% usar tralling stop
+Se andar y% usar Stop no zero
+
+Quero usar o motor e analisar com as médias exponenciais:
+Individual do motor com cada uma delas e suas combinações
+20 e 9
+20 e 50
+9, 20, 50
+
+A ideia é saber se o contexto está sendo de venda ou compra ou neutro com medias em paralelo ou proximas
+qual a proximidade entre as médias que eu devo analisar?
+
+Parece que quanto tem sinais invertidos de compra e venda nas zonas de ignição e saturação podem ser um bom sinal de direção. acho que merece uma boa exploração em cima deste ponto.

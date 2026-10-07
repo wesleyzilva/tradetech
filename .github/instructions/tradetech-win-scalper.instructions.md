@@ -1,6 +1,6 @@
 ---
 applyTo: "Robots/**,Robots/Results/**,CandlesHistoryDatas/**,README.md"
-description: "Use when: analyzing Tradetech WIN scalper robots, Profit simulator CSVs, backtests, timeframe choice, risk/reward, probability of success, stop behavior, or NTSL execution parameters."
+description: "Use when: analyzing Tradetech WIN scalper robots, Profit simulator CSVs, backtests, timeframe choice, risk/reward, probability of success, stop behavior, NTSL execution parameters, or the F=m*a candle/econophysics study and its artifact locations."
 ---
 
 # Tradetech WIN Scalper Instructions
@@ -19,6 +19,17 @@ Use estas instrucoes sempre que analisar, editar ou documentar robos WIN scalper
 - Ao comparar resultados, tratar cada pasta numerada como uma versao fechada de experimento.
 - Antes de analisar uma pasta numerada, confirmar qual snapshot de codigo existe dentro dela e citar a pasta/rodada, nao apenas o nome do CSV.
 - Nunca misturar CSVs de uma rodada com codigo de outra ao concluir sobre probabilidade, RR ou risco real.
+
+## Analise econofisica de candles — localizacao oficial
+
+- Todo novo script, documento Markdown, conclusao, hipotese ou resultado gerado para a tese F=m*a e analise de candles deve ficar em `CandlesHistoryDatas/TeseFma_analiseCandle/`.
+- Os CSVs originais continuam nas pastas de dados irmas (`2012_14/` ... `2026/` e `CandlesHistoricos2026/`); nao mover nem duplicar os dados brutos.
+- Atualizar os documentos e scripts canonicos existentes nessa pasta em vez de criar copias na raiz de `CandlesHistoryDatas/`.
+- Scripts da tese leem as pastas de dados pelo diretorio pai e gravam os documentos no proprio `TeseFma_analiseCandle/`.
+- Entradas canônicas: `TeseFma_analiseCandle/analise_candles.py`, `TeseFma_analiseCandle/validacao_econofisica.py`, `TeseFma_analiseCandle/ANALISE_CANDLES.md`, `TeseFma_analiseCandle/VALIDACAO_ECONOFISICA.md` e `TeseFma_analiseCandle/HIPOTESES.md`.
+- A comparação de cálculos Profit × Python é documentada em `TeseFma_analiseCandle/PARIDADE_NTSL_PYTHON.md`; o gerador `gerar_casos_paridade_ntsl.py` atualiza `PARIDADE_NTSL_CASOS.csv` e `PARIDADE_NTSL_HISTORICO.csv`, e as observações manuais ficam em `PARIDADE_NTSL_PROFIT_OBSERVACOES.csv`.
+- Na paridade NTSL, não ajustar thresholds/código com base apenas na cor: primeiro comparar OHLC, F, μ, σ e bandas nos timestamps exatos. Há divergências visuais reportadas em cinco dos dez casos do lote WINQ26 Jun–Jul/2026.
+- Manter `FORCA_WIN_V18_2_original_referencia.ntsl` intacto; `FORCA_WIN_V18_2_estudo_fma.ntsl` é apenas estudo visual sem ordens, reportado pelo usuário como compilado/executado no Profit em 2026-10-06, e não substitui a versão viva em `Robots/`. A próxima verificação é paridade dos valores NTSL com o relatório Python.
 
 ## Decisao operacional atual
 

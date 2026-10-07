@@ -1,0 +1,362 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#101923">
+  <title>FMA — hipóteses, evidências e próximos passos</title>
+  <style>
+    :root {
+      color-scheme: dark;
+      --bg: #0b1118;
+      --panel: #121c27;
+      --panel-2: #172330;
+      --line: #293847;
+      --ink: #edf4f7;
+      --muted: #9aabb8;
+      --cyan: #6bd7d0;
+      --green: #3fe38b;
+      --red: #ff656d;
+      --amber: #f4bd61;
+      --blue: #8bb8ff;
+      --radius: 18px;
+    }
+    * { box-sizing: border-box; }
+    html { scroll-behavior: smooth; }
+    body {
+      margin: 0;
+      background: radial-gradient(ellipse at 80% -10%, #193347 0, transparent 36%), var(--bg);
+      color: var(--ink);
+      font: 15px/1.55 Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    }
+    a { color: var(--cyan); text-decoration-thickness: 1px; text-underline-offset: 3px; }
+    a:hover { color: #b2fff4; }
+    button, input, select { font: inherit; }
+    .shell { width: min(1440px, calc(100% - 40px)); margin: auto; }
+    .topbar { display: flex; align-items: center; justify-content: space-between; gap: 18px; padding: 20px 0; border-bottom: 1px solid #ffffff12; }
+    .brand { display: flex; align-items: center; gap: 11px; font-size: 13px; font-weight: 800; letter-spacing: .12em; text-transform: uppercase; }
+    .brand-mark { width: 32px; height: 32px; display: grid; place-items: center; border: 1px solid #6bd7d080; border-radius: 10px; color: var(--cyan); background: #6bd7d012; }
+    .top-links { display: flex; flex-wrap: wrap; gap: 16px; font-size: 13px; }
+    .hero { padding: 58px 0 30px; display: grid; grid-template-columns: minmax(0, 1.35fr) minmax(260px, .65fr); align-items: end; gap: 34px; }
+    .eyebrow, .section-kicker { color: var(--cyan); font-size: 11px; font-weight: 800; letter-spacing: .16em; text-transform: uppercase; }
+    h1 { margin: 12px 0 15px; max-width: 850px; font-size: clamp(36px, 5vw, 62px); line-height: 1.04; letter-spacing: -.055em; }
+    .hero p { max-width: 780px; margin: 0; color: #b8c7d1; font-size: 17px; }
+    .hero-note { padding: 20px; border: 1px solid #f4bd6140; border-radius: var(--radius); background: linear-gradient(145deg, #f4bd6114, #121c27 70%); }
+    .hero-note strong { display: block; margin-bottom: 7px; color: var(--amber); font-size: 13px; text-transform: uppercase; letter-spacing: .07em; }
+    .hero-note p { font-size: 14px; }
+    .stats { display: grid; grid-template-columns: repeat(5, 1fr); gap: 12px; margin: 18px 0 34px; }
+    .stat { padding: 16px 18px; border: 1px solid var(--line); border-radius: 14px; background: #111a24d9; }
+    .stat b { display: block; font-size: 25px; line-height: 1.1; }
+    .stat span { color: var(--muted); font-size: 12px; }
+    .stat.confirm b { color: var(--green); }
+    .stat.partial b, .stat.pending b { color: var(--amber); }
+    .stat.rejected b { color: var(--red); }
+    section { margin: 42px 0; scroll-margin-top: 24px; }
+    .section-head { display: flex; align-items: end; justify-content: space-between; gap: 18px; margin-bottom: 16px; }
+    h2 { margin: 5px 0 0; font-size: clamp(23px, 3vw, 32px); letter-spacing: -.035em; }
+    h3 { margin: 0; font-size: 17px; letter-spacing: -.015em; }
+    .section-desc { max-width: 720px; margin: 7px 0 0; color: var(--muted); }
+    .panel { padding: 22px; border: 1px solid var(--line); border-radius: var(--radius); background: linear-gradient(145deg, #15212d, #101821); }
+    .formula-row { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; margin: 16px 0 4px; }
+    .formula { padding: 15px; border: 1px solid #ffffff10; border-radius: 13px; background: #ffffff05; }
+    .formula .symbol { color: var(--cyan); font-size: 19px; font-weight: 800; }
+    .formula p { margin: 4px 0 0; color: var(--muted); font-size: 12px; }
+    .table-wrap { overflow-x: auto; margin-top: 16px; border: 1px solid var(--line); border-radius: 13px; }
+    table { width: 100%; border-collapse: collapse; min-width: 700px; }
+    th, td { padding: 11px 13px; border-bottom: 1px solid #ffffff0d; text-align: left; vertical-align: top; }
+    th { color: #aab9c4; background: #ffffff07; font-size: 11px; letter-spacing: .07em; text-transform: uppercase; }
+    td { font-size: 13px; }
+    tr:last-child td { border-bottom: 0; }
+    .state-chip { display: inline-flex; align-items: center; gap: 8px; white-space: nowrap; font-weight: 750; }
+    .swatch { width: 12px; height: 12px; display: inline-block; border-radius: 4px; box-shadow: 0 0 0 2px #fff1; }
+    .green-bright { background: #00e676; } .green-dark { background: #168b57; } .neutral { background: #e7edf1; } .red-dark { background: #bd4854; } .red-bright { background: #ff3b4e; }
+    .matrix { display: grid; grid-template-columns: repeat(5, minmax(50px, 1fr)); gap: 7px; margin-top: 16px; }
+    .matrix-cell { min-height: 68px; display: grid; place-items: center; padding: 8px; border: 1px solid #ffffff12; border-radius: 10px; background: #ffffff05; text-align: center; font-size: 12px; }
+    .matrix-cell b { display: block; font-size: 17px; }
+    .matrix-cell small { display: block; color: var(--muted); }
+    .method-warning { margin: 16px 0 0; padding: 13px 15px; border-left: 3px solid var(--amber); background: #f4bd610c; color: #d7dfe3; font-size: 13px; }
+    .controls { position: sticky; top: 0; z-index: 5; display: flex; flex-wrap: wrap; gap: 10px; padding: 13px 0; background: #0b1118ed; backdrop-filter: blur(12px); border-bottom: 1px solid #ffffff12; }
+    .controls input, .controls select { min-height: 42px; padding: 8px 12px; border: 1px solid var(--line); border-radius: 10px; background: #121c27; color: var(--ink); }
+    .controls input { flex: 1 1 230px; }
+    .controls select { flex: 0 1 190px; }
+    .count-label { align-self: center; margin-left: auto; color: var(--muted); font-size: 12px; }
+    .cards { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px; }
+    .hyp-card { min-width: 0; overflow: hidden; border: 1px solid var(--line); border-radius: 15px; background: var(--panel); }
+    .hyp-card[hidden] { display: none; }
+    .card-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; padding: 17px 18px 11px; }
+    .id-group { display: flex; align-items: center; gap: 9px; margin-bottom: 6px; }
+    .hyp-id { color: var(--cyan); font-size: 11px; font-weight: 850; letter-spacing: .1em; }
+    .group { color: #8195a4; font-size: 11px; }
+    .badge { flex: 0 0 auto; padding: 4px 9px; border: 1px solid; border-radius: 999px; font-size: 10px; font-weight: 850; letter-spacing: .04em; text-transform: uppercase; }
+    .badge.confirmed { color: var(--green); border-color: #3fe38b55; background: #3fe38b12; }
+    .badge.partial, .badge.inconclusive, .badge.pending { color: var(--amber); border-color: #f4bd6155; background: #f4bd6112; }
+    .badge.unsupported, .badge.refuted { color: #ff8b91; border-color: #ff656d55; background: #ff656d12; }
+    .badge.manual { color: var(--blue); border-color: #8bb8ff55; background: #8bb8ff12; }
+    .card-body { display: grid; grid-template-columns: minmax(0, 1fr) 185px; gap: 14px; padding: 0 18px 17px; }
+    .copy p { margin: 7px 0; }
+    .copy .label { color: #879aa8; font-size: 10px; font-weight: 800; letter-spacing: .09em; text-transform: uppercase; }
+    .copy .evidence { color: #d4e0e6; font-size: 13px; }
+    .copy .meaning, .copy .next { color: #b5c3cc; font-size: 12px; }
+    .copy .next { padding-top: 7px; border-top: 1px solid #ffffff0d; }
+    .mini-viz { align-self: stretch; min-height: 150px; padding: 10px; border: 1px solid #ffffff12; border-radius: 12px; background: #0b131b; }
+    .mini-viz svg { display: block; width: 100%; height: 115px; }
+    .viz-caption { margin: 3px 0 0; color: #8094a2; font-size: 10px; text-align: center; }
+    .filter-empty { display: none; padding: 24px; border: 1px dashed var(--line); border-radius: 14px; color: var(--muted); text-align: center; }
+    .filter-empty.visible { display: block; }
+    .roadmap-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 13px; }
+    .roadmap { display: grid; grid-template-columns: 52px 1fr; gap: 12px; padding: 16px; border: 1px solid var(--line); border-radius: 14px; background: #111a24; }
+    .roadmap .num { width: 48px; height: 48px; display: grid; place-items: center; border-radius: 12px; background: #f4bd6114; color: var(--amber); font-size: 12px; font-weight: 900; }
+    .roadmap p { margin: 5px 0; color: #b3c1cb; font-size: 12px; }
+    .roadmap svg { width: 100%; height: 56px; margin-top: 4px; }
+    .assets { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px; }
+    .asset { overflow: hidden; padding: 12px; border: 1px solid var(--line); border-radius: 14px; background: #111a24; }
+    .asset img { display: block; width: 100%; height: auto; border-radius: 9px; background: #f7f8fa; }
+    .asset figcaption { margin: 8px 2px 0; color: var(--muted); font-size: 12px; }
+    .asset-note { margin-top: 14px; color: var(--muted); font-size: 12px; }
+    .sources { display: flex; flex-wrap: wrap; gap: 9px; margin-top: 13px; }
+    .sources a { padding: 7px 10px; border: 1px solid #6bd7d044; border-radius: 9px; background: #6bd7d00c; font-size: 12px; }
+    footer { margin-top: 52px; padding: 24px 0 40px; border-top: 1px solid #ffffff12; color: #8295a3; font-size: 12px; }
+    @media (max-width: 900px) { .hero { grid-template-columns: 1fr; padding-top: 38px; } .stats { grid-template-columns: repeat(3, 1fr); } .cards { grid-template-columns: 1fr; } }
+    @media (max-width: 600px) { .shell { width: min(100% - 24px, 1440px); } .topbar { align-items: flex-start; flex-direction: column; } .stats { grid-template-columns: repeat(2, 1fr); } .formula-row { grid-template-columns: repeat(2, 1fr); } .card-body { grid-template-columns: 1fr; } .mini-viz { min-height: 135px; } .mini-viz svg { height: 95px; } .roadmap-grid, .assets { grid-template-columns: 1fr; } .matrix { grid-template-columns: repeat(5, minmax(42px, 1fr)); gap: 4px; } .matrix-cell { min-height: 59px; padding: 4px; font-size: 10px; } }
+    @media print { :root { color-scheme: light; --bg:#fff; --panel:#fff; --ink:#111; --muted:#455; --line:#ccd3d8; } body { background:#fff; color:#111; } .topbar,.controls { position:static; background:#fff; } .controls { display:none; } .hero-note,.panel,.hyp-card,.roadmap,.asset,.stat { break-inside:avoid; background:#fff; } .cards,.roadmap-grid { grid-template-columns:1fr 1fr; } a { color:#145d67; } }
+  </style>
+</head>
+<body>
+  <div class="shell">
+    <header class="topbar">
+      <div class="brand"><span class="brand-mark">F</span> Tese FMA <span style="color:#8295a3">/ painel de hipóteses</span></div>
+      <nav class="top-links" aria-label="Navegação"><a href="#cores">Legenda de cores</a><a href="#resultados">Resultados</a><a href="#fila">Próximos testes</a><a href="#graficos">Gráficos existentes</a></nav>
+    </header>
+    <main>
+      <section class="hero" aria-labelledby="title">
+        <div>
+          <div class="eyebrow">Mapa do conhecimento · WIN · motor F=m×a</div>
+          <h1 id="title">O que sabemos.<br>O que ainda falta provar.</h1>
+          <p>Uma leitura organizada do status das hipóteses, do significado dos achados e da próxima decisão metodológica. Evidência descritiva não é sinal de direção nem validação de estratégia.</p>
+        </div>
+        <aside class="hero-note"><strong>Conclusão operacional atual</strong><p>O primeiro candle colorido após neutro pode ser marcado como <b>candidato visual</b> no fechamento. Entrada, direção, SL e SG seguem sem validação. A paridade numérica Profit × Python também está pendente.</p></aside>
+      </section>
+      <div class="stats" aria-label="Resumo dos vereditos do painel automático">
+        <div class="stat confirm"><b>19</b><span>confirmadas</span></div><div class="stat partial"><b>3</b><span>parciais</span></div><div class="stat partial"><b>5</b><span>inconclusivas</span></div><div class="stat rejected"><b>3</b><span>não suportadas / refutada</span></div><div class="stat pending"><b>1</b><span>pendente no painel automático</span></div>
+      </div>
+
+      <section id="motor">
+        <div class="section-head"><div><div class="section-kicker">01 / O instrumento</div><h2>O que o motor classifica</h2><p class="section-desc">A cor representa uma classe estatística de força e intensidade, não previsão de compra ou venda.</p></div></div>
+        <div class="panel">
+          <div class="formula-row">
+            <div class="formula"><div class="symbol">m · massa</div><p>Corpo do candle dividido pelo range; carrega sinal positivo ou negativo.</p></div>
+            <div class="formula"><div class="symbol">a · aceleração</div><p>Volume atual relativo à média anterior da janela.</p></div>
+            <div class="formula"><div class="symbol">F = m × a × 100</div><p>Força calculada a cada barra.</p></div>
+            <div class="formula"><div class="symbol">z = (F − μ) / σ</div><p>Desvio padronizado; limiares de cor em 1,5σ e 2,5σ.</p></div>
+          </div>
+          <p class="method-warning">μ e σ incluem o candle atual na implementação canônica; portanto, a classificação pode oscilar enquanto a barra se forma. Para hipótese no fechamento, registrar apenas o estado final da barra completa.</p>
+        </div>
+      </section>
+
+      <section id="cores">
+        <div class="section-head"><div><div class="section-kicker">02 / Legenda do motor</div><h2>Tabela de cores e transições</h2><p class="section-desc">Use os símbolos, a condição matemática e a interpretação estrita em conjunto.</p></div></div>
+        <div class="panel">
+          <div class="table-wrap"><table>
+            <thead><tr><th>Estado</th><th>Cor</th><th>Condição no fechamento</th><th>O que diz</th><th>O que não diz</th></tr></thead>
+            <tbody>
+              <tr><td><b>VL</b></td><td><span class="state-chip"><i class="swatch green-bright"></i>🟢 verde vivo</span></td><td>F &gt; 0; z ≥ 2,5</td><td>Família positiva, intensidade brilhante.</td><td>Não prova continuação, compra ou maior chance de lucro.</td></tr>
+              <tr><td><b>VD</b></td><td><span class="state-chip"><i class="swatch green-dark"></i>🟩 verde escuro</span></td><td>F &gt; 0; 1,5 ≤ z &lt; 2,5</td><td>Família positiva, estado colorido escuro.</td><td>Não valida entrada nem “manter posição”.</td></tr>
+              <tr><td><b>N</b></td><td><span class="state-chip"><i class="swatch neutral"></i>⬜ neutro</span></td><td>Nenhuma condição colorida satisfeita</td><td>O motor não classificou o candle como colorido.</td><td>Não é sinal de compra/venda nem saída automática.</td></tr>
+              <tr><td><b>RD</b></td><td><span class="state-chip"><i class="swatch red-dark"></i>🟥 vermelho escuro</span></td><td>F &lt; 0; −2,5 &lt; z ≤ −1,5</td><td>Família negativa, estado colorido escuro.</td><td>Não prova venda, continuação ou reversão.</td></tr>
+              <tr><td><b>RV</b></td><td><span class="state-chip"><i class="swatch red-bright"></i>🔴 vermelho vivo</span></td><td>F &lt; 0; z ≤ −2,5</td><td>Família negativa, intensidade brilhante.</td><td>Não prova exaustão nem oportunidade de venda.</td></tr>
+            </tbody>
+          </table></div>
+          <h3 style="margin-top:22px">Como ler uma mudança entre candles</h3>
+          <div class="matrix" aria-label="Exemplos de transições de estado">
+            <div class="matrix-cell"><b>⬜ → 🟩 / 🟢</b><small>Primeiro positivo após neutro: candidato para estudo</small></div>
+            <div class="matrix-cell"><b>⬜ → 🟥 / 🔴</b><small>Primeiro negativo após neutro: candidato para estudo</small></div>
+            <div class="matrix-cell"><b>🟩 → 🟢</b><small>Mesma família; intensidade sobe</small></div>
+            <div class="matrix-cell"><b>🟢 → 🟩</b><small>Mesma família; intensidade cai</small></div>
+            <div class="matrix-cell"><b>Cor → ⬜</b><small>Estado atual volta a neutro</small></div>
+          </div>
+          <p class="method-warning">A tabela de transições é uma legenda, não probabilidades por transição. Primeiro candle colorido é candidato visual, não entrada aprovada. É preciso fixar se “primeiro” significa primeiro do pregão ou primeiro após neutro; um neutro isolado também pode estar dentro de cluster.</p>
+        </div>
+      </section>
+
+      <section id="resultados">
+        <div class="section-head"><div><div class="section-kicker">03 / Evidência registrada</div><h2>Hipóteses avaliadas</h2><p class="section-desc">Resumo do painel automático em HIPOTESES.md (WIN, foco principal 5 e 15 min; ver cada regra e amostra no documento). Cada mini-gráfico é um esquema do critério, não uma nova análise.</p></div></div>
+        <div class="controls" aria-label="Filtros do painel">
+          <input id="search" type="search" placeholder="Buscar por id, tema ou evidência…" aria-label="Buscar hipóteses">
+          <select id="statusFilter" aria-label="Filtrar por veredito"><option value="all">Todos os vereditos</option><option value="CONFIRMADA">Confirmada</option><option value="PARCIAL">Parcial</option><option value="INCONCLUSIVA">Inconclusiva</option><option value="NÃO SUPORTADA">Não suportada</option><option value="REFUTADA">Refutada</option><option value="PENDENTE">Pendente</option></select>
+          <select id="groupFilter" aria-label="Filtrar por grupo"><option value="all">Todos os grupos</option></select>
+          <span class="count-label" id="resultCount" aria-live="polite"></span>
+        </div>
+        <div class="cards" id="hypothesisCards"></div>
+        <div class="filter-empty" id="emptyState">Nenhuma hipótese corresponde aos filtros.</div>
+      </section>
+
+      <section id="fichas">
+        <div class="section-head"><div><div class="section-kicker">04 / Fichas manuais</div><h2>H27–H28: variantes rejeitadas</h2><p class="section-desc">Conclusões das fichas manuais em HIPOTESES.md; não fazem parte da contagem automática de 31 hipóteses acima.</p></div></div>
+        <div class="cards" id="manualCards"></div>
+      </section>
+
+      <section id="fila">
+        <div class="section-head"><div><div class="section-kicker">05 / Próximos passos</div><h2>Fila de pesquisa, na ordem certa</h2><p class="section-desc">Estas propostas estão pendentes: enunciados e desenhos abaixo explicam o que seria testado, não antecipam resultado.</p></div></div>
+        <div class="method-warning" style="margin:0 0 14px">Ordem metodológica: (1) concluir paridade Profit × Python; (2) auditar a seleção das séries e congelar definições; (3) descrever frequência/evento; (4) testar entradas e saídas fora da amostra; (5) somente depois comparar desempenho líquido e risco. H44–H48 são propostas novas, todas pendentes.</div>
+        <div class="method-warning" style="margin:0 0 14px;border-left-color:var(--red);background:#ff656d0b"><b>Cobertura das pastas:</b> WINFUT em 2024_26 cobre 2024-06-19–2025-12-30; WINM26 em 2026 cobre 2026-01-02–2026-05-14. O WINFUT de CandlesHistoricos2026 (2024-10-18–2025-12-30) duplica timestamps de 2024_26; WINQ26 (2026-02-13–2026-07-24) sobrepõe WINM26 e é outro contrato, não holdout temporal independente. O carregador Contexto escolhe o primeiro arquivo encontrado, não concatena as pastas. Portanto, auditar a fonte antes de chamar um resultado de comparação entre diretórios.</div>
+        <div class="roadmap-grid" id="roadmapCards"></div>
+      </section>
+
+      <section id="graficos">
+        <div class="section-head"><div><div class="section-kicker">06 / Acervo visual</div><h2>Gráficos existentes no diretório</h2><p class="section-desc">Figuras exploratórias já produzidas pelo gerador local; use as fichas e documentos como fonte de veredito.</p></div></div>
+        <div class="assets">
+          <figure class="asset"><img src="06_massa_aceleracao_forca.png" alt="Distribuições de massa, aceleração e força"><figcaption>Componentes do motor: m, a e F.</figcaption></figure>
+          <figure class="asset"><img src="01_distribuicao_forca.png" alt="Distribuição da força por timeframe"><figcaption>Distribuição de |F| nos timeframes de foco.</figcaption></figure>
+          <figure class="asset"><img src="02_estados_por_tf.png" alt="Proporção dos estados FMA por timeframe"><figcaption>Frequência de estados por timeframe.</figcaption></figure>
+          <figure class="asset"><img src="03_h29_absorcao_vs_controle.png" alt="Comparação de absorção e controle"><figcaption>H29: atividade após absorção versus controle; resultado e ressalvas no documento da hipótese.</figcaption></figure>
+          <figure class="asset"><img src="04_h29_persistencia.png" alt="Persistência observada para H29"><figcaption>H29: persistência descritiva, sem inferência direcional.</figcaption></figure>
+          <figure class="asset"><img src="05_h27_h28.png" alt="Comparação exploratória das variantes H27 e H28"><figcaption>H27/H28: variantes avaliadas e rejeitadas nas fichas manuais.</figcaption></figure>
+        </div>
+        <p class="asset-note">Não incluí 07_hipoteses_resumo.png: é uma figura estática antiga com números hardcoded que não estão sincronizados com o painel atual. Também permanecem no acervo o protótipo dashboard_motor.html e o estudo Bollinger/ignição; este arquivo é o resumo metodológico consolidado.</p>
+      </section>
+      <section id="fontes">
+        <div class="section-head"><div><div class="section-kicker">07 / Fontes canônicas</div><h2>Documentos e validações</h2></div></div>
+        <div class="panel"><p style="margin-top:0">O painel resume; não substitui a tabela automática, os métodos nem os anexos de validação.</p><div class="sources">
+          <a href="../HIPOTESES.md">HIPOTESES.md — status, critérios e backlog</a>
+          <a href="../LEITURA_VISUAL_MOTOR.md">LEITURA_VISUAL_MOTOR.md — cores e transições</a>
+          <a href="../PARIDADE_NTSL_PYTHON.md">PARIDADE_NTSL_PYTHON.md — comparação Profit × Python</a>
+          <a href="../ANALISE_IGNICAO_SATURACAO.md">ANALISE_IGNICAO_SATURACAO.md — ignição e saturação</a>
+          <a href="../ANALISE_ESCALONAMENTO_ECONOFISICO.md">ANALISE_ESCALONAMENTO_ECONOFISICO.md — modelo e H03</a>
+          <a href="../VALIDACAO_TEMPORAL_H29.md">VALIDACAO_TEMPORAL_H29.md — robustez de H29</a>
+          <a href="../validacao_econofisica.py">validacao_econofisica.py — implementação dos testes</a>
+          <a href="../analise_candles.py">analise_candles.py — motor Python canônico</a>
+        </div></div>
+      </section>
+    </main>
+    <footer>Resumo editorial baseado nos documentos locais. O painel automático de HIPOTESES.md declara geração em 2026-10-06; ao regenerar resultados, confira e atualize esta página. Esquemas internos ilustram o desenho/resultado já documentado; não representam série nova. Nenhum elemento deste dashboard constitui recomendação financeira.</footer>
+  </div>
+  <script>
+    const hypotheses = [
+      {id:'H01',group:'Modelo',status:'CONFIRMADA',title:'k é cosmético sob limiares adaptativos',rule:'Zero divergências entre estados com k=1 e k=100.',evidence:'5 min: 0 divergências em 55.436; 15 min: 0 em 23.246.',meaning:'A escala multiplicativa cancela no z-score adaptativo. Isso valida uma propriedade da fórmula, não a utilidade operacional.',next:'Manter a especificação e preservar a ressalva do clamp ±100 usado em robôs antigos.',viz:'formula'},
+      {id:'H02',group:'Modelo',status:'CONFIRMADA',title:'m e a carregam dimensões distintas',rule:'|ρ de postos| entre |m| e a < 0,30.',evidence:'5 min: ρ=+0,12; 15 min: ρ=+0,10.',meaning:'Massa do candle e componente de volume não são redundantes na amostra estudada.',next:'Manter ambos; não concluir causalidade física só pela associação observada.',viz:'scatter'},
+      {id:'H03',group:'Modelo',status:'CONFIRMADA',title:'Mais esforço acompanha maior deslocamento',rule:'β > 0,25 e R² ≥ 0,80 na relação log-log corpo/ATR ~ a.',evidence:'5 min: β=0,68, R²=0,94; 15 min: β=0,72, R²=0,93. A checagem temporal registrada também passa em treino e holdout.',meaning:'Associação consistente com uma lei de impacto descritiva; não demonstra causa física nem entrada lucrativa.',next:'Medir β por horário e buscar período independente mais distante; ver anexo de robustez temporal.',viz:'dose'},
+      {id:'H04',group:'Modelo',status:'PARCIAL',title:'O produto m×a prevê atividade futura melhor que cada componente',rule:'Expansão seguinte de F deve superar a e |m| em frequência equiparada.',evidence:'5 min: F 1,18×; a 1,18×; |m| 1,07×. 15 min: F 1,09×; a 1,10×; |m| 1,05×.',meaning:'O produto supera |m|, mas não supera a em todos os timeframes. Não há ganho demonstrado sobre volume isolado.',next:'Testar combinação alternativa a×amplitude apenas como alerta de atividade/risco, com regra congelada.',viz:'compare'},
+      {id:'H05',group:'Modelo',status:'INCONCLUSIVA',title:'A cor do candle extremo carrega direção?',rule:'|t| ≥ 3 e mesmo sinal nos dois timeframes.',evidence:'5 min: μ h1 = −4,2 pts (t=−2,3); 15 min: +1,9 pts (t=+0,4). Sinais/força estatística não concordam.',meaning:'Evidência mista; a cor isolada não é gatilho direcional.',next:'Somente hipótese nova e previamente definida pode testar direção condicionada ao contexto maior.',viz:'direction'},
+      {id:'H06',group:'Distribuição',status:'REFUTADA',title:'Os 20% maiores |F| concentram 80% da energia?',rule:'Top 20% deveria concentrar ≥80% de Σ|F|; abaixo de 65% refuta.',evidence:'Participação: 5 min 56%; 10 min 56%; 15 min 57%; 20 min 58%; 30 min 52%; 60 min 55%.',meaning:'A regra 80/20 estrita não descreve esta medida. Evitar chamá-la de princípio de Pareto.',next:'Se necessário, usar a linguagem de âncora de percentil, como H07.',viz:'distribution'},
+      {id:'H07',group:'Distribuição',status:'CONFIRMADA',title:'O limiar fixo 70 aproxima o percentil 80 de |F|',rule:'P(|F|≥70) entre 16% e 24% em cada timeframe.',evidence:'Faixa observada: 20,7%–22,5% nos seis timeframes listados.',meaning:'O limiar fixo se comporta como percentil aproximado na amostra; a proporção pode mudar com regime/amostra.',next:'Se mantiver limiar fixo, avaliar percentil rolante em teste separado.',viz:'threshold'},
+      {id:'H08',group:'Distribuição',status:'PARCIAL',title:'A cauda de F segue lei de potência?',rule:'Comparar R² log-log e semilog na cauda P80–P99,5.',evidence:'Log-log vence no 5 min (0,999 vs 0,934); nos outros TFs a evidência varia e em vários semilog é maior.',meaning:'Apenas parcial; o formato de cauda depende do timeframe. σ amostral pode ser instável, especialmente no 5 min.',next:'Testar medidas robustas de dispersão sem trocar retrospectivamente a regra registrada.',viz:'tail'},
+      {id:'H09',group:'Distribuição',status:'CONFIRMADA',title:'Com 70/85 fixos, ≥85 é mais frequente que 70–85',rule:'P(|F|≥85) > P(70≤|F|<85) em todos os TFs e definições comparadas.',evidence:'5 min: 14,9% vs 5,8%; 15 min: 16,6% vs 4,7%; padrão também registrado para demais TFs e robôs.',meaning:'A categoria “exaustão” fixa em 85 é mais comum que a faixa “forte”; clamp antigo acumula observações no teto.',next:'Não tratar 85 como saturação aprovada sem nova definição e validação.',viz:'bands'},
+      {id:'H10',group:'Distribuição',status:'CONFIRMADA',title:'Bollinger preserva brilhante mais raro que escuro',rule:'Frequência brilhante < escura em todos os TFs.',evidence:'5 min: 2,7% vs 9,3%; 15 min: 4,5% vs 9,7%; hierarquia registrada em todos os TFs.',meaning:'A hierarquia visual de intensidade aparece com limiares adaptativos na amostra.',next:'Manter como característica de classificação, não como ordenação de probabilidade de lucro.',viz:'bands'},
+      {id:'H11',group:'Distribuição',status:'CONFIRMADA',title:'Bollinger reduz dependência do orçamento diário à amplitude',rule:'Correlação do limiar fixo ≥0,15 e |ρ Bollinger|<0,10 nos dois TFs.',evidence:'5 min: fixo +0,20 vs Bollinger +0,02; 15 min: +0,34 vs +0,04. Replicação WDO marcada como não suportada.',meaning:'Achado no WIN, mas a replicação entre ativos não acompanha; não generalizar para todos os contratos.',next:'Manter claramente a diferença WIN/WDO na apresentação e revisar em novo acervo.',viz:'correlation'},
+      {id:'H12',group:'Distribuição',status:'INCONCLUSIVA',title:'Bollinger distribui cores mais uniformemente pelas horas?',rule:'CV horário do adaptativo menor que o fixo nos dois TFs.',evidence:'5 min: CV fixo 0,68 vs Bollinger 0,53; 15 min: 1,01 vs 1,14.',meaning:'Direções diferentes por timeframe: resultado inconclusivo.',next:'Considerar sazonalidade explícita do volume, conforme H13, sem afirmar efeito universal.',viz:'hour'},
+      {id:'H13',group:'Distribuição',status:'CONFIRMADA',title:'Ajuste sazonal de volume reduz concentração na abertura',rule:'CV com sazonal <0,8× CV canônico nos dois TFs.',evidence:'CV horário: 5 min 0,53→0,08; 15 min 1,14→0,13.',meaning:'A versão sazonal reduz a concentração temporal descrita; isso não prova melhoria preditiva nem operacional.',next:'Só propor substituição de a em backtest próprio com regra e amostra congeladas.',viz:'hour'},
+      {id:'H14',group:'Distribuição',status:'CONFIRMADA',title:'A cauda é mais pesada que a normal em 2,5σ',rule:'Frequência observada / frequência normal ≥1,5.',evidence:'5 min 2,2× (α Hill=2,11); 15 min 3,6× (α Hill=2,91).',meaning:'Eventos extremos são mais frequentes que a referência gaussiana, logo “2,5σ” não deve ser lido como evento raríssimo normal.',next:'Explicitar essa comparação e estudar robustez da escala; não converter em direção.',viz:'tail'},
+      {id:'H15',group:'Distribuição',status:'CONFIRMADA',title:'Incluir candle corrente em μ/σ mascara extremos',rule:'Excluir o candle corrente deve elevar a fração colorida em ≥1 p.p.',evidence:'5 min: 12,0%→14,2%; 15 min: 14,1%→16,0%.',meaning:'A auto-inclusão afeta a classificação e pode fazer estado intrabar oscilar.',next:'Comparar leave-one-out como variante em teste novo; não alterar silenciosamente o motor canônico.',viz:'window'},
+      {id:'H16',group:'Distribuição',status:'CONFIRMADA',title:'Bollinger e Pareto equiparado têm atividade futura semelhante',rule:'Diferença absoluta na expansão seguinte ≤0,03× em ambos os TFs.',evidence:'5 min: 1,18× vs 1,18×; 15 min: 1,10× vs 1,09×.',meaning:'A troca parece estrutural/legibilidade, não melhora preditiva de atividade.',next:'Decidir eventual migração por critério operacional separado (H33), não por previsão.',viz:'compare'},
+      {id:'H17',group:'Sinais',status:'PARCIAL',title:'Candle colorido é seguido de mais atividade colorida?',rule:'Lift de persistência ajustado por hora ≥1,30; em só um TF = parcial.',evidence:'Lift: 5 min 1,59; 15 min 1,11.',meaning:'Persistência de atividade colorida mais nítida em 5 min; não implica que a cor ou direção do preço persista.',next:'Construir/avaliar clusters no 5 min e testar outro timeframe, sem atribuir suporte/resistência.',viz:'persistence'},
+      {id:'H18',group:'Sinais',status:'INCONCLUSIVA',title:'Escuro significa continuação direcional?',rule:'Retorno h1 alinhado positivo com t≥3 nos dois TFs.',evidence:'5 min: μ h1=−3,9 (t=−2,2); 15 min: −2,7 (t=−0,4).',meaning:'Não há apoio suficiente à narrativa “manter posição”.',next:'Reescrever como ritmo/atividade; qualquer regra direcional exige hipótese nova.',viz:'direction'},
+      {id:'H19',group:'Sinais',status:'NÃO SUPORTADA',title:'Brilhante significa exaustão ou reversão?',rule:'Retornos h1 e h3 alinhados negativos com t≤−3 nos dois TFs.',evidence:'5 min: h1 −5,1 (t=−1,0), h3 −1,7 (−0,2); 15 min: h1 +12,0 (+1,3), h3 +17,9 (+1,1).',meaning:'Não há evidência de reversão nem continuação; leitura como exaustão não é sustentada.',next:'Usar “alerta de atividade” apenas no escopo de H20.',viz:'direction'},
+      {id:'H20',group:'Sinais',status:'CONFIRMADA',title:'Brilhante antecede expansão de volatilidade',rule:'Range seguinte ≥1,10× média da hora, com t≥3 nos dois TFs.',evidence:'5 min 1,44× (t=+19,1); 15 min 1,15× (t=+8,3).',meaning:'Evidência de atividade/expansão posterior; não informa o lado do movimento nem rentabilidade.',next:'Pode motivar hipótese de gestão de risco, não gatilho de entrada ou alvo sem backtest.',viz:'expansion'},
+      {id:'H21',group:'Sinais',status:'CONFIRMADA',title:'Neutro não oferece vantagem direcional detectável',rule:'|t|<3 para retorno h1 alinhado nos dois TFs.',evidence:'5 min: μ h1=−1,1 (t=−1,8); 15 min: −0,3 (−0,2).',meaning:'Compatível com abstenção descritiva do motor; não prova que neutro seja sempre sem oportunidade.',next:'Manter como interpretação de estado, sem ordem automática.',viz:'direction'},
+      {id:'H22',group:'Operação',status:'CONFIRMADA',title:'Estados coloridos são visualmente salientes pela raridade',rule:'Nos TFs foco, colorido ≤15% e brilhante ≤5%.',evidence:'5 min: 12,0% colorido / 2,7% brilhante; 15 min: 14,1% / 4,5%.',meaning:'A raridade apoia saliência visual, não qualidade operacional.',next:'Manter a legenda de 1,5σ/2,5σ; medir percepção ou desempenho separadamente se necessário.',viz:'frequency'},
+      {id:'H23',group:'Operação',status:'CONFIRMADA',title:'Abertura concentra estados coloridos',rule:'Participação das cores na abertura / participação dos candles ≥1,5.',evidence:'9h: 5 min 2,0×; 15 min 3,5×.',meaning:'Há concentração intradiária a considerar na amostragem/controle.',next:'Usar controle por hora e documentar ajuste sazonal; não ler como melhor horário de entrada.',viz:'hour'},
+      {id:'H24',group:'Operação',status:'CONFIRMADA',title:'Quantidade de cores não identifica tipo de dia',rule:'|ρ|<0,15 entre coloridos/dia e amplitude/direcionalidade em ambos TFs.',evidence:'5 min ρ amplitude +0,02 / direcional +0,03; 15 min +0,04 / −0,00. CV diário 0,20 / 0,32.',meaning:'Orçamento diário de cores é aproximadamente independente dessas medidas nesta amostra.',next:'Não inferir tendência ou volatilidade diária pela contagem de cores.',viz:'correlation'},
+      {id:'H25',group:'Áreas',status:'PENDENTE',title:'Clusters de mesma família formam áreas com dinâmica própria?',rule:'Medir retorno/rejeição nas bordas e comparar com controle; teste de borda permanece pendente.',evidence:'Descrição estrutural: ≥2 candles; 5 min 19% dos clusters têm ≥2, amplitude mediana 2,8 ATR; 15 min 24%, 3,7 ATR.',meaning:'A existência/desenho de clusters não demonstra suporte, resistência nem retorno à borda.',next:'Seguir H31 com definição de cluster, horizonte e controle de mesmo horário/largura congelados.',viz:'cluster'},
+      {id:'H26',group:'Escala temporal',status:'INCONCLUSIVA',title:'Janela de 100 min torna 5 e 15 min comparáveis?',rule:'Diferença de coloridos ≤5 p.p. e persistência ≤0,15.',evidence:'5 min 15,18% / persistência 0,35; 15 min 16,41% / 0,72; Δ 1,23 p.p. e 0,37.',meaning:'Frequência passa o limite sugerido, persistência não; equivalência global não demonstrada.',next:'Rever métrica/definição antes de alegar invariância por tempo físico.',viz:'timeframe'},
+      {id:'H30',group:'Distribuição',status:'NÃO SUPORTADA',title:'Dias direcionais têm distribuição de cores diferente?',rule:'Diferença de hora da primeira cor ou proporção brilhante com |t|≥3.',evidence:'5 min: primeira cor 9,03h vs 9,03h; brilho 2,7% vs 2,7%; t=−0,02 / +0,07. 15 min: 9,05h vs 9,09h; t=−1,57 / −0,03.',meaning:'Não apareceu diferença suportada pelo critério.',next:'Não usar contagem/horário da cor como detector de dia direcional.',viz:'hour'},
+      {id:'H29',group:'Absorção',status:'CONFIRMADA',title:'Absorção tem atividade e persistência próprias',rule:'a≥2 e |m|<0,3; regra histórica exige expansão range/ATR ≥1,50× e |t|≥3.',evidence:'5 min: range 1,60× vs 1,03×; persistência 1,56; t=+20,14. 15 min: 1,71× vs 1,03×; persistência 1,67; t=+25,68. Split temporal mais estrito é convincente no 5 min e inconclusivo no 15 min.',meaning:'Achado descritivo de atividade; retorno médio não torna absorção sinal direcional. Sensibilidade pareada por pregão limita o resultado no 15 min.',next:'Próxima verificação: bloco temporal independente se houver acervo; não mudar evento, controle, horizonte ou limiar.',viz:'absorption'},
+      {id:'H31',group:'Áreas',status:'INCONCLUSIVA',title:'Preço retorna às bordas dos clusters mais que ao controle?',rule:'P(retorno) observado > controle, com |t|≥3; estudar rejeição/rompimento separadamente.',evidence:'5 min: 87,1% vs controle 95,0% (t=−8,28; n=1.206). 15 min: 91,2% vs 94,6% (t=−3,32; n=713).',meaning:'A probabilidade observada é menor que o controle em ambos TFs; a direção contrária ao critério impede sustentar retorno especial às bordas.',next:'Investigar se hipótese está refutada sob regra pré-registrada; não renomear retorno negativo como confirmação.',viz:'control'},
+      {id:'H40',group:'Transições',status:'CONFIRMADA',title:'Duração das transições de família é descritível por percentis',rule:'Mediana ≤3 e P90≤25 nos dois TFs; gaps temporais separados dos candles neutros.',evidence:'5 min mediana 3,00 / P90 21,00 / gaps 0,9%; 15 min 1,00 / 23,00 / 2,6%.',meaning:'Resumo de duração de transição sob essa definição; não demonstra causalidade, direção ou entrada.',next:'Manter gaps explicitamente separados se forem reutilizadas as métricas.',viz:'duration'},
+      {id:'H39',group:'Multi-timeframe',status:'CONFIRMADA',title:'Alarmes coincidentes entre TFs têm atividade posterior maior?',rule:'Comparar alarmes simultâneos (≥2 TFs) com isolados; range/ATR e retorno, |t|≥3; contagem não prova direção.',evidence:'Coincidentes: range/ATR 1,89 vs 1,29; retorno alinhado 39,49 vs −9,04; t=+14,53 e +6,89, como registrado no bloco automático.',meaning:'Associação estatística no evento agregado; retorno alinhado não basta para concluir qualidade operacional, execução ou generalização.',next:'Confirmar a unidade de pareamento/timestamp e amostra; paridade do indicador ainda é pré-requisito de interpretação visual.',viz:'multitf'}
+    ];
+
+    const roadmaps = [
+      {id:'H32',title:'Replicar H06–H20 em 2020–2024',why:'Testar estabilidade temporal antes de tratar os resultados como gerais.',next:'Reexecutar as mesmas regras e registrar divergências sem retunar limiares.',viz:'split'},
+      {id:'H33',title:'Limiar 70 versus “colorido” no robô',why:'Mede resultado de simulador da mudança de definição; é uma rodada operacional independente.',next:'Mesmo ativo, sinais, execução, custos e janela; comparar PnL/PF/edge fora da seleção.',viz:'compare'},
+      {id:'H34',title:'Entrada antecipada abaixo da ignição',why:'Pergunta se volume previamente definido como confiável permite capturar movimento antes de 1,5σ.',next:'Definir confiabilidade do volume, entrada/saída, custos e controle antes do teste.',viz:'threshold'},
+      {id:'H35',title:'Entrada na ignição até a saturação',why:'Avalia a passagem 1,5σ→2,5σ como hipótese de execução, não como regra aprovada.',next:'Definir preenchimento no cruzamento, stop/saída, custos e amostra externa.',viz:'threshold'},
+      {id:'H36',title:'Oportunidades válidas por sessão',why:'Frequência não é qualidade; é preciso primeiro definir o evento sem olhar o resultado futuro.',next:'Fixar regra de sinal/não duplicação; publicar distribuição por sessão e intervalos de confiança.',viz:'frequency'},
+      {id:'H37',title:'Faixas possíveis de SG',why:'Só faz sentido após entrada e distribuição de excursão favorável estarem definidas.',next:'Custos, horizonte, preço de entrada e validação externa; não escolher alvo pelo melhor passado.',viz:'excursion'},
+      {id:'H38',title:'Referência e posicionamento de SL',why:'Abertura, fechamento, extremos do candle e nível estrutural são regras distintas.',next:'Comparar no mesmo conjunto; medir gaps, excursão adversa, risco em pontos e execução realista.',viz:'candle'},
+      {id:'H41',title:'Preço de entrada dentro/ao redor do candle',why:'Compara abertura, fechamento, mínima ou máxima no candle do sinal e no seguinte.',next:'Escolher variante antes de comparar e impedir uso retrospectivo de preços indisponíveis.',viz:'candle'},
+      {id:'H42',title:'SL baseado na área do candle',why:'Compara stop em mínima/máxima, fechamento, abertura e estruturas próximas.',next:'Mesmo conjunto de sinais; reportar risco em pontos e relativo à faixa de entrada.',viz:'candle'},
+      {id:'H43',title:'SG por deslocamento disponível',why:'Compara range/ATR seguinte, área do candle seguinte colorido e faixas fixas.',next:'Calcular distribuição primeiro; não recomendar pontos antes de medir excursões.',viz:'excursion'},
+      {id:'H44',title:'A primeira cor após neutro carrega direção?',why:'A legenda chama esse evento de candidato visual, mas o resultado direcional ainda não foi medido por horizontes.',next:'Fixar primeira após neutro dentro do pregão; medir retorno e excursões em 1/3/6 barras contra controles por hora.',viz:'direction'},
+      {id:'H45',title:'Por quantas barras dura a expansão após brilho?',why:'H20 cobre o candle seguinte; falta descrever o decaimento da atividade em horizontes maiores.',next:'Medir diferença de range/ATR em h=1/3/6, com controle horário e incerteza por pregão; sem inferir lado.',viz:'expansion'},
+      {id:'H46',title:'Absorção e impulso diferem após esforço alto?',why:'H29 compara absorção com o restante; falta contraste direto com candles de |m| alto sob a≥2.',next:'Congelar faixas |m|<0,3, 0,3–0,7 e ≥0,7; comparar range futuro e retorno alinhado.',viz:'absorption'},
+      {id:'H47',title:'Pavios acrescentam descrição além do estado?',why:'O motor classifica m, a e z, mas as assimetrias dos pavios não estão analisadas como informação incremental.',next:'Estratificar pavio superior/inferior por família e intensidade; controlar hora, pregão e comparações múltiplas.',viz:'candle'},
+      {id:'H48',title:'Os achados se mantêm entre períodos e contratos?',why:'As pastas incluem subconjuntos duplicados e contratos sobrepostos; a proveniência precisa ser separada da hipótese de mercado.',next:'Desenvolver em 2024_26, validar temporalmente em 2026 e usar WINQ26 apenas como comparação de contrato, com timestamps auditados.',viz:'split'}
+    ];
+
+    const manual = [
+      {id:'H27',group:'Ficha manual · robustez',status:'NÃO SUPORTADA',title:'σ robusto (MAD) sem candle atual preserva expansão?',rule:'Variante robusta deve manter o comportamento de expansão canônico.',evidence:'5 min: 715 eventos robustos vs 506 canônicos; lift robusto 1,27; expansão 1,18× vs 1,70×. 15 min: 36 vs 128; expansão 1,28× vs 1,36×. Em TFs maiores quase desaparece.',meaning:'A variante não preserva a expansão do próximo range e perde eventos, sobretudo em timeframes maiores.',next:'Manter como variante rejeitada; nova regra exigiria novo ID e validação própria.',viz:'compare'},
+      {id:'H28',group:'Ficha manual · sazonalidade',status:'NÃO SUPORTADA',title:'Volume sazonal substitui a canônica sem perder alerta?',rule:'Diferença de expansão ≤0,03× e CV horário ≤0,15.',evidence:'Ficha manual: expansão canônica e sazonal iguais (5 min 1,2567×; 15 min 1,5077×); CV horário=1,00.',meaning:'A variante não altera a métrica nem reduz a dispersão horária conforme o critério da ficha.',next:'Não substituir a canônica por esta evidência; preservar a definição original.',viz:'compare'}
+    ];
+
+    function escapeHtml(value) { return String(value).replace(/[&<>"']/g, ch => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[ch])); }
+    function statusClass(status) { return ({'CONFIRMADA':'confirmed','PARCIAL':'partial','INCONCLUSIVA':'inconclusive','NÃO SUPORTADA':'unsupported','REFUTADA':'refuted','PENDENTE':'pending'})[status] || 'manual'; }
+    function viz(kind, label) {
+      const base = '<line x1="12" y1="91" x2="172" y2="91" stroke="#344653"/><line x1="12" y1="12" x2="12" y2="91" stroke="#344653"/>';
+      const plots = {
+        formula:'<path d="M24 65 L58 45 L91 45 L123 28 L158 28" fill="none" stroke="#6bd7d0" stroke-width="3"/><circle cx="58" cy="45" r="4" fill="#3fe38b"/><circle cx="123" cy="28" r="4" fill="#ff656d"/><text x="21" y="82" fill="#91a5b3" font-size="8">m</text><text x="72" y="82" fill="#91a5b3" font-size="8">a</text><text x="127" y="82" fill="#91a5b3" font-size="8">z → estado</text>',
+        scatter:'<circle cx="34" cy="67" r="4" fill="#6bd7d0"/><circle cx="55" cy="58" r="4" fill="#6bd7d0"/><circle cx="76" cy="68" r="4" fill="#6bd7d0"/><circle cx="96" cy="47" r="4" fill="#6bd7d0"/><circle cx="117" cy="57" r="4" fill="#6bd7d0"/><circle cx="144" cy="35" r="4" fill="#6bd7d0"/><path d="M25 65 L155 49" stroke="#f4bd61" stroke-dasharray="4 4"/>',
+        dose:'<path d="M20 78 C55 70 85 56 112 37 S148 23 162 18" fill="none" stroke="#3fe38b" stroke-width="3"/><circle cx="47" cy="70" r="3" fill="#6bd7d0"/><circle cx="82" cy="56" r="3" fill="#6bd7d0"/><circle cx="121" cy="34" r="3" fill="#6bd7d0"/>',
+        compare:'<rect x="31" y="44" width="20" height="47" rx="3" fill="#8bb8ff"/><rect x="55" y="34" width="20" height="57" rx="3" fill="#6bd7d0"/><rect x="103" y="55" width="20" height="36" rx="3" fill="#8bb8ff"/><rect x="127" y="41" width="20" height="50" rx="3" fill="#6bd7d0"/><text x="29" y="30" fill="#91a5b3" font-size="8">critério A / B</text>',
+        direction:'<line x1="20" y1="51" x2="164" y2="51" stroke="#738592" stroke-dasharray="4 4"/><path d="M25 65 L52 39 L78 57 L104 34 L132 63 L160 46" fill="none" stroke="#f4bd61" stroke-width="2.5"/><text x="25" y="82" fill="#91a5b3" font-size="8">retorno alinhado ≠ direção provada</text>',
+        distribution:'<path d="M18 89 C33 88 39 78 49 60 C59 42 67 26 78 24 C93 20 99 46 108 62 C119 82 136 88 164 89" fill="none" stroke="#8bb8ff" stroke-width="3"/><line x1="77" y1="24" x2="77" y2="91" stroke="#f4bd61" stroke-dasharray="3 3"/>',
+        threshold:'<rect x="22" y="28" width="52" height="62" rx="5" fill="#3fe38b22" stroke="#3fe38b66"/><rect x="74" y="28" width="48" height="62" fill="#f4bd6120" stroke="#f4bd6166"/><rect x="122" y="28" width="42" height="62" rx="5" fill="#ff656d20" stroke="#ff656d66"/><line x1="74" y1="19" x2="74" y2="91" stroke="#f4bd61"/><line x1="122" y1="19" x2="122" y2="91" stroke="#ff656d"/><text x="33" y="55" fill="#b7c6d0" font-size="8">neutro</text><text x="82" y="55" fill="#b7c6d0" font-size="8">1,5σ</text><text x="130" y="55" fill="#b7c6d0" font-size="8">2,5σ</text>',
+        tail:'<path d="M19 25 C40 28 45 38 59 52 C79 71 102 82 162 88" fill="none" stroke="#8bb8ff" stroke-width="3"/><path d="M19 30 C45 47 71 66 162 88" fill="none" stroke="#f4bd61" stroke-width="2" stroke-dasharray="4 3"/><text x="111" y="30" fill="#91a5b3" font-size="8">cauda</text>',
+        bands:'<rect x="30" y="48" width="33" height="43" rx="4" fill="#168b57"/><rect x="66" y="66" width="25" height="25" rx="4" fill="#00e676"/><rect x="105" y="47" width="33" height="44" rx="4" fill="#bd4854"/><rect x="141" y="68" width="22" height="23" rx="4" fill="#ff3b4e"/><text x="25" y="33" fill="#91a5b3" font-size="8">escuro mais frequente que brilhante</text>',
+        correlation:'<line x1="19" y1="76" x2="164" y2="76" stroke="#344653"/><circle cx="37" cy="64" r="5" fill="#8bb8ff"/><circle cx="71" cy="48" r="5" fill="#8bb8ff"/><circle cx="104" cy="58" r="5" fill="#6bd7d0"/><circle cx="143" cy="43" r="5" fill="#6bd7d0"/><path d="M25 67 L78 48" stroke="#8bb8ff"/><path d="M98 57 L150 54" stroke="#6bd7d0"/>',
+        hour:'<rect x="25" y="63" width="18" height="28" fill="#526777"/><rect x="52" y="32" width="18" height="59" fill="#f4bd61"/><rect x="79" y="52" width="18" height="39" fill="#526777"/><rect x="106" y="66" width="18" height="25" fill="#526777"/><rect x="133" y="72" width="18" height="19" fill="#526777"/><text x="42" y="24" fill="#f4bd61" font-size="8">abertura / hora</text>',
+        window:'<rect x="23" y="29" width="36" height="48" rx="4" fill="#8bb8ff33" stroke="#8bb8ff"/><rect x="51" y="39" width="37" height="39" rx="4" fill="#f4bd6133" stroke="#f4bd61"/><rect x="80" y="51" width="37" height="28" rx="4" fill="#ff656d33" stroke="#ff656d"/><line x1="22" y1="87" x2="160" y2="87" stroke="#607380"/><text x="29" y="22" fill="#91a5b3" font-size="8">janela rolante inclui candle corrente</text>',
+        persistence:'<rect x="23" y="64" width="24" height="27" rx="3" fill="#168b57"/><rect x="51" y="45" width="24" height="46" rx="3" fill="#168b57"/><rect x="79" y="55" width="24" height="36" rx="3" fill="#e7edf1"/><rect x="107" y="37" width="24" height="54" rx="3" fill="#168b57"/><rect x="135" y="50" width="24" height="41" rx="3" fill="#168b57"/><text x="30" y="28" fill="#91a5b3" font-size="8">estado colorido → estado seguinte</text>',
+        expansion:'<rect x="24" y="67" width="28" height="24" rx="3" fill="#485a67"/><rect x="61" y="54" width="28" height="37" rx="3" fill="#485a67"/><rect x="102" y="24" width="30" height="67" rx="3" fill="#ff656d"/><path d="M105 30 L117 17 L129 30" fill="none" stroke="#ff9aa0" stroke-width="2"/><text x="98" y="83" fill="#101923" font-size="8" font-weight="700">brilhante</text>',
+        frequency:'<rect x="30" y="28" width="42" height="63" rx="4" fill="#354754"/><rect x="30" y="75" width="42" height="16" rx="3" fill="#168b57"/><rect x="99" y="28" width="42" height="63" rx="4" fill="#354754"/><rect x="99" y="82" width="42" height="9" rx="3" fill="#00e676"/><text x="29" y="23" fill="#91a5b3" font-size="8">colorido / brilhante</text>',
+        cluster:'<rect x="31" y="35" width="106" height="46" rx="8" fill="#6bd7d018" stroke="#6bd7d0" stroke-dasharray="4 3"/><line x1="21" y1="91" x2="155" y2="91" stroke="#344653"/><path d="M25 76 L43 57 L61 66 L79 44 L96 53 L115 39 L141 62" fill="none" stroke="#6bd7d0" stroke-width="2.5"/><text x="48" y="32" fill="#91a5b3" font-size="8">área candidata ≠ suporte provado</text>',
+        timeframe:'<rect x="30" y="34" width="34" height="55" rx="4" fill="#8bb8ff"/><rect x="74" y="34" width="34" height="55" rx="4" fill="#f4bd61"/><rect x="118" y="34" width="34" height="55" rx="4" fill="#8bb8ff"/><text x="35" y="27" fill="#91a5b3" font-size="8">5 min</text><text x="80" y="27" fill="#91a5b3" font-size="8">15 min</text><text x="123" y="27" fill="#91a5b3" font-size="8">100 min</text>',
+        absorption:'<path d="M24 40 L50 36 L76 39 L102 38 L128 34 L155 39" fill="none" stroke="#8bb8ff" stroke-width="2"/><path d="M24 70 L50 65 L76 69 L102 48 L128 36 L155 58" fill="none" stroke="#f4bd61" stroke-width="3"/><text x="24" y="85" fill="#91a5b3" font-size="8">controle / absorção · range futuro</text>',
+        control:'<rect x="34" y="32" width="38" height="59" rx="5" fill="#ff656d"/><rect x="105" y="37" width="38" height="54" rx="5" fill="#8bb8ff"/><text x="32" y="25" fill="#91a5b3" font-size="8">retorno observado</text><text x="106" y="30" fill="#91a5b3" font-size="8">controle</text><path d="M75 59 H101" stroke="#ff656d" stroke-width="2" marker-end="url(#arrow)"/>',
+        duration:'<line x1="22" y1="54" x2="161" y2="54" stroke="#536977"/><circle cx="54" cy="54" r="6" fill="#6bd7d0"/><circle cx="133" cy="54" r="6" fill="#f4bd61"/><path d="M54 42 V67 M133 42 V67" stroke="#91a5b3"/><text x="34" y="82" fill="#91a5b3" font-size="8">mediana</text><text x="119" y="82" fill="#91a5b3" font-size="8">P90</text>',
+        multitf:'<rect x="27" y="28" width="33" height="62" rx="5" fill="#6bd7d0"/><rect x="67" y="47" width="33" height="43" rx="5" fill="#586a77"/><rect x="107" y="58" width="33" height="32" rx="5" fill="#586a77"/><text x="28" y="22" fill="#91a5b3" font-size="8">coincidente ≥2 TF</text>',
+        split:'<rect x="22" y="25" width="65" height="62" rx="6" fill="#8bb8ff22" stroke="#8bb8ff"/><rect x="92" y="25" width="65" height="62" rx="6" fill="#3fe38b22" stroke="#3fe38b"/><line x1="89" y1="18" x2="89" y2="93" stroke="#f4bd61" stroke-dasharray="3 3"/><text x="42" y="59" fill="#b9c9d2" font-size="9">treino</text><text x="112" y="59" fill="#b9c9d2" font-size="9">holdout</text>',
+        excursion:'<line x1="27" y1="83" x2="154" y2="83" stroke="#546674"/><path d="M30 77 L53 60 L77 70 L100 38 L123 47 L151 18" fill="none" stroke="#3fe38b" stroke-width="2.5"/><path d="M30 77 L53 85 L77 63 L100 77 L123 71 L151 89" fill="none" stroke="#ff656d" stroke-width="2"/><text x="104" y="30" fill="#3fe38b" font-size="8">favorável</text><text x="106" y="90" fill="#ff8b91" font-size="8">adversa</text>',
+        candle:'<line x1="91" y1="18" x2="91" y2="89" stroke="#8bb8ff" stroke-width="2"/><rect x="73" y="39" width="36" height="27" rx="3" fill="#168b57"/><line x1="27" y1="29" x2="155" y2="29" stroke="#ff656d" stroke-dasharray="4 3"/><line x1="27" y1="78" x2="155" y2="78" stroke="#f4bd61" stroke-dasharray="4 3"/><text x="118" y="27" fill="#ff8b91" font-size="8">SL?</text><text x="118" y="76" fill="#f4bd61" font-size="8">SG?</text>'
+      };
+      return `<svg viewBox="0 0 184 105" role="img" aria-label="Esquema: ${escapeHtml(label)}"><defs><marker id="arrow" markerWidth="7" markerHeight="7" refX="5" refY="3.5" orient="auto"><path d="M0 0 L7 3.5 L0 7" fill="#ff656d"/></marker></defs>${base}${plots[kind] || plots.formula}</svg>`;
+    }
+    function card(item) {
+      const badge = statusClass(item.status);
+      return `<article class="hyp-card" data-status="${escapeHtml(item.status)}" data-group="${escapeHtml(item.group)}" data-search="${escapeHtml([item.id,item.group,item.title,item.rule,item.evidence,item.meaning,item.next].join(' ').toLowerCase())}">
+        <div class="card-head"><div><div class="id-group"><span class="hyp-id">${escapeHtml(item.id)}</span><span class="group">${escapeHtml(item.group)}</span></div><h3>${escapeHtml(item.title)}</h3></div><span class="badge ${badge}">${escapeHtml(item.status)}</span></div>
+        <div class="card-body"><div class="copy"><p class="label">Pergunta / critério</p><p>${escapeHtml(item.rule)}</p><p class="label">Evidência registrada</p><p class="evidence">${escapeHtml(item.evidence)}</p><p class="meaning"><b>O que implica:</b> ${escapeHtml(item.meaning)}</p><p class="next"><b>Próximo passo:</b> ${escapeHtml(item.next)}</p></div><div class="mini-viz">${viz(item.viz, item.title)}<p class="viz-caption">Esquema do critério, não nova amostra</p></div></div>
+      </article>`;
+    }
+    function roadmapCard(item) {
+      return `<article class="roadmap"><div class="num">${escapeHtml(item.id)}</div><div><h3>${escapeHtml(item.title)} <span class="badge pending">PENDENTE</span></h3><p><b>Por quê:</b> ${escapeHtml(item.why)}</p><p><b>Próxima ação:</b> ${escapeHtml(item.next)}</p>${viz(item.viz,item.title)}</div></article>`;
+    }
+    const cardRoot = document.getElementById('hypothesisCards');
+    const manualRoot = document.getElementById('manualCards');
+    const roadmapRoot = document.getElementById('roadmapCards');
+    cardRoot.innerHTML = hypotheses.map(card).join('');
+    manualRoot.innerHTML = manual.map(card).join('');
+    roadmapRoot.innerHTML = roadmaps.map(roadmapCard).join('');
+    const groupSelect = document.getElementById('groupFilter');
+    [...new Set(hypotheses.map(item => item.group))].sort().forEach(group => {
+      const option = document.createElement('option'); option.value = group; option.textContent = group; groupSelect.append(option);
+    });
+    function applyFilters() {
+      const term = document.getElementById('search').value.trim().toLowerCase();
+      const status = document.getElementById('statusFilter').value;
+      const group = groupSelect.value;
+      const cards = [...cardRoot.querySelectorAll('.hyp-card')];
+      let visible = 0;
+      cards.forEach(item => {
+        const show = (!term || item.dataset.search.includes(term)) && (status === 'all' || item.dataset.status === status) && (group === 'all' || item.dataset.group === group);
+        item.hidden = !show; if (show) visible++;
+      });
+      document.getElementById('resultCount').textContent = `${visible} de ${cards.length} hipóteses`;
+      document.getElementById('emptyState').classList.toggle('visible', visible === 0);
+    }
+    document.getElementById('search').addEventListener('input', applyFilters);
+    document.getElementById('statusFilter').addEventListener('change', applyFilters);
+    groupSelect.addEventListener('change', applyFilters);
+    applyFilters();
+  </script>
+</body>
+</html>
