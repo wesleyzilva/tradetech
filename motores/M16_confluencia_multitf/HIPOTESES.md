@@ -38,6 +38,6 @@ Ressalva de poder: a base de 5 min tem só 491 pregões e os conjuntos com 3+ TF
 
 | ID | Pergunta | Critério (congelado) | Status | Veredito |
 |---|---|---|---|---|
-| CF-H07 | O alinhamento simultâneo (barra do TF maior em formação incluída) tem direção? | Retorno alinhado ≠ 0 em algum horizonte: \|t\| ≥ 3 na descoberta (n ≥ 100), mesmo sinal com \|t\| ≥ 2 nos hold-outs 1 e 2 e mesmo sinal no WDO | PENDENTE | — |
-| CF-H08 | O alinhamento supera a cor do TF maior sozinho? | Diferença de retorno alinhado (alinhado − TF maior só) > 0 com t ≥ 3 na descoberta e mesmo sinal com t ≥ 2 nos dois hold-outs | PENDENTE | — |
-| CF-H09 | Os limiares fixos 60/80 mudam o resultado em relação ao Bollinger? | Comparar, no mesmo conjunto, a diferença de retorno alinhado entre as duas definições: \|t\| ≥ 3 e mesmo sinal nos dois hold-outs | PENDENTE | — |
+| CF-H07 | O alinhamento simultâneo (barra do TF maior em formação incluída) tem direção? | Retorno alinhado ≠ 0 em algum horizonte: \|t\| ≥ 3 na descoberta (n ≥ 100), mesmo sinal com \|t\| ≥ 2 nos hold-outs 1 e 2 e mesmo sinal no WDO | EXECUTADA | **REFUTADA** — melhor caso: 30+60 limiar 80, +50 pts (t=2,6, p=53%) até 2019 e −43 pts (t=−1,9) em 2020–2025; conjuntos com 5 min ficam em \|t\| < 1,6 |
+| CF-H08 | O alinhamento supera a cor do TF maior sozinho? | Diferença de retorno alinhado (alinhado − TF maior só) > 0 com t ≥ 3 na descoberta e mesmo sinal com t ≥ 2 nos dois hold-outs | EXECUTADA | **REFUTADA** — a diferença troca de sinal: +16 a +21 pts até 2019 e −15 a −54 pts em 2020–2025 (30+60) |
+| CF-H09 | Os limiares fixos 60/80 mudam o resultado em relação ao Bollinger? | Comparar, no mesmo conjunto, a diferença de retorno alinhado entre as duas definições: \|t\| ≥ 3 e mesmo sinal nos dois hold-outs | EXECUTADA | **REFUTADA** — mesmo sinal nas duas definições; o limiar fixo só aumenta a frequência (2 a 6 vezes) |

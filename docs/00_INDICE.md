@@ -33,6 +33,7 @@ python -m unittest discover tests                                   # testes
 python ferramentas/auditar_candles.py                               # auditoria de dados (~20 s)
 python motores/M02_microestrutura_barreiras/codigo/analise_001.py   # baseline M02 (~15 s)
 python motores/M16_confluencia_multitf/codigo/analise_001.py       # confluência multi-TF (~30 s)
+python motores/M16_confluencia_multitf/codigo/analise_002.py       # alinhamento no mesmo instante (~10 s)
 python ferramentas/gerar_painel.py                                # painel HTML interativo: docs/painel/painel.html (usa --refazer para recalcular o cache do M02)
 python ferramentas/indexar_hipoteses.py                             # índice de hipóteses
 ```
