@@ -1,0 +1,8 @@
+__pycache__/
+*.pyc
+.venv/
+.ipynb_checkpoints/
+.pytest_cache/
+# caches e saídas regeneráveis
+dados/cache/
+saidas/

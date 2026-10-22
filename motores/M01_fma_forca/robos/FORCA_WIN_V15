@@ -1,0 +1,304 @@
+{
+  Robo  : FORCA_WIN_V15
+  Tipo  : NTSL (estrategia/robo executavel)
+  Ativo : WIN (mini-indice)
+  Versao: 15.0
+  Base  : FORCA_WIN_V14 (mesmo gatilho de entrada, novo perfil de saida)
+
+  === OBJETIVO V15 ===
+
+  SCALP CURTO: capturar 50 a 100 pontos por trade, NUNCA mais que isso.
+  Sinais de entrada vindos da analise visual em estudo_visual
+  (telasAnalise.md) — entrada de qualidade do V14, saida agressivamente curta.
+
+  === MUDANCAS V15 vs V14 ===
+
+  1. TakeProfit: 2466 -> 50 pts                       [TP1 hard]
+     — sai 100% da posicao em +50 pts (alvo minimo da janela 50-100).
+     — em WIN 15min com range medio 411 pts, +50 pts costuma ser atingido
+       intrabar no proprio candle de gatilho.
+
+  2. UsarTeto: novo flag                              [HARD CAP 100 pts]
+     — qualquer ganho >= TetoMaximo encerra posicao imediatamente.
+     — garante "nunca mais que 100 pts" mesmo com trailing solto.
+
+  3. UsarTrailing: false -> true                      [extende ate 100]
+     — apos BE armar (em +BeRatio*TP = +30 pts), ativa trailing curto
+       com passo de 15 pts, deixando o trade andar ate o teto de 100.
+
+  4. StopMinimo: 822 -> 30 pts                        [SL proporcional ao alvo]
+     — RR target: TP1 50 / SL 30 = 1.67 (em TP teto 100 -> RR 3.33).
+     — FatorRangeSL desligado (FatorRangeSL=0) para nao inflar o SL.
+
+  5. BreakEvenRatio: 0.50 -> 0.60                     [BE em +30 pts]
+     — gatilho do trailing.
+
+  6. ForcaStopContra: 70 mantido                      [V14 preservado]
+     — mantem saida antecipada por inversao forte do candle contrario.
+
+  7. MaxBarrasEmPosicao: 0 -> 3                       [scalp expira rapido]
+     — se em 3 candles de 15min (45 min) nao tocou TP nem teto, encerra.
+     — coerente com perfil scalp; reduz exposicao a noticias/lateralizacao.
+
+  8. Filtro 1o candle de forca: MANTIDO                [evita entrada atrasada]
+     — fForca[1] < ForcaMinimaForte (compra) / > -ForcaMinimaForte (venda).
+
+  9. MTF tripleta 60/30/15: MANTIDO                    [iJanelaDir=2 iJanelaCtx=4]
+
+  === ATENCAO / DISCLAIMER ===
+
+  Este perfil NAO foi rebacktestado. Parametros derivados de:
+    - SL 30 pts: ~0.07x range medio 15min (411 pts). Risco real: muitos trades
+      podem ser stopados antes de TP por ruido intrabar.
+    - Necessario backtest WIN 15min com novo TP/SL antes de operar real.
+    - Alternativa a avaliar: rodar V15 em 5min (range medio ~171 pts) ou 1min
+      para reduzir whipsaw — porem isto descalibra a tripleta MTF do V14.
+
+  Capital/risco com novo SL:
+    SL=30 pts * R$0.20 = R$6 risco/contrato
+    1% R$10k = R$100 -> ate 16 contratos (limitado por MaxContratos=5).
+}
+
+input
+  // === FORCA ===
+  ForcaMinimaForte(70.0);
+  ForcaExaustao(85.0);
+  PeriodoMediaVolume(20);
+  UsarFiltroVolume(true);
+  VolumeMinimo(5000);
+
+  // === MULTI-TF (tripleta WIN 15min: 60/30/15) — IDENTICO V14 ===
+  iJanelaDir(2);
+  iJanelaCtx(4);
+
+  // === STOP / ALVO V15 (scalp 50-100 pts) ===
+  StopMinimo(30.0);             // V15: 822 -> 30 pts
+  FatorRangeSL(0.0);            // V15: desligado (era 2.0) — nao inflar SL
+  TakeProfit(50.0);             // V15: 2466 -> 50 pts (TP1 alvo minimo)
+  TetoMaximo(100.0);            // V15 NOVO: hard cap (nunca passa de 100 pts)
+  UsarBreakEven(true);
+  BreakEvenRatio(0.6);          // V15: 0.5 -> 0.6 (BE em +30 pts, gatilho do trailing)
+  UsarTrailing(true);           // V15: false -> true
+  TrailingPasso(15.0);          // V15 NOVO: passo curto de 15 pts
+
+  // === GERENCIAMENTO DE RISCO ===
+  CapitalReais(10000.0);
+  RiscoPorcentagem(1.0);
+  PontoValorReais(0.20);
+  MaxContratos(5);
+
+  // === SAIDAS ===
+  StopHorario_H(17);
+  StopHorario_M(45);
+  UsarStopCandleContra(true);
+  ForcaStopContra(70.0);        // mantido do V14
+  PermitirReversao(true);
+  MaxBarrasEmPosicao(3);        // V15: 0 -> 3 (scalp expira em 45min)
+
+  // === ALERTAS ===
+  MostrarAlertas(true);
+  HabilitarOperacoes(true);
+
+var
+  fCorpo, fRange, fVolMedia : float;
+  fMassa, fAceleracao, fForca, fForcaAbs : float;
+  fMediaDir, fMediaCtx : float;
+  bCtxAlta, bCtxBaixa, bDirAlta, bDirBaixa : boolean;
+  r, g, b : integer;
+  iBarras : integer;
+  bDeveOperar, bBreakEven : boolean;
+  fEntrada, fSL, fSLAtivo : float;
+  fTrailingRef, fLucroAtual : float;
+  iQtd : integer;
+
+begin
+  // ─── Calculos base ────────────────────────────────────────────
+  fCorpo := Close - Open;
+  fRange := High - Low;
+  if fRange <= 0 then fRange := 0.0001;
+  fVolMedia := Media(PeriodoMediaVolume, Volume);
+  if fVolMedia <= 0 then fVolMedia := 1;
+
+  // ─── F = M x A ────────────────────────────────────────────────
+  fMassa      := fCorpo / fRange;
+  fAceleracao := Volume / fVolMedia;
+  fForca      := fMassa * fAceleracao * 100;
+  if fForca >  100 then fForca :=  100;
+  if fForca < -100 then fForca := -100;
+  fForcaAbs := abs(fForca);
+
+  // ─── Multi-TF ─────────────────────────────────────────────────
+  fMediaDir := Media(iJanelaDir, Close);
+  fMediaCtx := Media(iJanelaCtx, Close);
+  bCtxAlta  := (Close > fMediaCtx) and (fMediaCtx > fMediaCtx[iJanelaCtx]);
+  bCtxBaixa := (Close < fMediaCtx) and (fMediaCtx < fMediaCtx[iJanelaCtx]);
+  bDirAlta  := (Close > fMediaDir) and (fMediaDir > fMediaDir[iJanelaDir]);
+  bDirBaixa := (Close < fMediaDir) and (fMediaDir < fMediaDir[iJanelaDir]);
+
+  // ─── Cores padrao FORCA (verde/vermelho fraco e forte) ───────
+  // Verde fraco  (F 70-85)  : forte compradora
+  // Verde forte  (F >= 85)  : exaustao compradora
+  // Vermelho fraco (F -70 a -85): forte vendedora
+  // Vermelho forte (F <= -85)   : exaustao vendedora
+  r := 255; g := 255; b := 255;
+  if fForca >= ForcaExaustao then begin r := 0;   g := 150; b := 0;   end
+  else if fForca >= ForcaMinimaForte then begin r := 120; g := 220; b := 120; end
+  else if fForca <= -ForcaExaustao   then begin r := 180; g := 0;   b := 0;   end
+  else if fForca <= -ForcaMinimaForte then begin r := 255; g := 120; b := 120; end;
+  PaintBar(RGB(r, g, b));
+
+  // ─── SL fixo (FatorRangeSL desligado no V15) ──────────────────
+  fSL := StopMinimo;
+  if (FatorRangeSL > 0) and ((fRange * FatorRangeSL) > fSL) then
+    fSL := fRange * FatorRangeSL;
+
+  // ─── Sizing por risco ─────────────────────────────────────────
+  if (fSL > 0) and (PontoValorReais > 0) then
+    iQtd := CapitalReais * (RiscoPorcentagem / 100) / (fSL * PontoValorReais)
+  else
+    iQtd := 1;
+  if iQtd < 1 then iQtd := 1;
+  if iQtd > MaxContratos then iQtd := MaxContratos;
+
+  // ─── Stop horario ─────────────────────────────────────────────
+  // Profit usa HHMM em Time(): 17:45 = 1745, nao 174500.
+  if Time() >= (StopHorario_H * 100 + StopHorario_M) then
+  begin
+    if IsBought or IsSold then ClosePosition;
+    bDeveOperar := false;
+  end
+  else
+    bDeveOperar := true;
+
+  // ─── Controle barras em posicao ───────────────────────────────
+  if IsBought or IsSold then
+    iBarras := iBarras + 1
+  else begin
+    iBarras      := 0;
+    bBreakEven   := false;
+    fTrailingRef := 0;
+  end;
+
+  if (MaxBarrasEmPosicao > 0) and (iBarras >= MaxBarrasEmPosicao) then
+  begin
+    if IsBought or IsSold then ClosePosition;
+    iBarras := 0; bDeveOperar := false;
+  end;
+
+  // ─── HARD STOP LOSS via intrabar High/Low (V14 mantido) ───────
+  if IsBought and (Low <= fEntrada - fSLAtivo) then
+  begin
+    ClosePosition;
+    iBarras := 0;
+  end;
+  if IsSold and (High >= fEntrada + fSLAtivo) then
+  begin
+    ClosePosition;
+    iBarras := 0;
+  end;
+
+  // ─── Stop candle contra (V14 mantido: ForcaStopContra=70) ────
+  if UsarStopCandleContra then
+  begin
+    if IsBought  and (fForca <= -ForcaStopContra) then begin ClosePosition; iBarras := 0; end;
+    if IsSold    and (fForca >= ForcaStopContra)  then begin ClosePosition; iBarras := 0; end;
+  end;
+
+  // ─── [V15] HARD CAP — TetoMaximo 100 pts ──────────────────────
+  // Garantia "nunca mais que 100 pts": fecha imediatamente se intrabar tocar o teto.
+  if IsBought and (High >= fEntrada + TetoMaximo) then
+  begin
+    ClosePosition;
+    iBarras := 0;
+  end;
+  if IsSold and (Low <= fEntrada - TetoMaximo) then
+  begin
+    ClosePosition;
+    iBarras := 0;
+  end;
+
+  // ─── Break-even (V15: 0.6 do TP = +30 pts; arma o trailing) ──
+  if UsarBreakEven then
+  begin
+    if IsBought and (not bBreakEven) then
+      if (Close - fEntrada) >= (TakeProfit * BreakEvenRatio) then bBreakEven := true;
+    if IsSold and (not bBreakEven) then
+      if (fEntrada - Close) >= (TakeProfit * BreakEvenRatio) then bBreakEven := true;
+    if bBreakEven then
+    begin
+      if IsBought  and (Close <= fEntrada) then begin ClosePosition; iBarras := 0; end;
+      if IsSold    and (Close >= fEntrada) then begin ClosePosition; iBarras := 0; end;
+    end;
+  end;
+
+  // ─── [V15] Trailing curto (apos BE armado, passo 15 pts) ─────
+  // Deixa o trade respirar de +30 pts ate o teto de +100 pts.
+  if UsarTrailing and bBreakEven then
+  begin
+    if IsBought then
+    begin
+      if Close - TrailingPasso > fTrailingRef then
+        fTrailingRef := Close - TrailingPasso;
+      if (fTrailingRef > fEntrada) and (Low <= fTrailingRef) then
+        begin ClosePosition; iBarras := 0; end;
+    end;
+    if IsSold then
+    begin
+      if (Close + TrailingPasso < fTrailingRef) or (fTrailingRef = 0) then
+        fTrailingRef := Close + TrailingPasso;
+      if (fTrailingRef < fEntrada) and (High >= fTrailingRef) then
+        begin ClosePosition; iBarras := 0; end;
+    end;
+  end;
+
+  // ─── Take Profit fixo TP1 (50 pts) ────────────────────────────
+  // Saida 100% da posicao no TP1; trailing+teto so atuam se TP1 nao for tocado
+  // no candle de entrada e o BE for armado em candles seguintes.
+  if IsBought  and (High >= fEntrada + TakeProfit) and (not bBreakEven) then
+    begin ClosePosition; iBarras := 0; end;
+  if IsSold    and (Low  <= fEntrada - TakeProfit) and (not bBreakEven) then
+    begin ClosePosition; iBarras := 0; end;
+
+  // ─── ENTRADAS WIN (identico ao V14: 1o candle + MTF + volume) ─
+  if HabilitarOperacoes and bDeveOperar then
+  begin
+    // COMPRA
+    if (fForca >= ForcaMinimaForte)
+      and (fForca[1] < ForcaMinimaForte)
+      and bCtxAlta and bDirAlta
+      and ((not UsarFiltroVolume) or (Volume >= VolumeMinimo)) then
+    begin
+      if PermitirReversao and IsSold then ClosePosition;
+      if (not IsBought) and (not IsSold) then
+      begin
+        BuyAtMarket;
+        fEntrada     := Close;
+        fSLAtivo     := fSL;
+        fTrailingRef := Close - fSL;
+        iBarras      := 0;
+        bBreakEven   := false;
+        if MostrarAlertas then Alert(RGB(0, 200, 0));
+      end;
+    end;
+
+    // VENDA
+    if (fForca <= -ForcaMinimaForte)
+      and (fForca[1] > -ForcaMinimaForte)
+      and bCtxBaixa and bDirBaixa
+      and ((not UsarFiltroVolume) or (Volume >= VolumeMinimo)) then
+    begin
+      if PermitirReversao and IsBought then ClosePosition;
+      if (not IsBought) and (not IsSold) then
+      begin
+        SellShortAtMarket;
+        fEntrada     := Close;
+        fSLAtivo     := fSL;
+        fTrailingRef := Close + fSL;
+        iBarras      := 0;
+        bBreakEven   := false;
+        if MostrarAlertas then Alert(RGB(200, 0, 0));
+      end;
+    end;
+  end;
+
+end;

@@ -1,5 +1,5 @@
 ---
-applyTo: "Robots/**,Robots/Results/**,CandlesHistoryDatas/**,README.md"
+applyTo: "motores/**,dados/**,docs/**,README.md"
 description: "Use when: analyzing Tradetech WIN scalper robots, Profit simulator CSVs, backtests, timeframe choice, risk/reward, probability of success, stop behavior, NTSL execution parameters, or the F=m*a candle/econophysics study and its artifact locations."
 ---
 
@@ -9,9 +9,9 @@ Use estas instrucoes sempre que analisar, editar ou documentar robos WIN scalper
 
 ## Estrutura oficial de trabalho
 
-- Versao viva do robo principal: `Robots/FORCA_WIN_V16_scalper_sinaisForca/FORCA_WIN_V16_scalper_sinaisForca`.
-- Arquivos antigos na raiz de `Robots/` podem existir como historico; ao trabalhar no scalper principal, priorizar sempre a versao viva acima.
-- Resultados do simulador ficam em: `Robots/Results/FORCA_WIN_V16_scalper_sinaisForca/`.
+- Versao viva do robo principal: `motores/M01_fma_forca/robos/FORCA_WIN_V16_scalper_sinaisForca/FORCA_WIN_V16_scalper_sinaisForca`.
+- Arquivos antigos na raiz de `motores/M01_fma_forca/robos/` podem existir como historico; ao trabalhar no scalper principal, priorizar sempre a versao viva acima.
+- Resultados do simulador ficam em: `motores/M01_fma_forca/robos/Results/FORCA_WIN_V16_scalper_sinaisForca/`.
 - Cada rodada de teste deve ficar em uma pasta numerada sequencialmente: `1/`, `2/`, `3/`, etc.
 - Dentro de cada pasta numerada, manter:
   - backup/snapshot do codigo usado na rodada com data e horario, exemplo `FORCA_WIN_V16_scalper_sinaisForca_20260612_0846`;
@@ -22,23 +22,23 @@ Use estas instrucoes sempre que analisar, editar ou documentar robos WIN scalper
 
 ## Analise econofisica de candles — localizacao oficial
 
-- Todo novo script, documento Markdown, conclusao, hipotese ou resultado gerado para a tese F=m*a e analise de candles deve ficar em `CandlesHistoryDatas/TeseFma_analiseCandle/`.
-- Os CSVs originais continuam nas pastas de dados irmas (`2012_14/` ... `2026/` e `CandlesHistoricos2026/`); nao mover nem duplicar os dados brutos.
-- Atualizar os documentos e scripts canonicos existentes nessa pasta em vez de criar copias na raiz de `CandlesHistoryDatas/`.
-- Scripts da tese leem as pastas de dados pelo diretorio pai e gravam os documentos no proprio `TeseFma_analiseCandle/`.
-- Entradas canônicas: `TeseFma_analiseCandle/analise_candles.py`, `TeseFma_analiseCandle/validacao_econofisica.py`, `TeseFma_analiseCandle/ANALISE_CANDLES.md`, `TeseFma_analiseCandle/VALIDACAO_ECONOFISICA.md` e `TeseFma_analiseCandle/HIPOTESES.md`.
-- A comparação de cálculos Profit × Python é documentada em `TeseFma_analiseCandle/PARIDADE_NTSL_PYTHON.md`; o gerador `gerar_casos_paridade_ntsl.py` atualiza `PARIDADE_NTSL_CASOS.csv` e `PARIDADE_NTSL_HISTORICO.csv`, e as observações manuais ficam em `PARIDADE_NTSL_PROFIT_OBSERVACOES.csv`.
+- Todo novo script, documento Markdown, conclusao, hipotese ou resultado gerado para a tese F=m*a e analise de candles deve ficar em `motores/M01_fma_forca/teses/cores/`.
+- Os CSVs originais ficam em `dados/candles/<lote>/` (lotes nomeados pela cobertura real; ver `dados/README.md` e `dados/catalogo_candles.csv`); nao duplicar os dados brutos nem editar CSVs em lugar.
+- Atualizar os documentos e scripts canonicos existentes nessa pasta em vez de criar copias em outras pastas.
+- Scripts da tese leem `dados/candles/` e gravam os documentos no proprio `motores/M01_fma_forca/teses/cores/`; rodar a partir da raiz com `python -m motores.M01_fma_forca.teses.cores.<modulo>`.
+- Entradas canônicas: `motores/M01_fma_forca/teses/cores/analise_candles.py`, `motores/M01_fma_forca/teses/cores/validacao_econofisica.py`, `motores/M01_fma_forca/teses/cores/ANALISE_CANDLES.md`, `motores/M01_fma_forca/teses/cores/VALIDACAO_ECONOFISICA.md` e `motores/M01_fma_forca/teses/cores/HIPOTESES.md`.
+- A comparação de cálculos Profit × Python é documentada em `motores/M01_fma_forca/teses/cores/PARIDADE_NTSL_PYTHON.md`; o gerador `gerar_casos_paridade_ntsl.py` atualiza `PARIDADE_NTSL_CASOS.csv` e `PARIDADE_NTSL_HISTORICO.csv`, e as observações manuais ficam em `PARIDADE_NTSL_PROFIT_OBSERVACOES.csv`.
 - Na paridade NTSL, não ajustar thresholds/código com base apenas na cor: primeiro comparar OHLC, F, μ, σ e bandas nos timestamps exatos. Há divergências visuais reportadas em cinco dos dez casos do lote WINQ26 Jun–Jul/2026.
-- Manter `FORCA_WIN_V18_2_original_referencia.ntsl` intacto; `FORCA_WIN_V18_2_estudo_fma.ntsl` é apenas estudo visual sem ordens, reportado pelo usuário como compilado/executado no Profit em 2026-10-06, e não substitui a versão viva em `Robots/`. A próxima verificação é paridade dos valores NTSL com o relatório Python.
+- Manter `FORCA_WIN_V18_2_original_referencia.ntsl` intacto; `FORCA_WIN_V18_2_estudo_fma.ntsl` é apenas estudo visual sem ordens, reportado pelo usuário como compilado/executado no Profit em 2026-10-06, e não substitui a versão viva em `motores/M01_fma_forca/robos/`. A próxima verificação é paridade dos valores NTSL com o relatório Python.
 
 ## Decisao operacional atual
 
-- Robo principal: `Robots/FORCA_WIN_V16_scalper_sinaisForca/FORCA_WIN_V16_scalper_sinaisForca`.
+- Robo principal: `motores/M01_fma_forca/robos/FORCA_WIN_V16_scalper_sinaisForca/FORCA_WIN_V16_scalper_sinaisForca`.
 - Timeframe principal para operacao: **WIN 5min**.
 - Timeframes `1min` e `2min`: nao priorizar para operacao; muito ruido e resultados recentes negativos/fracos.
 - Timeframe `20min`: tratar como estudo separado/promissor, nao substituir o foco 5min sem novo backtest e replay dedicado.
 - Timeframes `30min`, `45min` e `60min`: nao promover como foco sem evidencia nova; resultados recentes perderam consistencia no comparativo.
-- `Robots/FORCA_WIN_V16_scalpercurto`: tratar como setup tatico de replay/estudo, 1 contrato, nao como robo principal.
+- `motores/M01_fma_forca/robos/FORCA_WIN_V16_scalpercurto`: tratar como setup tatico de replay/estudo, 1 contrato, nao como robo principal.
 
 ## Parametros padrao do 5min
 
@@ -138,5 +138,5 @@ Ao responder uma analise, estruturar assim:
 
 - Preservar mudancas nao relacionadas do usuario.
 - Nao reverter delecoes ou arquivos fora do escopo sem pedido explicito.
-- Depois de editar `Robots/**` ou `README.md`, validar com `get_errors` e `git diff --check`.
+- Depois de editar `motores/M01_fma_forca/robos/**` ou `README.md`, validar com `get_errors` e `git diff --check`.
 - Nao commitar nem fazer push sem pedido explicito.
