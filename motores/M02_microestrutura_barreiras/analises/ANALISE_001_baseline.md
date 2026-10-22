@@ -185,6 +185,33 @@ Independente das barreiras: retorno da abertura da barra seguinte até o fechame
 
 Critério (`docs/01_CONVENCOES.md`): mesmo sinal em ≥ 2 conjuntos independentes, |t| ≥ 3 na descoberta e |t| ≥ 2 no teste. O `t (pregão)` aqui é a média por pregão da soma dos desvios dos eventos em relação ao incondicional (pregões sem evento contam zero). A interpretação fica em `HIPOTESES.md` (MB-H01).
 
+### 7.1 Retorno alinhado dos sinais do contexto 3 (MB-H02)
+
+Todos os sinais de fluxo neutro (não só os que viram trade), retorno na direção do sinal da abertura seguinte até `h` barras depois. Positivo = o rompimento tem continuação; zero ou negativo = não há edge direcional antes das barreiras.
+
+| conjunto | h (barras) | n sinais | retorno alinhado médio (pts) | % positivos | t (pregão) |
+|---|---|---|---|---|---|
+| WINFUT 1min | 1 | 3.669 | -1,58 | 47,5 | -1,62 |
+| WINFUT 1min | 5 | 3.669 | -4,31 | 46,5 | -1,41 |
+| WINFUT 1min | 10 | 3.669 | -3,03 | 46,4 | -0,70 |
+| WINFUT 1min | 20 | 3.669 | 2,81 | 47,1 | 0,41 |
+| WINQ26 1min | 1 | 1.863 | 0,69 | 45,4 | 0,36 |
+| WINQ26 1min | 5 | 1.863 | 5,30 | 49,9 | 0,86 |
+| WINQ26 1min | 10 | 1.863 | 8,15 | 49,8 | 1,02 |
+| WINQ26 1min | 20 | 1.863 | -23,80 | 45,9 | -2,01 |
+| WINFUT 5min | 1 | 4.517 | -0,57 | 47,2 | -0,30 |
+| WINFUT 5min | 5 | 4.517 | 3,21 | 47,6 | 0,59 |
+| WINFUT 5min | 10 | 4.517 | 0,98 | 48,5 | 0,12 |
+| WINFUT 5min | 20 | 4.517 | -2,28 | 49,6 | -0,19 |
+| WINM26 5min | 1 | 773 | 3,70 | 48,1 | 0,44 |
+| WINM26 5min | 5 | 773 | 24,56 | 50,3 | 0,97 |
+| WINM26 5min | 10 | 773 | 39,84 | 51,6 | 0,98 |
+| WINM26 5min | 20 | 773 | -9,64 | 49,7 | -0,19 |
+| WINQ26 5min | 1 | 858 | -1,71 | 47,9 | -0,30 |
+| WINQ26 5min | 5 | 858 | -12,70 | 47,7 | -0,82 |
+| WINQ26 5min | 10 | 858 | -14,74 | 47,0 | -0,55 |
+| WINQ26 5min | 20 | 858 | -11,08 | 48,6 | -0,35 |
+
 ## 8. Teste de escala (5 min)
 
 Mesmos parâmetros em barras de 5 min (ATR 5× maior, pisos de 35/120 pts irrelevantes, 20 barras = 100 min). Não valida o robô, mas diz se o conceito (fade de barra brilhante, rompimento neutro) sobrevive a uma escala em que o piso de stop não domina.

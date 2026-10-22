@@ -140,6 +140,23 @@ def retornos_futuros(d: pd.DataFrame, p: mb.Params) -> list[dict]:
     return linhas
 
 
+def retorno_alinhado_sinais(d: pd.DataFrame, ctx: int) -> list[dict]:
+    """Retorno alinhado ao lado do sinal (entrada na abertura seguinte), para todos os sinais do contexto ``ctx``."""
+    o_prox = d["o"].shift(-1)
+    sel = (d["ctx"] == ctx) & (d["sinal"] != 0)
+    linhas = []
+    for h in HORIZONTES:
+        fut = (d["c"].shift(-h) - o_prox) * d["sinal"]
+        ok = sel & (d["dia"].shift(-h) == d["dia"])
+        r = fut.where(ok)
+        por_dia = r.groupby(d["dia"]).sum(min_count=1).fillna(0.0)
+        t = por_dia.mean() / (por_dia.std(ddof=1) / np.sqrt(len(por_dia))) if por_dia.std(ddof=1) > 0 else np.nan
+        x = r.dropna()
+        linhas.append({"h (barras)": h, "n sinais": fmt(len(x)), "retorno alinhado médio (pts)": fmt(x.mean()),
+                       "% positivos": fmt(100 * (x > 0).mean(), 1), "t (pregão)": fmt(t)})
+    return linhas
+
+
 def pctl(valor: float, amostra: pd.Series) -> float:
     return 100 * float((amostra < valor).mean())
 
@@ -299,6 +316,16 @@ def main() -> None:
     w("\nCritério (`docs/01_CONVENCOES.md`): mesmo sinal em ≥ 2 conjuntos independentes, |t| ≥ 3 na descoberta e |t| ≥ 2 no teste. "
       "O `t (pregão)` aqui é a média por pregão da soma dos desvios dos eventos em relação ao incondicional (pregões sem evento contam zero). "
       "A interpretação fica em `HIPOTESES.md` (MB-H01).\n")
+
+    w("### 7.1 Retorno alinhado dos sinais do contexto 3 (MB-H02)\n")
+    w("Todos os sinais de fluxo neutro (não só os que viram trade), retorno na direção do sinal da abertura seguinte até `h` barras depois. "
+      "Positivo = o rompimento tem continuação; zero ou negativo = não há edge direcional antes das barreiras.\n")
+    linhas = []
+    for nome in {**conj, **conj_5}:
+        for l in retorno_alinhado_sinais(resultados[(nome, "fiel")][0], 3):
+            linhas.append({"conjunto": nome, **l})
+    w(tabela(linhas, ["conjunto", "h (barras)", "n sinais", "retorno alinhado médio (pts)", "% positivos", "t (pregão)"]))
+    w("")
 
     # ---------------------------------------------------------------- escala
     w("## 8. Teste de escala (5 min)\n")
