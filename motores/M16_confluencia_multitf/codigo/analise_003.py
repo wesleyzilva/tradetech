@@ -43,7 +43,7 @@ def montar(serie: str) -> pd.DataFrame:
     mesmo = j["f5"].notna() & (j["f5"].dt.normalize() == j["fecha"].dt.normalize())
     b["F5"] = j["F5"].where(mesmo)
     b["fx5"] = faixa(b["F5"])
-    b["lado5"] = np.sign(b["F5"]).astype(int)
+    b["lado5"] = np.sign(b["F5"].fillna(0)).astype(int)
     fut = b.set_index("fecha").sort_index()
     for h in (15, 60):
         cc = fut["c"].reindex(b["fecha"] + pd.Timedelta(minutes=h))

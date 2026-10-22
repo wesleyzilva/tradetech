@@ -58,5 +58,5 @@ Períodos, forçados pela cobertura do 5 min: descoberta = WINFUT 2024-06-19 a 2
 
 | ID | Pergunta | Critério (congelado) | Status | Veredito |
 |---|---|---|---|---|
-| CF-H10 | Alguma combinação fraco/forte do mesmo lado tem continuação? | Em alguma das 4 células, retorno de 60 min com \|t\| ≥ 3 e n ≥ 80 na descoberta, mesmo sinal com \|t\| ≥ 2 no hold-out 1 | PENDENTE | — |
-| CF-H11 | Fraco continua e forte reverte, no 5 min sozinho? | Fraco com retorno > 0 e forte com retorno < 0, cada um com \|t\| ≥ 3 e n ≥ 80 na descoberta e o mesmo sinal no hold-out 1 | PENDENTE | — |
+| CF-H10 | Alguma combinação fraco/forte do mesmo lado tem continuação? | Em alguma das 4 células, retorno de 60 min com \|t\| ≥ 3 e n ≥ 80 na descoberta, mesmo sinal com \|t\| ≥ 2 no hold-out 1 | EXECUTADA | **REFUTADA** — nenhuma das 4 células. A maior (forte × forte, n=452) fica em −3 pts (t=−0,1, acerto 52%) na descoberta e +37 pts (t=1,1) no hold-out |
+| CF-H11 | Fraco continua e forte reverte, no 5 min sozinho? | Fraco com retorno > 0 e forte com retorno < 0, cada um com \|t\| ≥ 3 e n ≥ 80 na descoberta e o mesmo sinal no hold-out 1 | EXECUTADA | **REFUTADA** — fraco no 5 min perde −21 pts (acerto 41%, t=−0,7); forte fica em −7 pts (acerto 50%, t=−0,3). Nenhum chega a \|t\| ≥ 3 |

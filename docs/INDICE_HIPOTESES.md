@@ -10,7 +10,7 @@
 | M01 · áreas | 8 | 0 | 0 | 1 | 0 | 0 | 7 |
 | M01 · reversão | 1 | 0 | 0 | 0 | 0 | 0 | 1 |
 | M02 · microestrutura | 15 | 2 | 0 | 3 | 0 | 3 | 7 |
-| M16 · confluência multi-TF | 9 | 0 | 0 | 1 | 0 | 6 | 2 |
+| M16 · confluência multi-TF | 11 | 0 | 0 | 1 | 0 | 8 | 2 |
 
 ## M01 · cores
 
@@ -124,4 +124,6 @@ Fonte: [`motores/M16_confluencia_multitf/HIPOTESES.md`](../motores/M16_confluenc
 | CF-H07 |  | O alinhamento simultâneo (barra do TF maior em formação incluída) tem direção? | REFUTADA |
 | CF-H08 |  | O alinhamento supera a cor do TF maior sozinho? | REFUTADA |
 | CF-H09 |  | Os limiares fixos 60/80 mudam o resultado em relação ao Bollinger? | REFUTADA |
+| CF-H10 |  | Alguma combinação fraco/forte do mesmo lado tem continuação? | REFUTADA |
+| CF-H11 |  | Fraco continua e forte reverte, no 5 min sozinho? | REFUTADA |
 
