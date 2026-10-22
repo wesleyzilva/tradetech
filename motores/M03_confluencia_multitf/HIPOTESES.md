@@ -1,7 +1,7 @@
 # M03 — Hipóteses (CF-H##) — **congeladas em 2026-10-22, antes de rodar**
 
 Regras e definições: [`METODO.md`](METODO.md). Veredito padrão: `docs/01_CONVENCOES.md` §2.
-Número de estratégias com barreira testadas: **120** (declarado); o esperado por acaso com |t| ≥ 3 é < 1, mas com |t| ≥ 2 é ≈ 5–6 — por isso exigimos replicação.
+Número de estratégias com barreira testadas: **132** (declarado); o esperado por acaso com |t| ≥ 3 é < 1, mas com |t| ≥ 2 é ≈ 5–6 — por isso exigimos replicação.
 
 | ID | Pergunta | Critério de veredito (congelado) | Status | Veredito |
 |---|---|---|---|---|
