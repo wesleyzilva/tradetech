@@ -138,6 +138,7 @@ class _Pos:
     stop_limite: float | None = None
     alvo: float | None = None
     stop_passivo: bool = False
+    teve_passivo: bool = False
     sl_pts: float = 0.0
     sg_pts: float = 0.0
     mfe: float = 0.0
@@ -158,6 +159,7 @@ def _colocar_ordens(pos: _Pos, atr_i: float, close_i: float, p: Params) -> None:
         pos.stop = pos.entrada + sl
         pos.stop_limite = pos.stop + p.offset
         pos.stop_passivo = close_i >= pos.stop_limite
+    pos.teve_passivo = pos.teve_passivo or pos.stop_passivo
 
 
 def _avaliar_barra(pos: _Pos, o: float, h: float, l: float, p: Params):
@@ -237,6 +239,7 @@ def simular(d: pd.DataFrame, p: Params) -> pd.DataFrame:
                 "sl_pts": pos.sl_pts,
                 "sg_pts": pos.sg_pts,
                 "atr_sinal": atr[pos.i_entrada - 1],
+                "armadilha": pos.teve_passivo,
                 "mfe": pos.mfe,
                 "mae": pos.mae,
             }
