@@ -9,7 +9,7 @@
 | M01 · cores | 45 | 19 | 3 | 5 | 4 | 1 | 13 |
 | M01 · áreas | 8 | 0 | 0 | 1 | 0 | 0 | 7 |
 | M01 · reversão | 1 | 0 | 0 | 0 | 0 | 0 | 1 |
-| M02 · microestrutura | 12 | 1 | 0 | 2 | 0 | 3 | 6 |
+| M02 · microestrutura | 15 | 2 | 0 | 3 | 0 | 3 | 7 |
 
 ## M01 · cores
 
@@ -104,4 +104,7 @@ Fonte: [`motores/M02_microestrutura_barreiras/HIPOTESES.md`](../motores/M02_micr
 | MB-H10 |  | A barreira de tempo de 20 barras ajuda? | PENDENTE |
 | MB-H11 |  | A estimativa do ATR incluindo a barra atual mascara extremos (como M01-H15) e muda a classificação "brilhante"? | PENDENTE |
 | MB-H12 |  | Paridade: a réplica (avaliação no fechamento, fill no open seguinte) reproduz o trade log do robô no simulador do Profit? | PENDENTE |
+| MB-H13 |  | Em timeframes ≥ 30 min, a geometria SL curto/SG longo (≤ ~100 min) tem esperança positiva mesmo com entrada aleatória (efeito de autocorrel… | INCONCLUSIVA |
+| MB-H14 |  | A barra brilhante (≥ 1,7 × ATR) antecipa expansão do range seguinte em todos os timeframes (cor como alarme)? | CONFIRMADA |
+| MB-H15 |  | Em 20–60 min o sinal do M02 (ctx 1–3) supera a entrada aleatória com a mesma saída? | PENDENTE |
 

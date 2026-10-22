@@ -10,7 +10,7 @@
 | Janelas | 09:15–12:00 e 14:00–16:15 (almoço bloqueado) |
 | Robô vigente | [`robo/Robo_Microestrutura_Barreiras_v1_20261022.ntsl`](robo/Robo_Microestrutura_Barreiras_v1_20261022.ntsl) |
 | Simulador | [`codigo/mb_motor.py`](codigo/mb_motor.py) (testes: `tests/test_mb_motor.py`) |
-| Baseline | [`analises/ANALISE_001_baseline.md`](analises/ANALISE_001_baseline.md) |
+| Baseline | [`analises/ANALISE_001_baseline.md`](analises/ANALISE_001_baseline.md); timeframes e cor como alarme: [`ANALISE_002`](analises/ANALISE_002_timeframes_rr.md) |
 
 ## Veredito do baseline (ANALISE_001)
 

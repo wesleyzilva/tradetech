@@ -50,6 +50,7 @@ class Params:
     custo_pts: float = 0.0
     slippage_stop_pts: float = 0.0
     stop_primeiro: bool = True
+    gap_max_min: int = 10
 
 
 def hhmm(dt: pd.Series) -> np.ndarray:
@@ -217,7 +218,7 @@ def simular(d: pd.DataFrame, p: Params) -> pd.DataFrame:
     pos: _Pos | None = None
 
     def mesmo_pregao(i: int, j: int) -> bool:
-        return j < n and dia[i] == dia[j] and (dts[j] - dts[i]) <= np.timedelta64(10, "m")
+        return j < n and dia[i] == dia[j] and (dts[j] - dts[i]) <= np.timedelta64(p.gap_max_min, "m")
 
     def fechar(preco: float, i_saida: int, motivo: str) -> None:
         nonlocal pos
