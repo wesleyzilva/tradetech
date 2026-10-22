@@ -51,6 +51,7 @@ class Params:
     slippage_stop_pts: float = 0.0
     stop_primeiro: bool = True
     gap_max_min: int = 10
+    stop_a_mercado: bool = False
 
 
 def hhmm(dt: pd.Series) -> np.ndarray:
@@ -160,6 +161,8 @@ def _colocar_ordens(pos: _Pos, atr_i: float, close_i: float, p: Params) -> None:
         pos.stop = pos.entrada + sl
         pos.stop_limite = pos.stop + p.offset
         pos.stop_passivo = close_i >= pos.stop_limite
+    if p.stop_a_mercado:
+        pos.stop_passivo = False
     pos.teve_passivo = pos.teve_passivo or pos.stop_passivo
 
 
@@ -177,7 +180,7 @@ def _avaliar_barra(pos: _Pos, o: float, h: float, l: float, p: Params):
             toca_stop = False
         if toca_stop and (p.stop_primeiro or not toca_alvo):
             preco = o if o <= stop else stop
-            if preco < lim:
+            if preco < lim and not p.stop_a_mercado:
                 if h >= lim:
                     return lim, "STOP_PASSIVO"
                 return None
@@ -194,7 +197,7 @@ def _avaliar_barra(pos: _Pos, o: float, h: float, l: float, p: Params):
             toca_stop = False
         if toca_stop and (p.stop_primeiro or not toca_alvo):
             preco = o if o >= stop else stop
-            if preco > lim:
+            if preco > lim and not p.stop_a_mercado:
                 if l <= lim:
                     return lim, "STOP_PASSIVO"
                 return None

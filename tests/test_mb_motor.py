@@ -77,6 +77,15 @@ class TesteSimulador(unittest.TestCase):
         self.assertAlmostEqual(t.loc[0, "saida"], 60.0)
         self.assertAlmostEqual(t.loc[0, "pnl"], -40.0)
 
+    def test_stop_a_mercado_sai_na_abertura_em_vez_de_ficar_passivo(self):
+        d = serie([PLANA, (100, 101, 50, 50), (50, 55, 48, 52), (52, 61, 51, 60)], {0: (1, 3)})
+        t = mb.simular(d, mb.Params(stop_a_mercado=True))
+        self.assertEqual(t.loc[0, "motivo"], "SL")
+        self.assertAlmostEqual(t.loc[0, "saida"], 50.0)
+        self.assertAlmostEqual(t.loc[0, "pnl"], -50.0)
+        t2 = mb.simular(d, mb.Params(stop_a_mercado=True, slippage_stop_pts=5.0))
+        self.assertAlmostEqual(t2.loc[0, "pnl"], -55.0)
+
     def test_stop_de_tempo_na_abertura_da_barra_seguinte(self):
         d = serie([PLANA] * 30, {0: (1, 3)})
         t = mb.simular(d, mb.Params(max_barras=20))
