@@ -1,0 +1,9 @@
+[project]
+name = "tradetech"
+version = "0.1.0"
+description = "Pesquisa de motores quantitativos para WIN/WDO (Profit/NTSL)"
+requires-python = ">=3.10"
+dependencies = ["numpy>=1.26", "pandas>=2.1"]
+
+[tool.setuptools.packages.find]
+where = ["src"]

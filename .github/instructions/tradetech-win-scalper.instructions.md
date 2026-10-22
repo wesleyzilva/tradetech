@@ -7,6 +7,14 @@ description: "Use when: analyzing Tradetech WIN scalper robots, Profit simulator
 
 Use estas instrucoes sempre que analisar, editar ou documentar robos WIN scalper, resultados do simulador Profit, backtests locais ou decisao de parametros operacionais neste repositorio.
 
+## Convencoes canonicas do repositorio (leia primeiro)
+
+- Indice: `docs/00_INDICE.md`; regras comuns: `docs/01_CONVENCOES.md`; estrutura e mapa antigo -> novo: `docs/02_ESTRUTURA_PASTAS.md`; motores e candidatos: `docs/03_CATALOGO_MOTORES.md`; hipoteses de todos os motores: `docs/INDICE_HIPOTESES.md` (gerado por `ferramentas/indexar_hipoteses.py`).
+- Cada motor e uma pasta autocontida em `motores/M##_nome/` (`robo/`, `codigo/`, `analises/`, `deltas/`, `HIPOTESES.md`). Mudanca no robo = `deltas/DELTA_###_*.md` com uma unica alavanca, criterio de decisao congelado antes de rodar e hold-out.
+- Dados: ler apenas via `src/tradetech/dados.py` (`carregar_serie`); nunca glob recursivo em `dados/candles`; serie `_alt` (preco ajustado) fica fora.
+- Todo resultado de regra de entrada precisa de controle nulo (entrada aleatoria com a mesma saida), custos explicitos (0/2/5 pts) e t-stat por pregao.
+- Motor M02 (robo atual de 1 min): `motores/M02_microestrutura_barreiras/` (baseline em `analises/ANALISE_001_baseline.md`).
+
 ## Estrutura oficial de trabalho
 
 - Versao viva do robo principal: `motores/M01_fma_forca/robos/FORCA_WIN_V16_scalper_sinaisForca/FORCA_WIN_V16_scalper_sinaisForca`.
