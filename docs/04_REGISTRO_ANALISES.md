@@ -9,7 +9,7 @@
 | Entra no robô | 3 |
 | Só entra com a ressalva registrada | 2 |
 | Ainda não decide parâmetro | 2 |
-| Fica fora do robô | 4 |
+| Fica fora do robô | 5 |
 | Fora do protocolo (não usar como evidência) | 1 |
 
 ## Por decisão
@@ -44,6 +44,7 @@
 | M16-A001 | direcao | [`Confluência de cor com barras fechando juntas`](../motores/M16_confluencia_multitf/analises/ANALISE_001_confluencia.md) | WIN 2014-2026 e WDO, bases 5/15/30 min | 0 de 114 estratégias passam. A cor alinhada indica amplitude (MFE parecido com MAE), não o lado. |
 | M16-A002 | direcao | [`Alinhamento no mesmo minuto, com limiares 60 e 80`](../motores/M16_confluencia_multitf/analises/ANALISE_002_alinhamento.md) | WIN 2014-2026 e WDO | O melhor caso (+50 pts até 2019) troca de sinal em 2020-2025. Limiar fixo e Bollinger contam a mesma história. |
 | M16-A003 | direcao | [`Tabela fraco/forte cruzada no 5 e no 15 min`](../motores/M16_confluencia_multitf/analises/ANALISE_003_fraco_forte.md) | WIN 5 min desde 2024-06 e WDO | Nenhuma das 4 combinações do mesmo lado tem continuação. Fraco não continua e forte não reverte. |
+| M18-A001 | direcao | [`Estrutura intradiária: momentum do dia, faixas, dia da semana, gap e faixa de abertura`](../motores/M18_estrutura_intradiaria/analises/ANALISE_001_estrutura_intradiaria.md) | WINFUT e WDOFUT 30 min, 2014-2025 | 35 testes, 0 passam. A faixa 09:30 do WIN chega a t 3,45 e 53% de acerto, mas no hold-out cai (t 1,6), some em 2022-2025 e o WDO tem sinal oposto. Hipótese que nascer daqui só confirma em dado novo. |
 
 ### Fora do protocolo (não usar como evidência)
 

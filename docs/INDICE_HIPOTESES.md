@@ -11,6 +11,7 @@
 | M01 · reversão | 1 | 0 | 0 | 0 | 0 | 0 | 1 |
 | M02 · microestrutura | 15 | 2 | 0 | 3 | 0 | 3 | 7 |
 | M16 · confluência multi-TF | 11 | 0 | 0 | 2 | 0 | 7 | 2 |
+| M18 · estrutura intradiária | 5 | 0 | 0 | 1 | 0 | 4 | 0 |
 | M17 · aprendizado walk-forward | 8 | 1 | 0 | 2 | 0 | 4 | 1 |
 
 ## M01 · cores
@@ -127,6 +128,18 @@ Fonte: [`motores/M16_confluencia_multitf/HIPOTESES.md`](../motores/M16_confluenc
 | CF-H09 |  | Os limiares fixos 60/80 mudam o resultado em relação ao Bollinger? | REFUTADA |
 | CF-H10 |  | Alguma combinação fraco/forte do mesmo lado tem continuação? | REFUTADA |
 | CF-H11 |  | Fraco continua e forte reverte, no 5 min sozinho? | REFUTADA |
+
+## M18 · estrutura intradiária
+
+Fonte: [`motores/M18_estrutura_intradiaria/HIPOTESES.md`](../motores/M18_estrutura_intradiaria/HIPOTESES.md)
+
+| id | grupo | hipótese | veredito |
+|---|---|---|---|
+| ID-H01 |  | O sentido do dia até 10:00, 14:00 ou 16:00 continua até o fim do pregão? | REFUTADA |
+| ID-H02 |  | Alguma faixa de 30 min rende mais ou menos que as outras do mesmo dia, de forma estável? | INCONCLUSIVA |
+| ID-H03 |  | Algum dia da semana rende diferente dos demais? | REFUTADA |
+| ID-H04 |  | O gap de abertura é desfeito (fade) até 10:00, 12:00 ou o fim do pregão? | REFUTADA |
+| ID-H05 |  | O rompimento da faixa de abertura continua até 12:00 ou o fim do pregão? | REFUTADA |
 
 ## M17 · aprendizado walk-forward
 

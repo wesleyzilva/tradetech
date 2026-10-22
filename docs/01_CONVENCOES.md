@@ -13,7 +13,7 @@ Regras que valem para **todos os motores**. Se uma análise as violar, o resulta
 | Robô (NTSL) | `Nome_v<N>_<AAAAMMDD>.ntsl` | `Robo_Microestrutura_Barreiras_v1_20261022.ntsl` | `motores/<motor>/robo/` |
 | Lote de dados | `<ano-ini>-<ano-fim>[_sufixo]` ou `<ano>-<1S|2S>_<contrato>` | `2024-2025`, `2026-2S_Q26` | `dados/candles/` |
 
-Prefixos já reservados: `MB` (M02), `FM` (reservado para M01 em novas hipóteses; as antigas ficam `H01–H48`), `OR` (M03), `VW` (M04), `TS` (M05), `SZ` (M06), `VR` (M07), `LL` (M08), `CF` (M16), `ML` (M17). Ver `docs/03_CATALOGO_MOTORES.md`.
+Prefixos já reservados: `MB` (M02), `FM` (reservado para M01 em novas hipóteses; as antigas ficam `H01–H48`), `OR` (M03), `VW` (M04), `TS` (M05), `SZ` (M06), `VR` (M07), `LL` (M08), `CF` (M16), `ML` (M17), `ID` (M18). Ver `docs/03_CATALOGO_MOTORES.md`.
 
 Numeração nunca é reaproveitada. Hipótese refutada continua no registro com veredito; regra mudada ⇒ **novo ID**.
 
