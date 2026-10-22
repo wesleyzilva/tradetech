@@ -14,11 +14,11 @@
 
 ## Veredito do baseline (ANALISE_001)
 
-- **Bruto, sem custos:** WINFUT 1 min −6,2 pts/trade (t = −2,3), WINQ26 1 min +0,2 pt/trade (t ≈ 0). O robô fica no percentil 3 do controle de entrada aleatória no WINFUT e no 66 no WINQ26: o sinal não supera o acaso.
+- **Bruto, sem custos:** WINFUT 1 min −6,2 pts/trade (t = −2,3), WINQ26 1 min +1,5 pt/trade (28 pregões líquidos, t ≈ 0). O robô fica no percentil 3 do controle de entrada aleatória no WINFUT e no 70 no WINQ26: o sinal não supera o acaso.
 - **Com 2 a 5 pts de custo:** negativo nos dois conjuntos.
 - **Quase todo o fluxo vem do contexto 3** (≈ 99,2 % dos sinais). Os fades (ctx 1 e 2) quase não disparam por exigirem rompimento da barra brilhante já na barra seguinte.
 - **Estrutura de execução:** ~30 trades por pregão; 64 % saem no SL; stop mínimo de 35 pts é ruído em 1 min; stop-limit com offset de 5 pts vira ordem passiva em movimentos rápidos e deixa perdas muito acima do SL nominal (ver `REVISAO_CODIGO_NTSL.md`).
-- **Dados:** só ~99 pregões de 1 min existem (64 WINFUT + 35 WINQ26). Conclusões têm incerteza alta; as hipóteses do motor foram escritas para ser retestadas com mais dados.
+- **Dados:** só ~92 pregões de 1 min existem (64 WINFUT + 28 WINQ26 líquidos; os 7 pregões anteriores de WINQ26 tinham volume de contrato fora do vencimento e saíram, ver `docs/05_TRILHA_ROBO.md`). Conclusões têm incerteza alta; as hipóteses do motor foram escritas para ser retestadas com mais dados.
 
 ## Como reproduzir
 

@@ -10,7 +10,8 @@
 | M01 · áreas | 8 | 0 | 0 | 1 | 0 | 0 | 7 |
 | M01 · reversão | 1 | 0 | 0 | 0 | 0 | 0 | 1 |
 | M02 · microestrutura | 15 | 2 | 0 | 3 | 0 | 3 | 7 |
-| M16 · confluência multi-TF | 11 | 0 | 0 | 1 | 0 | 8 | 2 |
+| M16 · confluência multi-TF | 11 | 0 | 0 | 2 | 0 | 7 | 2 |
+| M17 · aprendizado walk-forward | 8 | 1 | 0 | 2 | 0 | 4 | 1 |
 
 ## M01 · cores
 
@@ -119,11 +120,26 @@ Fonte: [`motores/M16_confluencia_multitf/HIPOTESES.md`](../motores/M16_confluenc
 | CF-H02 |  | A confluência tem direção (continuação ou fade)? | REFUTADA |
 | CF-H03 |  | Quantos pontos se pode capturar? (descritivo) | PENDENTE |
 | CF-H04 |  | Existe estratégia com barreira (continuação ou fade) com esperança líquida positiva? | REFUTADA |
-| CF-H05 |  | A confluência é melhor que o TF único com a mesma estratégia? | REFUTADA |
+| CF-H05 |  | A confluência é melhor que o TF único com a mesma estratégia? | INCONCLUSIVA |
 | CF-H06 |  | O alerta é raro o suficiente para chamar atenção (≤ 3 por pregão no conjunto escolhido)? | PENDENTE |
 | CF-H07 |  | O alinhamento simultâneo (barra do TF maior em formação incluída) tem direção? | REFUTADA |
 | CF-H08 |  | O alinhamento supera a cor do TF maior sozinho? | REFUTADA |
 | CF-H09 |  | Os limiares fixos 60/80 mudam o resultado em relação ao Bollinger? | REFUTADA |
 | CF-H10 |  | Alguma combinação fraco/forte do mesmo lado tem continuação? | REFUTADA |
 | CF-H11 |  | Fraco continua e forte reverte, no 5 min sozinho? | REFUTADA |
+
+## M17 · aprendizado walk-forward
+
+Fonte: [`motores/M17_aprendizado_walkforward/HIPOTESES.md`](../motores/M17_aprendizado_walkforward/HIPOTESES.md)
+
+| id | grupo | hipótese | veredito |
+|---|---|---|---|
+| ML-H01 |  | A estrutura (S2) prevê a amplitude melhor que a linha de base HAR (B1)? | CONFIRMADA |
+| ML-H02 |  | Acrescentar o WDO (S3 contra S2) melhora a amplitude do WIN? | REFUTADA |
+| ML-H03 |  | Acrescentar a cor (S4 contra S2) melhora a amplitude? | REFUTADA |
+| ML-H04 |  | A estrutura (S2) prevê o lado? | PENDENTE |
+| ML-H05 |  | O WDO (S3) acrescenta informação de lado ao WIN? | REFUTADA |
+| ML-H06 |  | A cor (S4) acrescenta informação de lado? | REFUTADA |
+| ML-H07 |  | A amplitude prevista dimensiona o stop melhor que um ATR fixo? | INCONCLUSIVA |
+| ML-H08 |  | Teste final em 2026 (um disparo) | INCONCLUSIVA |
 

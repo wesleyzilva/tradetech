@@ -29,9 +29,18 @@ Cada passo mexe numa alavanca só, no formato de delta (`docs/01_CONVENCOES.md` 
 
 ### Leitura do retrato atual (dados até julho de 2026)
 
-- 2026 teve mais barras brilhantes: 3% a 5% em 30 e 60 min, contra cerca de 1,4% em 2020-2025. No M26 de 5 min o ATR mediano foi 224 pts, contra 158 em 2024-2025.
-- A cor continua sem lado. O acerto fica entre 45% e 52% nos dois contratos, e o sinal do M26 não se repete no Q26.
-- O alarme de volatilidade em 5 min, que em 2024-2025 tem t = 4,6, ainda não aparece nos cerca de 90 pregões de 2026 (t ≤ 0,9).
+**Correção de dados.** A primeira versão do retrato mostrava 2026 com mais barras brilhantes e ATR maior. Era um efeito dos contratos fora do vencimento líquido: `WINM26` fez 68 a 17 mil contratos por dia de janeiro a março e `WINQ26` no máximo 17 mil até maio, contra 7 a 18 milhões nos meses líquidos. Com só os pregões líquidos, o retrato fica assim:
+
+- O ano tem **pouca coisa para comparar**: 17 a 20 pregões do WINM26 (15/04 a 14/05) e 25 a 28 do WINQ26 (a partir de 17/06). Faltam 2026-01 a 2026-04-14 e 2026-05-15 a 2026-06-16, que são os contratos `WING26` e `WINJ26`, e o WINM26 depois de 14/05. Para o ano inteiro, o caminho é exportar o `WINFUT` de 2026.
+- Barras brilhantes e ATR ficam na faixa de 2020-2025 (por exemplo, 30 min: 1,5% e 2,8% contra 1,4%; ATR 582 e 538 pts contra 573).
+- A cor continua sem lado: acerto entre 47% e 55% e |t| ≤ 1 na maior parte; o 60 min do Q26 mostra 67% de acerto com t = 2,1 em 25 pregões, o que é um número de amostra pequena e não vira regra.
+- O alarme de amplitude em 5 min (t = 4,6 em 2024-2025) aparece de novo no M26 (1,17, t = 2,3) e mais fraco no Q26 (1,09, t = 1,3).
+
+### O que o M17 acrescenta (walk-forward 2018–2025)
+
+- **Amplitude é previsível e dá para dimensionar a saída.** Um modelo de estrutura (retornos, ATR, volume relativo, hora, gap) ganha de 5% a 9% da perda de uma linha de base de volatilidade tipo HAR, em 8 de 8 anos no WIN e também no WDO. O quantil 80% do range previsto cobre 79% a 80% dos casos; a dispersão de `range ÷ previsto` é 10% a 13% menor que a de `range ÷ ATR`. Em 2026 (47 pregões líquidos) o modelo de 30 min com árvores repete o ganho (12%, t = 5,8). **Entra na saída do robô** (stop e alvo em função do range previsto) como candidato M05.
+- **O lado tem um sinal fraco e que decai.** AUC entre 0,51 e 0,525 em 20 de 24 células, contra um placebo que não passa de 2,3 em `z`. Mas a esperança líquida é de até +0,9 pb por trade (cerca de 14 pts) em 60 min, 1 pb de custo por trade a zera, o AUC cai de 0,56 em 2018 para 0,50 em 2025, e em 2026 não confirma (AUC 0,524, `z` = 0,83, sem poder). **Não entra no robô.** Fica CONDICIONAL a um export mais longo de 2026.
+- **WDO e cor não acrescentam nada** (ML-H02, H03, H05, H06). O alarme de cor serve, como antes, para chamar atenção.
 
 ## Ano foco: 2026
 

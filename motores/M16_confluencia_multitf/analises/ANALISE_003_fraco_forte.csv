@@ -13,19 +13,17 @@ WINFUT;hold1;5 fraco × 15 forte;51;105,2157;1,5189;0,5882
 WINFUT;hold1;5 forte × 15 fraco;20;-18,6000;-0,1166;0,6000
 WINFUT;hold1;5 forte × 15 forte;221;36,6833;1,1349;0,5113
 WINFUT;hold1;5 colorido × 15 oposto;53;44,7358;0,6479;0,5660
-WINM26;hold2;5 fraco, 15 branco;36;-14,0278;-0,1285;0,4722
-WINM26;hold2;5 forte, 15 branco;106;92,9717;1,3991;0,6321
-WINM26;hold2;5 fraco × 15 forte;13;-85,0000;-0,3954;0,4615
-WINM26;hold2;5 forte × 15 fraco;10;-551,5000;-1,9374;0,2000
-WINM26;hold2;5 forte × 15 forte;103;-11,6505;-0,1569;0,4466
-WINM26;hold2;5 colorido × 15 oposto;28;51,4286;0,3247;0,5357
-WINQ26;hold2;5 fraco, 15 branco;32;47,5000;0,6294;0,4375
-WINQ26;hold2;5 forte, 15 branco;67;55,5224;1,0360;0,5970
-WINQ26;hold2;5 fraco × 15 fraco;5;-42,0000;-0,2347;0,4000
-WINQ26;hold2;5 fraco × 15 forte;18;172,2222;1,1373;0,7222
-WINQ26;hold2;5 forte × 15 fraco;11;-53,6364;-0,3903;0,4545
-WINQ26;hold2;5 forte × 15 forte;80;-37,0625;-0,4445;0,4500
-WINQ26;hold2;5 colorido × 15 oposto;26;-155,1923;-0,9549;0,4615
+WINM26;hold2;5 fraco, 15 branco;20;-116,7500;-1,0641;0,4000
+WINM26;hold2;5 forte, 15 branco;31;25,1613;0,2330;0,6129
+WINM26;hold2;5 fraco × 15 forte;5;199,0000;1,1365;0,6000
+WINM26;hold2;5 forte × 15 forte;31;10,1613;0,0923;0,4516
+WINM26;hold2;5 colorido × 15 oposto;9;-156,1111;-0,6841;0,3333
+WINQ26;hold2;5 fraco, 15 branco;21;13,5714;0,1515;0,4286
+WINQ26;hold2;5 forte, 15 branco;27;-20,3704;-0,1907;0,5926
+WINQ26;hold2;5 fraco × 15 forte;13;239,2308;1,3128;0,6923
+WINQ26;hold2;5 forte × 15 fraco;4;-377,5000;-2,7816;0,0000
+WINQ26;hold2;5 forte × 15 forte;47;-116,1702;-1,0610;0,4468
+WINQ26;hold2;5 colorido × 15 oposto;11;-114,0909;-0,3372;0,4545
 WDOFUT;wdo;5 fraco, 15 branco;296;0,9212;0,9622;0,5068
 WDOFUT;wdo;5 forte, 15 branco;504;0,8300;1,2850;0,4762
 WDOFUT;wdo;5 fraco × 15 fraco;42;2,0364;0,6357;0,5238

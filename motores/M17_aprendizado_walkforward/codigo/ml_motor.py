@@ -25,7 +25,7 @@ for p in (RAIZ, RAIZ / "src"):
         sys.path.insert(0, str(p))
 
 from motores.M01_fma_forca.teses.cores.analise_candles import calcular  # noqa: E402
-from tradetech.dados import carregar_serie  # noqa: E402
+from tradetech.dados import carregar_serie, sessoes_liquidas  # noqa: E402
 
 warnings.filterwarnings("ignore")
 
@@ -84,9 +84,10 @@ def _estrutura(d: pd.DataFrame) -> pd.DataFrame:
     return x
 
 
-def construir(serie: str, tf: int, cruz: pd.DataFrame | None = None, ate: str | None = None, desde: str | None = None) -> pd.DataFrame:
-    """Tabela de observações (uma por barra) com variáveis, rótulos e metadados."""
-    d = carregar_serie(serie, f"{tf}min")
+def construir(serie: str, tf: int, cruz: pd.DataFrame | None = None, ate: str | None = None, desde: str | None = None, d: pd.DataFrame | None = None) -> pd.DataFrame:
+    """Tabela de observações (uma por barra) com variáveis, rótulos e metadados. ``d`` substitui a leitura de ``serie``."""
+    if d is None:
+        d = carregar_serie(serie, f"{tf}min")
     d = _barras(d, tf)
     x = _estrutura(d)
     x["dow"] = d["dt"].dt.dayofweek

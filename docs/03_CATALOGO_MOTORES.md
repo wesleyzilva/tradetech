@@ -25,6 +25,7 @@ Restrições que valem para todos: contínuo com *gaps* de rolagem; `Volume` fin
 | M01 | Força F = m·a (cores, áreas, reversão) | ATIVO | descritivo robusto (H20, H29 confirmadas); sem edge direcional (H05, H18, H19, H21) | `motores/M01_fma_forca/` |
 | M02 | Microestrutura com barreiras (WIN 1 min) | ATIVO | sem vantagem detectável; execução frágil | `motores/M02_microestrutura_barreiras/` |
 | M16 | Confluência de cor em múltiplos TFs (alerta sonoro) | ATIVO | sem vantagem direcional; confluência é rara (≤ 1/pregão) e só sinaliza amplitude | `motores/M16_confluencia_multitf/` |
+| M17 | Aprendizado supervisionado com walk-forward (WIN/WDO 30 e 60 min) | ATIVO | amplitude previsível e útil para dimensionar stop (ML-H01, H07); lado com sinal fraco e decrescente, sem confirmação em 2026; WDO e cor não acrescentam | `motores/M17_aprendizado_walkforward/` |
 
 Índice de todas as hipóteses: [`INDICE_HIPOTESES.md`](INDICE_HIPOTESES.md).
 

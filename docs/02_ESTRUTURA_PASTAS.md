@@ -38,6 +38,11 @@
 │       ├── codigo/                simulador Python + scripts de análise
 │       ├── analises/              ANALISE_###_*.md + CSVs gerados
 │       └── deltas/                DELTA_###_*.md
+│   ├── M16_confluencia_multitf/   cor em vários timeframes e alarme sonoro
+│   └── M17_aprendizado_walkforward/ amplitude e lado com walk-forward, placebo e teste final
+│       ├── METODO.md, HIPOTESES.md (ML-H##), README.md
+│       ├── codigo/                ml_motor.py (variáveis, rótulos, modelos), analise_001/002, diagnostico_001
+│       └── analises/              ANALISE_001_walkforward, ANALISE_002_2026, DIAGNOSTICO_001 + CSVs
 ├── diario/                        notas operacionais
 └── estudo_visual/                 material visual (capturas)
 ```

@@ -41,3 +41,5 @@ Regras de veredito e congelamento: [`docs/01_CONVENCOES.md`](../../docs/01_CONVE
 | MB-H11 (auto-inclusão) | H15 CONFIRMADA |
 
 Leitura combinada: no M01 o brilhante prevê **volatilidade**, não direção. É coerente com o M02 não ter edge direcional; o uso mais promissor do estado brilhante é como **filtro/dimensionamento** (aumentar alvo/stop, evitar entradas), não como gatilho de fade.
+
+**Nota de correção (2026-10-22).** Os números de `WINM26` e `WINQ26` citados acima foram calculados antes de descartar os pregões de contrato sem liquidez (Quantidade diária < 1 milhão). Os valores recalculados estão em `analises/ANALISE_001_baseline.md` (por exemplo, WINQ26 1 min: 28 pregões, +1,5 pt/trade bruto, −3,5 com custo de 5 pts). Nenhum veredito acima muda de sentido; os números de WINFUT não mudam.

@@ -13,7 +13,7 @@ Regras que valem para **todos os motores**. Se uma análise as violar, o resulta
 | Robô (NTSL) | `Nome_v<N>_<AAAAMMDD>.ntsl` | `Robo_Microestrutura_Barreiras_v1_20261022.ntsl` | `motores/<motor>/robo/` |
 | Lote de dados | `<ano-ini>-<ano-fim>[_sufixo]` ou `<ano>-<1S|2S>_<contrato>` | `2024-2025`, `2026-2S_Q26` | `dados/candles/` |
 
-Prefixos já reservados: `MB` (M02), `FM` (reservado para M01 em novas hipóteses; as antigas ficam `H01–H48`), `OR` (M03), `VW` (M04), `TS` (M05), `SZ` (M06), `VR` (M07), `LL` (M08), `CF` (M16). Ver `docs/03_CATALOGO_MOTORES.md`.
+Prefixos já reservados: `MB` (M02), `FM` (reservado para M01 em novas hipóteses; as antigas ficam `H01–H48`), `OR` (M03), `VW` (M04), `TS` (M05), `SZ` (M06), `VR` (M07), `LL` (M08), `CF` (M16), `ML` (M17). Ver `docs/03_CATALOGO_MOTORES.md`.
 
 Numeração nunca é reaproveitada. Hipótese refutada continua no registro com veredito; regra mudada ⇒ **novo ID**.
 
@@ -42,6 +42,7 @@ PENDENTE → (regra congelada) → EXECUTADA → CONFIRMADA | REFUTADA | INCONCL
 - Timestamps são da **abertura** da barra. Sinal no fechamento da barra `i` ⇒ ordem a mercado na abertura de `i+1`.
 - Só usar **pregões completos** (≥ 90 % das barras do p95 do arquivo) em estatísticas por pregão.
 - `Volume` do export Profit é **financeiro**; para esforço usar `Quantidade` (contratos).
+- **Liquidez:** `carregar_serie` descarta, por padrão, os pregões de contratos `WIN*` com `Quantidade` diária < 1 milhão (`sessoes_liquidas`). Contrato fora do vencimento líquido quase não negocia (WINM26 em jan–mar/2026: 68 a 17 mil por dia, contra 7 a 18 milhões no líquido) e distorce cor, ATR e volume relativo. Usar `liquido=False` só para auditar.
 - Contrato contínuo (`WINFUT`) tem *gaps* de rolagem entre pregões: nunca calcular retorno cruzando pregões sem tratar o gap.
 - Não reproduzir dados pessoais de exports de corretora.
 

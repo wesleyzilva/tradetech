@@ -114,6 +114,7 @@ def carregar_serie(
     raiz: Path | None = None,
     sufixo: str | None = None,
     variante: str = "padrao",
+    liquido: bool = True,
 ) -> pd.DataFrame:
     """Concatena todos os lotes de ``serie``/``tf`` em uma única série ascendente e sem timestamps duplicados.
 
@@ -142,7 +143,23 @@ def carregar_serie(
         partes.append(d)
     todo = pd.concat(partes, ignore_index=True)
     todo = todo.drop_duplicates("dt", keep="last").sort_values("dt").reset_index(drop=True)
+    if liquido and classificar_serie(serie.upper())["natureza"] == "contrato" and serie.upper().startswith("WIN"):
+        todo = sessoes_liquidas(todo)
     return todo
+
+
+QTD_MIN_WIN = 1_000_000
+
+
+def sessoes_liquidas(d: pd.DataFrame, minimo: float = QTD_MIN_WIN) -> pd.DataFrame:
+    """Mantém só os pregões com ``Quantidade`` diária ≥ ``minimo`` (padrão: 1 milhão de contratos, WIN).
+
+    Um contrato com vencimento fora da janela líquida quase não negocia (WINM26 em jan–mar/2026: 68 a 17 mil por dia; em abril, 9 milhões),
+    e as barras desses pregões têm preço parado e volume sem relação com o contrato líquido. A série contínua ``WINFUT`` já costura o contrato líquido.
+    """
+    dia = d["dt"].dt.normalize()
+    q = d.groupby(dia)["q"].transform("sum")
+    return d[q >= minimo].reset_index(drop=True)
 
 
 def sessoes(d: pd.DataFrame) -> pd.Series:
@@ -171,6 +188,7 @@ __all__ = [
     "catalogo_arquivos",
     "classificar_serie",
     "descrever_nome",
+    "sessoes_liquidas",
     "ler_csv_profit",
     "numero_br",
     "problemas_ohlc",
