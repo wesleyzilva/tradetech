@@ -13,6 +13,8 @@
 | [`templates/`](templates) | `HIPOTESE`, `DELTA`, `ANALISE`, `FICHA_MOTOR` |
 | [`teoria/`](teoria) | notas teóricas |
 
+- Robôs a construir e o que não vale montar: [`06_ROBOS_A_CONSTRUIR.md`](06_ROBOS_A_CONSTRUIR.md)
+
 ## Motores
 
 | Motor | Entrada |
