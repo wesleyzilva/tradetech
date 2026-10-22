@@ -54,3 +54,40 @@ O M17 mostrou de onde vem o pouco de lado que existe: no 60 min, `ret_dia`, `pos
 3. **M15 (custo real):** é pré-requisito de qualquer robô intradiário. Precisa de um export de trades do Profit; sem ele, o custo usado (5 pts) é uma suposição.
 
 Só depois de um desses mostrar vantagem fora da amostra com custo, abre-se um robô de entrada (R4), construído sobre a casca R2 e dimensionado por R1.
+
+## Fila de análises até um robô de entrada
+
+### Regra de "vale montar" (portão único)
+
+Um candidato só vira robô se passar nos seis pontos, nesta ordem:
+
+1. Esperança **líquida** de custo > 0 na descoberta, com `|t| ≥ 3` depois de contar todos os testes declarados.
+2. Mesmo sinal e `|t| ≥ 2` no hold-out e no WDO (ou em outro período independente).
+3. Supera o controle nulo (entrada aleatória com a mesma saída) e o placebo.
+4. Margem líquida de pelo menos **2 vezes** o custo medido, para o slippage não zerar o resultado.
+5. Estável em pelo menos 6 de cada 8 anos.
+6. Confirmado em 2026 líquido (ou no modo sombra R3 com a regra de parada acima).
+
+### Por que baixar a frequência
+
+No M17 a margem do lado era da ordem do custo porque o modelo opera cerca de 8 vezes por pregão e ganha ~1 pb por trade. Um sinal de um trade por pregão, com movimento esperado de uns 100 pb, tem margem muitas vezes maior para o mesmo acerto. Com ~2.900 pregões, um acerto de **53%** já dá `z = 3`. Por isso a fila abaixo é toda de baixa frequência, e a decisão do M17 de ficar em 30 e 60 min não é o fim: é o ponto de partida para testar horizontes mais longos.
+
+### Fila (cada passo declara a grade e conta os testes antes de rodar)
+
+| # | Análise | Pergunta | Motor / prefixo | Dados | Depende de |
+|---|---|---|---|---|---|
+| 0 | Dados | Exportar `WINFUT` e `WDOFUT` de 2026 inteiro; história anterior a 2014; um export de trades do Profit | — | Profit | você |
+| 1 | Estrutura intradiária (M07 + M04) | A direção da primeira hora (09:00–10:00) e do dia até 16:00 continua até o fim do pregão? A média por faixa de horário é estável entre anos? | novo, `ID` | WIN/WDO 30–60 min, 2014→2025 | nada |
+| 2 | Abertura (M03) | O gap se preenche mais que o acaso? O rompimento da faixa de abertura continua até o meio-dia? | `OR` | WIN/WDO 30 min | nada |
+| 3 | Diário (M08, M10, M14) | Retorno de k dias (5, 20), compressão de range (NR7) e semana de vencimento prevêem o dia ou a semana seguinte? | `TS`, `CP`, `VC` | D1/W1, 2014→2025 | nada; poder baixo, serve de triagem |
+| 4 | M17 diário | Um modelo linear sobre o alvo "retorno de 10:00 a 17:00" com variáveis da primeira hora, gap, amplitude e regime ganha de 50% fora da amostra? | M17-A003 | WIN 30 min, 2.900 pregões | passos 1 a 3 (escolhem as variáveis) |
+| 5 | Custo real (M15) | Qual o slippage por volatilidade e horário? | `EX` | export de trades | passo 0 |
+| 6 | Modo sombra (R3) | O modelo de lado de 60 min se confirma fora da amostra? | M17 | ao vivo | passo 0 |
+
+Os passos 1 a 3 não dependem de dados novos e podem rodar já. O passo 4 só roda depois deles para não escolher variável olhando o teste.
+
+### Quando parar
+
+- Os passos 1 a 4 somam, no máximo, cerca de 40 testes declarados. Aplica-se a correção de múltiplos testes sobre o conjunto.
+- Se **nada** passar no portão: o veredito é "lado não extraível de candles com os dados atuais". Constroem-se só R1 e R2, e a investigação de lado fica parada até chegar dado novo (tick ou book, M18).
+- Se **algo** passar: abre-se o robô de entrada (R4) sobre a casca R2, dimensionado por R1, com 2026 (ou o modo sombra) como confirmação.
