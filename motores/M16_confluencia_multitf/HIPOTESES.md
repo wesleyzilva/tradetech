@@ -41,3 +41,22 @@ Ressalva de poder: a base de 5 min tem só 491 pregões e os conjuntos com 3+ TF
 | CF-H07 | O alinhamento simultâneo (barra do TF maior em formação incluída) tem direção? | Retorno alinhado ≠ 0 em algum horizonte: \|t\| ≥ 3 na descoberta (n ≥ 100), mesmo sinal com \|t\| ≥ 2 nos hold-outs 1 e 2 e mesmo sinal no WDO | EXECUTADA | **REFUTADA** — melhor caso: 30+60 limiar 80, +50 pts (t=2,6, p=53%) até 2019 e −43 pts (t=−1,9) em 2020–2025; conjuntos com 5 min ficam em \|t\| < 1,6 |
 | CF-H08 | O alinhamento supera a cor do TF maior sozinho? | Diferença de retorno alinhado (alinhado − TF maior só) > 0 com t ≥ 3 na descoberta e mesmo sinal com t ≥ 2 nos dois hold-outs | EXECUTADA | **REFUTADA** — a diferença troca de sinal: +16 a +21 pts até 2019 e −15 a −54 pts em 2020–2025 (30+60) |
 | CF-H09 | Os limiares fixos 60/80 mudam o resultado em relação ao Bollinger? | Comparar, no mesmo conjunto, a diferença de retorno alinhado entre as duas definições: \|t\| ≥ 3 e mesmo sinal nos dois hold-outs | EXECUTADA | **REFUTADA** — mesmo sinal nas duas definições; o limiar fixo só aumenta a frequência (2 a 6 vezes) |
+
+## ANALISE_003 — tabela fraco/forte (congelada em 2026-10-22, antes de rodar)
+
+A tabela do robô (CHANGELOG, padrão V14+; a mesma faixa do guia, que chama 70–85 de "forte" e ≥ 85 de "exaustão"):
+
+| Faixa | \|F\| | Nome usado aqui |
+|---|---|---|
+| fraco | 70 ≤ \|F\| < 85 | fraco |
+| forte | \|F\| ≥ 85 | forte |
+| branco | \|F\| < 70 | sem cor |
+
+Lado = sinal de F. Continuação = o preço anda nesse sinal. Combinação = faixa do 5 min × faixa do 15 min no mesmo fechamento (a barra de 15 min e a última de 5 min fecham juntas). Quatro células do mesmo lado: fraco×fraco, fraco×forte, forte×fraco, forte×forte. Controles, sem veredito: 5 min sozinho em cada faixa, e 5 min colorido com 15 min do lado oposto.
+
+Períodos, forçados pela cobertura do 5 min: descoberta = WINFUT 2024-06-19 a 2025-06-30; hold-out 1 = WINFUT 2025-07-01 a 2025-12-30; hold-out 2 = WINM26 até 2026-05-14 e WINQ26 depois. Retorno alinhado em 60 min, t por pregão. Quatro células testadas.
+
+| ID | Pergunta | Critério (congelado) | Status | Veredito |
+|---|---|---|---|---|
+| CF-H10 | Alguma combinação fraco/forte do mesmo lado tem continuação? | Em alguma das 4 células, retorno de 60 min com \|t\| ≥ 3 e n ≥ 80 na descoberta, mesmo sinal com \|t\| ≥ 2 no hold-out 1 | PENDENTE | — |
+| CF-H11 | Fraco continua e forte reverte, no 5 min sozinho? | Fraco com retorno > 0 e forte com retorno < 0, cada um com \|t\| ≥ 3 e n ≥ 80 na descoberta e o mesmo sinal no hold-out 1 | PENDENTE | — |
