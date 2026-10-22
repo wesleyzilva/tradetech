@@ -23,6 +23,7 @@
 | M02 — Microestrutura com barreiras | [`motores/M02_microestrutura_barreiras/README.md`](../motores/M02_microestrutura_barreiras/README.md) |
 | M16 — Confluência de cor multi-TF | [`motores/M16_confluencia_multitf/README.md`](../motores/M16_confluencia_multitf/README.md) |
 | M18 — Estrutura intradiária (abertura, faixas, momentum do dia) | [`motores/M18_estrutura_intradiaria/README.md`](../motores/M18_estrutura_intradiaria/README.md) |
+| M19 — Estrutura diária e semanal (momentum, NR7, vencimento, dia anterior) | [`motores/M19_estrutura_diaria/README.md`](../motores/M19_estrutura_diaria/README.md) |
 | M17 — Aprendizado com walk-forward (amplitude e lado) | [`motores/M17_aprendizado_walkforward/README.md`](../motores/M17_aprendizado_walkforward/README.md) |
 
 ## Rotina de trabalho (resumo)
@@ -43,6 +44,7 @@ python motores/M02_microestrutura_barreiras/codigo/analise_001.py   # baseline M
 python motores/M16_confluencia_multitf/codigo/analise_001.py       # confluência multi-TF (~30 s)
 python motores/M16_confluencia_multitf/codigo/analise_002.py       # alinhamento no mesmo instante (~10 s)
 python motores/M18_estrutura_intradiaria/codigo/analise_001.py     # estrutura intradiária (~10 s)
+python motores/M19_estrutura_diaria/codigo/analise_001.py          # estrutura diária e semanal
 python motores/M17_aprendizado_walkforward/codigo/analise_001.py    # walk-forward 2018–2025 e placebo (~15 min)
 python motores/M17_aprendizado_walkforward/codigo/analise_002.py    # teste final de 2026 (~5 s)
 python ferramentas/gerar_painel.py                                # painel HTML interativo: docs/painel/painel.html (usa --refazer para recalcular o cache do M02)

@@ -22,6 +22,7 @@ FONTES = [
     ("M02 · microestrutura", "motores/M02_microestrutura_barreiras/HIPOTESES.md", r"MB-H\d+"),
     ("M16 · confluência multi-TF", "motores/M16_confluencia_multitf/HIPOTESES.md", r"CF-H\d+"),
     ("M18 · estrutura intradiária", "motores/M18_estrutura_intradiaria/HIPOTESES.md", r"ID-H\d+"),
+    ("M19 · estrutura diária e semanal", "motores/M19_estrutura_diaria/HIPOTESES.md", r"DD-H\d+"),
     ("M17 · aprendizado walk-forward", "motores/M17_aprendizado_walkforward/HIPOTESES.md", r"ML-H\d+"),
 ]
 VEREDITOS = ["CONFIRMADA", "PARCIAL", "INCONCLUSIVA", "NÃO SUPORTADA", "REFUTADA", "PENDENTE"]

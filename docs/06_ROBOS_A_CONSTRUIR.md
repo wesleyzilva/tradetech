@@ -77,14 +77,14 @@ No M17 a margem do lado era da ordem do custo porque o modelo opera cerca de 8 v
 | # | Análise | Pergunta | Motor / prefixo | Dados | Depende de |
 |---|---|---|---|---|---|
 | 0 | Dados | Exportar `WINFUT` e `WDOFUT` de 2026 inteiro; história anterior a 2014; um export de trades do Profit | — | Profit | você |
-| 1 | Estrutura intradiária (M07 + M04) | A direção da primeira hora (09:00–10:00) e do dia até 16:00 continua até o fim do pregão? A média por faixa de horário é estável entre anos? | novo, `ID` | WIN/WDO 30–60 min, 2014→2025 | nada |
-| 2 | Abertura (M03) | O gap se preenche mais que o acaso? O rompimento da faixa de abertura continua até o meio-dia? | `OR` | WIN/WDO 30 min | nada |
-| 3 | Diário (M08, M10, M14) | Retorno de k dias (5, 20), compressão de range (NR7) e semana de vencimento prevêem o dia ou a semana seguinte? | `TS`, `CP`, `VC` | D1/W1, 2014→2025 | nada; poder baixo, serve de triagem |
+| 1 | **FEITO (M18)** Estrutura intradiária (M07 + M04) | A direção da primeira hora (09:00–10:00) e do dia até 16:00 continua até o fim do pregão? A média por faixa de horário é estável entre anos? | novo, `ID` | WIN/WDO 30–60 min, 2014→2025 | nada |
+| 2 | **FEITO (M18)** Abertura (M03) | O gap se preenche mais que o acaso? O rompimento da faixa de abertura continua até o meio-dia? | `OR` | WIN/WDO 30 min | nada |
+| 3 | **FEITO (M19)** Diário (M08, M10, M14) | Retorno de k dias (5, 20), compressão de range (NR7) e semana de vencimento prevêem o dia ou a semana seguinte? | `TS`, `CP`, `VC` | D1/W1, 2014→2025 | nada; poder baixo, serve de triagem |
 | 4 | M17 diário | Um modelo linear sobre o alvo "retorno de 10:00 a 17:00" com variáveis da primeira hora, gap, amplitude e regime ganha de 50% fora da amostra? | M17-A003 | WIN 30 min, 2.900 pregões | passos 1 a 3 (escolhem as variáveis) |
 | 5 | Custo real (M15) | Qual o slippage por volatilidade e horário? | `EX` | export de trades | passo 0 |
 | 6 | Modo sombra (R3) | O modelo de lado de 60 min se confirma fora da amostra? | M17 | ao vivo | passo 0 |
 
-Os passos 1 a 3 não dependem de dados novos e podem rodar já. O passo 4 só roda depois deles para não escolher variável olhando o teste.
+Os passos 1 a 3 foram executados (M18: 35 testes, M19: 10 testes) e nenhuma célula passou o portão. Resta um quase-acerto, o fade da posição do fechamento de ontem (DD-H05, pré-registrado), que só se confirma com dado novo: WINFUT D1 anterior a 2014 ou o ano de 2026. O passo 4 só roda depois deles para não escolher variável olhando o teste.
 
 ### Quando parar
 

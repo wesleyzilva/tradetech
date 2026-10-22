@@ -4,7 +4,7 @@ Pergunta do motor: no horizonte de um dia a uma semana, a direção ou a amplitu
 
 ## Dados
 
-WINFUT diário (`D1`) e semanal (`W1`), 2014-01-02 → 2025-12-30 (decide); WDOFUT (replica). Lote padrão. Quando o `WINFUT` de 2026 existir, os anos novos entram como colunas nas tabelas por ano e não entram nos vereditos.
+WINFUT diário (`D1`), 2014-01-02 → 2025-12-30 (decide); WDOFUT (replica). O semanal é montado do diário (segunda a sexta): o `W1` do Profit só traz 521 semanas e deixa buracos em 2018–2019, descoberto na primeira execução; a primeira execução com o `W1` não mudou nenhum veredito. Lote padrão. Quando o `WINFUT` de 2026 existir, os anos novos entram como colunas nas tabelas por ano e não entram nos vereditos.
 
 ## Definições
 

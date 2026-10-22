@@ -12,6 +12,7 @@
 | M02 · microestrutura | 15 | 2 | 0 | 3 | 0 | 3 | 7 |
 | M16 · confluência multi-TF | 11 | 0 | 0 | 2 | 0 | 7 | 2 |
 | M18 · estrutura intradiária | 5 | 0 | 0 | 1 | 0 | 4 | 0 |
+| M19 · estrutura diária e semanal | 5 | 0 | 0 | 0 | 0 | 4 | 1 |
 | M17 · aprendizado walk-forward | 8 | 1 | 0 | 2 | 0 | 4 | 1 |
 
 ## M01 · cores
@@ -140,6 +141,18 @@ Fonte: [`motores/M18_estrutura_intradiaria/HIPOTESES.md`](../motores/M18_estrutu
 | ID-H03 |  | Algum dia da semana rende diferente dos demais? | REFUTADA |
 | ID-H04 |  | O gap de abertura é desfeito (fade) até 10:00, 12:00 ou o fim do pregão? | REFUTADA |
 | ID-H05 |  | O rompimento da faixa de abertura continua até 12:00 ou o fim do pregão? | REFUTADA |
+
+## M19 · estrutura diária e semanal
+
+Fonte: [`motores/M19_estrutura_diaria/HIPOTESES.md`](../motores/M19_estrutura_diaria/HIPOTESES.md)
+
+| id | grupo | hipótese | veredito |
+|---|---|---|---|
+| DD-H01 |  | O retorno dos últimos 5 ou 20 dias (ou 1 ou 4 semanas) prevê o sinal do período seguinte? | REFUTADA |
+| DD-H02 |  | Depois de NR7 ou inside bar o range seguinte é maior que o normal? | REFUTADA |
+| DD-H03 |  | A semana do vencimento tem amplitude ou retorno diferentes das demais? | REFUTADA |
+| DD-H04 |  | O corpo ou a posição do fechamento de ontem prevê o dia de hoje? | REFUTADA |
+| DD-H05 |  | O dia seguinte reverte a posição do fechamento de ontem na faixa do dia (fechamento perto da máxima, o dia seguinte tende a cair; perto da… | PENDENTE |
 
 ## M17 · aprendizado walk-forward
 

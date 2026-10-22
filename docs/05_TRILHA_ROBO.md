@@ -42,6 +42,12 @@ Cada passo mexe numa alavanca só, no formato de delta (`docs/01_CONVENCOES.md` 
 - **O lado tem um sinal fraco e que decai.** AUC entre 0,51 e 0,525 em 20 de 24 células, contra um placebo que não passa de 2,3 em `z`. Mas a esperança líquida é de até +0,9 pb por trade (cerca de 14 pts) em 60 min, 1 pb de custo por trade a zera, o AUC cai de 0,56 em 2018 para 0,50 em 2025, e em 2026 não confirma (AUC 0,524, `z` = 0,83, sem poder). **Não entra no robô.** Fica CONDICIONAL a um export mais longo de 2026.
 - **WDO e cor não acrescentam nada** (ML-H02, H03, H05, H06). O alarme de cor serve, como antes, para chamar atenção.
 
+### O que o M18 e o M19 acrescentam (estrutura de um trade por dia)
+
+- **M18 (intradiário, 35 testes):** nenhuma célula passa. Momentum do dia, dia da semana, gap e faixa de abertura não têm direção sustentada. A faixa 09:30 chega a t 3,45 e some no hold-out; o WDO tem sinal oposto.
+- **M19 (diário e semanal, 10 testes):** nenhuma célula passa `|t| ≥ 3`. Momentum, NR7, inside bar e vencimento não têm direção. O quase-acerto é o fade da posição do fechamento de ontem (t −2,61 e −2,44, WDO −3,40, 9 de 12 anos), pré-registrado como DD-H05.
+- **Consequência:** a trilha continua com R1 (assistente de risco) e R2 (casca de execução). O lado só entra se o DD-H05 se confirmar em dado novo (WINFUT D1 anterior a 2014 ou 2026 líquido). Cada motor gera tabela por ano, então 2026 entra como mais uma coluna.
+
 ## Ano foco: 2026
 
 2026 é o ano para **entender o comportamento**, não para escolher o melhor parâmetro. Uma regra que só funciona em 2026 descreve o ano; ela não entra no robô.
