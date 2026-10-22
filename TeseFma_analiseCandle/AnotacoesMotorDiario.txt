@@ -67,3 +67,5 @@ Parece que quanto tem sinais invertidos de compra e venda nas zonas de ignição
 QUando tenho 1 sinal qual a probabilidade do movimento chegar em x pontos?
 quando tenho 2 combinações de sinais qual a probabilidade do movimento continuar? e chegar em x pontos?
 qdo tenho 2 sinais diferentes qual a probabilidade de chegar em y pontos e fazer o movimento compra ou venda?
+qual a probabilidade de no timeframe x chegar a y pontos para cada momento de saturação e ignição?
+qual a probabilidade de voltar no sentido contrario?
