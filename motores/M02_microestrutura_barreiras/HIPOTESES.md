@@ -2,7 +2,7 @@
 
 Regras de veredito e congelamento: [`docs/01_CONVENCOES.md`](../../docs/01_CONVENCOES.md) §2. Template: [`docs/templates/HIPOTESE.md`](../../docs/templates/HIPOTESE.md).
 
-> **Honestidade de procedimento.** MB-H01 a MB-H05 foram avaliadas na ANALISE_001 *depois* de ver parte dos números (análise exploratória do robô existente), portanto os vereditos abaixo valem como **exploratórios**. Para virar evidência, devem ser refeitas com regra congelada (novo ID) em dados novos.
+> **Honestidade de procedimento.** MB-H01 a MB-H05 e MB-H13 a MB-H15 foram avaliadas na ANALISE_001 *depois* de ver parte dos números (análise exploratória do robô existente), portanto os vereditos abaixo valem como **exploratórios**. Para virar evidência, devem ser refeitas com regra congelada (novo ID) em dados novos.
 
 ## 1. Painel
 
@@ -20,6 +20,9 @@ Regras de veredito e congelamento: [`docs/01_CONVENCOES.md`](../../docs/01_CONVE
 | MB-H10 | A barreira de tempo de 20 barras ajuda? | TEMPO: 103 trades, média −193 pts, mas confundida com a armadilha (stop passivo → só sai por tempo) | PENDENTE | — |
 | MB-H11 | A estimativa do ATR incluindo a barra atual mascara extremos (como M01-H15) e muda a classificação "brilhante"? | não medido; no M01 a auto-inclusão limita z a √19 | PENDENTE | — |
 | MB-H12 | **Paridade:** a réplica (avaliação no fechamento, fill no open seguinte) reproduz o trade log do robô no simulador do Profit? | não medido (precisa export do Profit nos mesmos pregões) | PENDENTE | — |
+| MB-H13 | Em timeframes ≥ 30 min, a geometria SL curto/SG longo (≤ ~100 min) tem esperança positiva **mesmo com entrada aleatória** (efeito de autocorrelação positiva)? | WINFUT, entrada aleatória: 60 min +20,2 pts/trade (t 5,6; 11/12 anos positivos), 30 min +8,6 (t 3,8; 10/12); ≤ 15 min ≈ 0 ou negativo. ρ lag-1 do retorno ÷ ATR: +0,021 (t 3,3) em 60 min. **WDO não replica** (|t| ≤ 1,1 em todos os TFs) | EXECUTADA (exploratória, ANALISE_002) | **INCONCLUSIVA** — consistente no tempo no WIN, não replica no WDO |
+| MB-H14 | A barra brilhante (≥ 1,7 × ATR) antecipa expansão do range seguinte em todos os timeframes (cor como alarme)? | Range seguinte ÷ média da hora: 1,29 (5 min), 1,22 (10), 1,15 (15), 1,14 (20), 1,20 (30), 1,15 (60); t por pregão 6,4 a 9,3. Replica M01 H20 | EXECUTADA (ANALISE_002) | **CONFIRMADA** (volatilidade, não direção) |
+| MB-H15 | Em 20–60 min o sinal do M02 (ctx 1–3) supera a entrada aleatória com a mesma saída? | Percentil vs nulo (com 5 pts): 60 min 86–96, 30 min 90–98, 20 min 56–98, ≤ 15 min 8–60; mas o nulo já é positivo (MB-H13) e a vantagem sobre ele é pequena; sem t da diferença pareada | PENDENTE (exige teste pareado por pregão) | — |
 
 ## 2. Backlog priorizado
 

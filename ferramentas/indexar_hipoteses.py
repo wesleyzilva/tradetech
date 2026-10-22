@@ -20,6 +20,7 @@ FONTES = [
     ("M01 · áreas", "motores/M01_fma_forca/teses/areas/HIPOTESES.md", r"A\d+"),
     ("M01 · reversão", "motores/M01_fma_forca/teses/reversao/HIPOTESES.md", r"R\d+"),
     ("M02 · microestrutura", "motores/M02_microestrutura_barreiras/HIPOTESES.md", r"MB-H\d+"),
+    ("M16 · confluência multi-TF", "motores/M16_confluencia_multitf/HIPOTESES.md", r"CF-H\d+"),
 ]
 VEREDITOS = ["CONFIRMADA", "PARCIAL", "INCONCLUSIVA", "NÃO SUPORTADA", "REFUTADA", "PENDENTE"]
 

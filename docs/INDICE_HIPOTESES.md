@@ -9,7 +9,8 @@
 | M01 · cores | 45 | 19 | 3 | 5 | 4 | 1 | 13 |
 | M01 · áreas | 8 | 0 | 0 | 1 | 0 | 0 | 7 |
 | M01 · reversão | 1 | 0 | 0 | 0 | 0 | 0 | 1 |
-| M02 · microestrutura | 12 | 1 | 0 | 2 | 0 | 3 | 6 |
+| M02 · microestrutura | 15 | 2 | 0 | 3 | 0 | 3 | 7 |
+| M16 · confluência multi-TF | 6 | 0 | 0 | 1 | 0 | 3 | 2 |
 
 ## M01 · cores
 
@@ -104,4 +105,20 @@ Fonte: [`motores/M02_microestrutura_barreiras/HIPOTESES.md`](../motores/M02_micr
 | MB-H10 |  | A barreira de tempo de 20 barras ajuda? | PENDENTE |
 | MB-H11 |  | A estimativa do ATR incluindo a barra atual mascara extremos (como M01-H15) e muda a classificação "brilhante"? | PENDENTE |
 | MB-H12 |  | Paridade: a réplica (avaliação no fechamento, fill no open seguinte) reproduz o trade log do robô no simulador do Profit? | PENDENTE |
+| MB-H13 |  | Em timeframes ≥ 30 min, a geometria SL curto/SG longo (≤ ~100 min) tem esperança positiva mesmo com entrada aleatória (efeito de autocorrel… | INCONCLUSIVA |
+| MB-H14 |  | A barra brilhante (≥ 1,7 × ATR) antecipa expansão do range seguinte em todos os timeframes (cor como alarme)? | CONFIRMADA |
+| MB-H15 |  | Em 20–60 min o sinal do M02 (ctx 1–3) supera a entrada aleatória com a mesma saída? | PENDENTE |
+
+## M16 · confluência multi-TF
+
+Fonte: [`motores/M16_confluencia_multitf/HIPOTESES.md`](../motores/M16_confluencia_multitf/HIPOTESES.md)
+
+| id | grupo | hipótese | veredito |
+|---|---|---|---|
+| CF-H01 |  | A confluência (modo A) antecipa expansão de range maior do que cor em TF único? | INCONCLUSIVA |
+| CF-H02 |  | A confluência tem direção (continuação ou fade)? | REFUTADA |
+| CF-H03 |  | Quantos pontos se pode capturar? (descritivo) | PENDENTE |
+| CF-H04 |  | Existe estratégia com barreira (continuação ou fade) com esperança líquida positiva? | REFUTADA |
+| CF-H05 |  | A confluência é melhor que o TF único com a mesma estratégia? | REFUTADA |
+| CF-H06 |  | O alerta é raro o suficiente para chamar atenção (≤ 3 por pregão no conjunto escolhido)? | PENDENTE |
 
