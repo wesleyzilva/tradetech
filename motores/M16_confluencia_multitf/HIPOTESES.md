@@ -18,3 +18,26 @@ Regra: se **nenhuma** estratégia satisfizer CF-H04, o veredito do motor é "sem
 
 Com a grade congelada, **não há vantagem direcional demonstrável** na confluência de cor entre timeframes (WIN, 2014–2026; replicação em WDO). A confluência é **rara** (≤ 1 alerta por pregão) e **não é mais volatilidade** do que a cor em um TF só. Pode servir como alarme de atenção, não como gatilho de entrada.
 Ressalva de poder: a base de 5 min tem só 491 pregões e os conjuntos com 3+ TFs têm menos de 40 eventos — resultado nulo ali significa "não detectável", não "provadamente zero".
+
+## ANALISE_002 — alinhamento no mesmo instante (congelado em 2026-10-22, antes de rodar)
+
+**Pergunta do operador:** quando, no mesmo minuto, timeframes diferentes mostram a mesma cor, a probabilidade de o movimento continuar no intraday é maior? E com os limiares do robô (faixa inicial em |F| ≥ 60 e saturação em |F| ≥ 80, que corresponde ao percentil ~84 de |F| no 5 min)?
+
+**Por que reabrir.** A ANALISE_001 exigia que as barras dos TFs **fechassem juntas** (modo A) e usava o estado Bollinger. Visualmente, o que se vê no gráfico é outra coisa: no instante T, a barra do TF maior **está em formação** e a cor dela até agora coincide com a do TF menor. Isso é o que se testa aqui. O modo A da ANALISE_001 continua válido para o que ele mediu.
+
+**Definições (congeladas):**
+- Âncora T = fechamento da barra do TF maior (15, 30 ou 60 min), dentro de 09:15–16:00.
+- Cor do TF maior = estado da **própria barra que fecha em T** (fechamento conhecido em T).
+- Cor do TF menor em T = estado da **última barra do TF menor fechada até T** (defasagem máxima = período do TF menor).
+- Definições de cor: **Bollinger** (N1 = |z| ≥ 1,5; N2 = |z| ≥ 2,5) e **limiar fixo** (|F| ≥ 60 = faixa inicial; |F| ≥ 80 = saturação).
+- Conjuntos: 2 TFs (5+15, 5+30, 5+60, 15+30, 15+60, 30+60) e 3+ TFs (5+15+30, 5+15+60, 15+30+60, 5+15+30+60), todos com a mesma família.
+- Controle: a barra do TF maior sozinha, no mesmo nível de cor.
+- Horizonte: retorno alinhado à cor, do fechamento em T até +15, +30, +60 e +120 min, dentro do mesmo pregão. Também MFE e MAE em 60 min.
+- Estatística: t por pregão (soma diária). Descoberta = WINFUT até o corte da base; hold-out 1 = WINFUT depois; hold-out 2 = WINM26/WINQ26; replicação = WDO.
+- Cortes por TF âncora: 15 min → 2023-12-31; 30 e 60 min → 2019-12-31.
+
+| ID | Pergunta | Critério (congelado) | Status | Veredito |
+|---|---|---|---|---|
+| CF-H07 | O alinhamento simultâneo (barra do TF maior em formação incluída) tem direção? | Retorno alinhado ≠ 0 em algum horizonte: \|t\| ≥ 3 na descoberta (n ≥ 100), mesmo sinal com \|t\| ≥ 2 nos hold-outs 1 e 2 e mesmo sinal no WDO | PENDENTE | — |
+| CF-H08 | O alinhamento supera a cor do TF maior sozinho? | Diferença de retorno alinhado (alinhado − TF maior só) > 0 com t ≥ 3 na descoberta e mesmo sinal com t ≥ 2 nos dois hold-outs | PENDENTE | — |
+| CF-H09 | Os limiares fixos 60/80 mudam o resultado em relação ao Bollinger? | Comparar, no mesmo conjunto, a diferença de retorno alinhado entre as duas definições: \|t\| ≥ 3 e mesmo sinal nos dois hold-outs | PENDENTE | — |
