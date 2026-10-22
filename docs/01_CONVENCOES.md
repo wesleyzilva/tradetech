@@ -77,3 +77,13 @@ Uma alavanca por delta; se dois efeitos se misturam, não se sabe o que funciono
 ## 7. Commits
 
 Mensagens curtas e descritivas, um commit por mudança lógica (dados / código / análise / documentação). Relatórios regenerados entram no mesmo commit do código que os gerou.
+
+## 8. Classificação das análises
+
+Toda análise que entra na trilha do robô ganha uma linha em `docs/registro/analises.csv` e aparece em `docs/04_REGISTRO_ANALISES.md` (gerado por `python ferramentas/indexar_analises.py`).
+
+- **Id:** `<motor>-A###` (`M16-A002`). O retrato do ano usa `ANO-<ano>`. Numeração não se reaproveita.
+- **Classe:** `direcao`, `volatilidade`, `geometria`, `execucao`, `descritiva`, `econofisica` ou `legado`. Uma classe principal por análise; o efeito secundário vai na nota.
+- **Decisão para o robô:** `USAR`, `NAO_USAR`, `CONDICIONAL`, `PENDENTE` ou `FORA_DO_PROTOCOLO`. Quem consolida as decisões é `docs/05_TRILHA_ROBO.md`.
+- Análise sem linha no registro não serve de argumento para mudar o robô.
+- O ano corrente (`docs/ano_foco/`) é estudo de comportamento. Número que só aparece nesse ano não vira parâmetro.

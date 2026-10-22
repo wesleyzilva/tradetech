@@ -18,3 +18,45 @@ Regra: se **nenhuma** estratégia satisfizer CF-H04, o veredito do motor é "sem
 
 Com a grade congelada, **não há vantagem direcional demonstrável** na confluência de cor entre timeframes (WIN, 2014–2026; replicação em WDO). A confluência é **rara** (≤ 1 alerta por pregão) e **não é mais volatilidade** do que a cor em um TF só. Pode servir como alarme de atenção, não como gatilho de entrada.
 Ressalva de poder: a base de 5 min tem só 491 pregões e os conjuntos com 3+ TFs têm menos de 40 eventos — resultado nulo ali significa "não detectável", não "provadamente zero".
+
+## ANALISE_002 — alinhamento no mesmo instante (congelado em 2026-10-22, antes de rodar)
+
+**Pergunta do operador:** quando, no mesmo minuto, timeframes diferentes mostram a mesma cor, a probabilidade de o movimento continuar no intraday é maior? E com os limiares do robô (faixa inicial em |F| ≥ 60 e saturação em |F| ≥ 80, que corresponde ao percentil ~84 de |F| no 5 min)?
+
+**Por que reabrir.** A ANALISE_001 exigia que as barras dos TFs **fechassem juntas** (modo A) e usava o estado Bollinger. Visualmente, o que se vê no gráfico é outra coisa: no instante T, a barra do TF maior **está em formação** e a cor dela até agora coincide com a do TF menor. Isso é o que se testa aqui. O modo A da ANALISE_001 continua válido para o que ele mediu.
+
+**Definições (congeladas):**
+- Âncora T = fechamento da barra do TF maior (15, 30 ou 60 min), dentro de 09:15–16:00.
+- Cor do TF maior = estado da **própria barra que fecha em T** (fechamento conhecido em T).
+- Cor do TF menor em T = estado da **última barra do TF menor fechada até T** (defasagem máxima = período do TF menor).
+- Definições de cor: **Bollinger** (N1 = |z| ≥ 1,5; N2 = |z| ≥ 2,5) e **limiar fixo** (|F| ≥ 60 = faixa inicial; |F| ≥ 80 = saturação).
+- Conjuntos: 2 TFs (5+15, 5+30, 5+60, 15+30, 15+60, 30+60) e 3+ TFs (5+15+30, 5+15+60, 15+30+60, 5+15+30+60), todos com a mesma família.
+- Controle: a barra do TF maior sozinha, no mesmo nível de cor.
+- Horizonte: retorno alinhado à cor, do fechamento em T até +15, +30, +60 e +120 min, dentro do mesmo pregão. Também MFE e MAE em 60 min.
+- Estatística: t por pregão (soma diária). Descoberta = WINFUT até o corte da base; hold-out 1 = WINFUT depois; hold-out 2 = WINM26/WINQ26; replicação = WDO.
+- Cortes por TF âncora: 15 min → 2023-12-31; 30 e 60 min → 2019-12-31.
+
+| ID | Pergunta | Critério (congelado) | Status | Veredito |
+|---|---|---|---|---|
+| CF-H07 | O alinhamento simultâneo (barra do TF maior em formação incluída) tem direção? | Retorno alinhado ≠ 0 em algum horizonte: \|t\| ≥ 3 na descoberta (n ≥ 100), mesmo sinal com \|t\| ≥ 2 nos hold-outs 1 e 2 e mesmo sinal no WDO | EXECUTADA | **REFUTADA** — melhor caso: 30+60 limiar 80, +50 pts (t=2,6, p=53%) até 2019 e −43 pts (t=−1,9) em 2020–2025; conjuntos com 5 min ficam em \|t\| < 1,6 |
+| CF-H08 | O alinhamento supera a cor do TF maior sozinho? | Diferença de retorno alinhado (alinhado − TF maior só) > 0 com t ≥ 3 na descoberta e mesmo sinal com t ≥ 2 nos dois hold-outs | EXECUTADA | **REFUTADA** — a diferença troca de sinal: +16 a +21 pts até 2019 e −15 a −54 pts em 2020–2025 (30+60) |
+| CF-H09 | Os limiares fixos 60/80 mudam o resultado em relação ao Bollinger? | Comparar, no mesmo conjunto, a diferença de retorno alinhado entre as duas definições: \|t\| ≥ 3 e mesmo sinal nos dois hold-outs | EXECUTADA | **REFUTADA** — mesmo sinal nas duas definições; o limiar fixo só aumenta a frequência (2 a 6 vezes) |
+
+## ANALISE_003 — tabela fraco/forte (congelada em 2026-10-22, antes de rodar)
+
+A tabela do robô (CHANGELOG, padrão V14+; a mesma faixa do guia, que chama 70–85 de "forte" e ≥ 85 de "exaustão"):
+
+| Faixa | \|F\| | Nome usado aqui |
+|---|---|---|
+| fraco | 70 ≤ \|F\| < 85 | fraco |
+| forte | \|F\| ≥ 85 | forte |
+| branco | \|F\| < 70 | sem cor |
+
+Lado = sinal de F. Continuação = o preço anda nesse sinal. Combinação = faixa do 5 min × faixa do 15 min no mesmo fechamento (a barra de 15 min e a última de 5 min fecham juntas). Quatro células do mesmo lado: fraco×fraco, fraco×forte, forte×fraco, forte×forte. Controles, sem veredito: 5 min sozinho em cada faixa, e 5 min colorido com 15 min do lado oposto.
+
+Períodos, forçados pela cobertura do 5 min: descoberta = WINFUT 2024-06-19 a 2025-06-30; hold-out 1 = WINFUT 2025-07-01 a 2025-12-30; hold-out 2 = WINM26 até 2026-05-14 e WINQ26 depois. Retorno alinhado em 60 min, t por pregão. Quatro células testadas.
+
+| ID | Pergunta | Critério (congelado) | Status | Veredito |
+|---|---|---|---|---|
+| CF-H10 | Alguma combinação fraco/forte do mesmo lado tem continuação? | Em alguma das 4 células, retorno de 60 min com \|t\| ≥ 3 e n ≥ 80 na descoberta, mesmo sinal com \|t\| ≥ 2 no hold-out 1 | EXECUTADA | **REFUTADA** — nenhuma das 4 células. A maior (forte × forte, n=452) fica em −3 pts (t=−0,1, acerto 52%) na descoberta e +37 pts (t=1,1) no hold-out |
+| CF-H11 | Fraco continua e forte reverte, no 5 min sozinho? | Fraco com retorno > 0 e forte com retorno < 0, cada um com \|t\| ≥ 3 e n ≥ 80 na descoberta e o mesmo sinal no hold-out 1 | EXECUTADA | **REFUTADA** — fraco no 5 min perde −21 pts (acerto 41%, t=−0,7); forte fica em −7 pts (acerto 50%, t=−0,3). Nenhum chega a \|t\| ≥ 3 |

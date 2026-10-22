@@ -29,6 +29,10 @@ Colunas devolvidas: `dt` (abertura da barra), `o h l c`, `v` (volume **financeir
 4. `*_alt` (preço ajustado) não entra nas análises: diferença de 5.700–7.200 pts no WIN.
 5. Contratos específicos (`WINJ26`, `WINM26`, `WINQ26`…) são séries separadas; o contínuo (`WINFUT`) tem *gaps* de rolagem.
 
+## Ano foco (2026)
+
+Export novo de 2026 vai para o lote `candles/2026-atual/`, sem editar os lotes já existentes (`2026-1S_M26`, `2026-2S_Q26`). Um arquivo por série e timeframe, sem ajuste de preço, com `Quantidade`. Depois: `python ferramentas/auditar_candles.py` e `python ferramentas/bateria_ano_foco.py`. O que esse ano pode e não pode decidir está em [`../docs/05_TRILHA_ROBO.md`](../docs/05_TRILHA_ROBO.md).
+
 ## Lacunas conhecidas (prioridade)
 
 1. 1 min de WIN: 2024-01 → 2025-09 e 2026-01 → hoje (hoje só 99 pregões).

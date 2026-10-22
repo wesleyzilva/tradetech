@@ -81,7 +81,8 @@
       <div class="ctl"><select id="yvalid"><option value="hold1">validação: hold-out 1 (WINFUT posterior)</option><option value="hold2">validação: hold-out 2 (WINM26/WINQ26)</option></select></div><div id="ch-scatter" style="height:460px"></div></div>
     <div class="card"><h2>6. A confluência expande mais o range que a cor em 1 TF?</h2><p class="sub">Razão entre o range seguinte após confluência e após cor em TF único (mesma base e nível). 1,0 = igual.</p><div id="ch-exp" style="height:460px"></div></div>
   </div>
-  <div class="card"><h2>7. Todas as estratégias testadas</h2><p class="sub">Líquido de 5 pts por trade (WIN). <code>t</code> = contra entrada aleatória com a mesma saída. WR = taxa de acerto; BE = acerto de equilíbrio da geometria. Clique no cabeçalho para ordenar.</p>
+  <div class="card"><h2>7. Alinhamento no mesmo instante, por período</h2><p class="sub">Retorno de 60 min a favor da cor quando os timeframes concordam no mesmo minuto (ANALISE_002). Cada cor é um período. Uma vantagem real teria todas as barras do mesmo lado do zero.</p><div class="ctl"><select id="aliDef"><option value="fixo60">limiar fixo (|F| ≥ 60 / 80)</option><option value="bollinger">Bollinger (1,5σ / 2,5σ)</option></select><select id="aliNivel"><option value="1">faixa inicial (N1)</option><option value="2">saturação (N2)</option></select></div><div id="ch-ali" style="height:460px"></div></div>
+<div class="card"><h2>8. Todas as estratégias testadas</h2><p class="sub">Líquido de 5 pts por trade (WIN). <code>t</code> = contra entrada aleatória com a mesma saída. WR = taxa de acerto; BE = acerto de equilíbrio da geometria. Clique no cabeçalho para ordenar.</p>
     <div class="ctl"><select id="tbBase"><option value="">todas as bases</option><option>5</option><option>15</option><option>30</option></select>
     <select id="tbLado"><option value="">continuação e fade</option><option>continuação</option><option>fade</option></select>
     <label><input type="checkbox" id="tbN30" checked> só n ≥ 30 na descoberta</label><span id="tbInfo" style="color:var(--mut)"></span></div>
@@ -282,6 +283,18 @@ function m16() {
     document.querySelectorAll('#tb-estrat th').forEach(th => th.onclick = () => { const k = th.dataset.k; ord = [k, ord[0] === k ? -ord[1] : -1]; tabela(); });
   };
   ['tbBase', 'tbLado', 'tbN30'].forEach(i => $(i).onchange = tabela); tabela();
+  const ali = () => {
+    const def = $('aliDef').value, nv = +$('aliNivel').value;
+    const A = DADOS.alinhamento.filter(r => r.def === def && r.nivel === nv && r.n >= 30);
+    const chaves = [...new Set(A.map(r => r.conjunto))].sort();
+    const pers = [['descoberta', '#2563eb'], ['hold1', '#f59e0b'], ['hold2', '#dc2626'], ['wdo', '#6b7280']];
+    const tr = pers.map(([p, c]) => ({ type: 'bar', name: p, marker: { color: c }, x: chaves,
+      y: chaves.map(k => { const r = A.find(x => x.conjunto === k && x.subset === p && x.serie === (p === 'wdo' ? 'WDOFUT' : 'WINFUT')); return r ? r.ret_60 : null; }),
+      text: chaves.map(k => { const r = A.find(x => x.conjunto === k && x.subset === p && x.serie === (p === 'wdo' ? 'WDOFUT' : 'WINFUT')); return r ? `t=${fmt(r.t_60, 1)} · n=${r.n}` : ''; }), hoverinfo: 'text+y' }));
+    Plotly.react('ch-ali', tr, LAY({ barmode: 'group', yaxis: { title: 'pontos em 60 min, a favor da cor' }, xaxis: { tickangle: -30 },
+      shapes: [{ type: 'line', x0: 0, x1: 1, xref: 'paper', y0: 0, y1: 0, line: { color: '#111' } }] }), CFG);
+  };
+  $('aliDef').onchange = ali; $('aliNivel').onchange = ali; ali();
 }
 
 // ---------- M02

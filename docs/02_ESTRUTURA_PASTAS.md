@@ -16,6 +16,10 @@
 │   ├── 01_CONVENCOES.md
 │   ├── 02_ESTRUTURA_PASTAS.md     (este arquivo)
 │   ├── 03_CATALOGO_MOTORES.md     motores existentes e candidatos
+│   ├── 04_REGISTRO_ANALISES.md    (gerado) análises classificadas
+│   ├── 05_TRILHA_ROBO.md          decisão do que entra no robô
+│   ├── registro/analises.csv      fonte do registro
+│   ├── ano_foco/<ano>/RETRATO.md  (gerado) comportamento do ano
 │   ├── auditorias/                relatórios gerados sobre os dados
 │   ├── teoria/                    notas teóricas
 │   └── templates/                 HIPOTESE, DELTA, ANALISE, FICHA_MOTOR

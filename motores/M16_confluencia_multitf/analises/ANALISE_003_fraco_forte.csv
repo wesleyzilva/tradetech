@@ -1,0 +1,35 @@
+serie;per;celula;n;ret;t;p
+WINFUT;descoberta;5 fraco, 15 branco;251;-21,1952;-0,7152;0,4064
+WINFUT;descoberta;5 forte, 15 branco;356;-6,9298;-0,3374;0,4972
+WINFUT;descoberta;5 fraco × 15 fraco;21;52,6667;0,4285;0,5238
+WINFUT;descoberta;5 fraco × 15 forte;117;-78,7094;-1,7005;0,4786
+WINFUT;descoberta;5 forte × 15 fraco;41;-117,9756;-1,2430;0,4146
+WINFUT;descoberta;5 forte × 15 forte;452;-3,1969;-0,1068;0,5177
+WINFUT;descoberta;5 colorido × 15 oposto;105;70,5810;1,4528;0,6095
+WINFUT;hold1;5 fraco, 15 branco;89;-21,3258;-0,5118;0,4607
+WINFUT;hold1;5 forte, 15 branco;173;1,7168;0,0415;0,4913
+WINFUT;hold1;5 fraco × 15 fraco;11;161,9091;1,1031;0,5455
+WINFUT;hold1;5 fraco × 15 forte;51;105,2157;1,5189;0,5882
+WINFUT;hold1;5 forte × 15 fraco;20;-18,6000;-0,1166;0,6000
+WINFUT;hold1;5 forte × 15 forte;221;36,6833;1,1349;0,5113
+WINFUT;hold1;5 colorido × 15 oposto;53;44,7358;0,6479;0,5660
+WINM26;hold2;5 fraco, 15 branco;36;-14,0278;-0,1285;0,4722
+WINM26;hold2;5 forte, 15 branco;106;92,9717;1,3991;0,6321
+WINM26;hold2;5 fraco × 15 forte;13;-85,0000;-0,3954;0,4615
+WINM26;hold2;5 forte × 15 fraco;10;-551,5000;-1,9374;0,2000
+WINM26;hold2;5 forte × 15 forte;103;-11,6505;-0,1569;0,4466
+WINM26;hold2;5 colorido × 15 oposto;28;51,4286;0,3247;0,5357
+WINQ26;hold2;5 fraco, 15 branco;32;47,5000;0,6294;0,4375
+WINQ26;hold2;5 forte, 15 branco;67;55,5224;1,0360;0,5970
+WINQ26;hold2;5 fraco × 15 fraco;5;-42,0000;-0,2347;0,4000
+WINQ26;hold2;5 fraco × 15 forte;18;172,2222;1,1373;0,7222
+WINQ26;hold2;5 forte × 15 fraco;11;-53,6364;-0,3903;0,4545
+WINQ26;hold2;5 forte × 15 forte;80;-37,0625;-0,4445;0,4500
+WINQ26;hold2;5 colorido × 15 oposto;26;-155,1923;-0,9549;0,4615
+WDOFUT;wdo;5 fraco, 15 branco;296;0,9212;0,9622;0,5068
+WDOFUT;wdo;5 forte, 15 branco;504;0,8300;1,2850;0,4762
+WDOFUT;wdo;5 fraco × 15 fraco;42;2,0364;0,6357;0,5238
+WDOFUT;wdo;5 fraco × 15 forte;151;-2,3654;-1,4022;0,4503
+WDOFUT;wdo;5 forte × 15 fraco;69;0,0053;0,0031;0,4348
+WDOFUT;wdo;5 forte × 15 forte;745;0,5650;0,8392;0,5047
+WDOFUT;wdo;5 colorido × 15 oposto;154;-0,5889;-0,3272;0,4870

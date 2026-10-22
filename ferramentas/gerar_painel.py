@@ -184,6 +184,12 @@ def bloco_m16(ev: pd.DataFrame) -> dict:
     return {"freq": freq, "boxes": boxes, "estrategias": estrategias, "heat": heat, "exp": exp}
 
 
+def bloco_alinhamento() -> list[dict]:
+    r = ler(M16 / "analises" / "ANALISE_002_alinhamento.csv")
+    a = r[(r["quem"] == "alinhado") & (r["serie"].isin(["WINFUT", "WDOFUT"]))]
+    return registros(a[["serie", "conjunto", "def", "nivel", "subset", "n", "ret_60", "t_60", "p_60"]])
+
+
 def bloco_m02(refazer: bool) -> dict:
     t = ler(M02 / "analises" / "ANALISE_001_trades.csv")
     t["dt_saida"] = pd.to_datetime(t["dt_saida"])
@@ -237,6 +243,7 @@ def main() -> None:
         "alarmes": bloco_alarmes(ev),
         "m16": bloco_m16(ev),
         "m02": bloco_m02(args.refazer),
+        "alinhamento": bloco_alinhamento(),
     }
     html = (Path(__file__).with_name("painel_template.html")).read_text(encoding="utf-8")
     html = html.replace("/*__DADOS__*/", "const DADOS = " + json.dumps(dados, separators=(",", ":"), default=limpo) + ";")
