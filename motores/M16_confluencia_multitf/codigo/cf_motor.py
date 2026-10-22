@@ -1,4 +1,4 @@
-"""Motor M03 — confluência de cor (M01) em múltiplos timeframes.
+"""Motor M16 — confluência de cor (M01) em múltiplos timeframes.
 
 Implementa exatamente as definições congeladas em ``METODO.md``. A cor vem de ``calcular`` do M01 (``est`` ∈ −2..2);
 a execução reaproveita o simulador do M02 (``mb_motor``).

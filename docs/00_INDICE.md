@@ -16,6 +16,7 @@
 |---|---|
 | M01 — F = m·a | [`motores/M01_fma_forca/README.md`](../motores/M01_fma_forca/README.md) |
 | M02 — Microestrutura com barreiras | [`motores/M02_microestrutura_barreiras/README.md`](../motores/M02_microestrutura_barreiras/README.md) |
+| M16 — Confluência de cor multi-TF | [`motores/M16_confluencia_multitf/README.md`](../motores/M16_confluencia_multitf/README.md) |
 
 ## Rotina de trabalho (resumo)
 
@@ -31,5 +32,6 @@ pip install -r requirements.txt
 python -m unittest discover tests                                   # testes
 python ferramentas/auditar_candles.py                               # auditoria de dados (~20 s)
 python motores/M02_microestrutura_barreiras/codigo/analise_001.py   # baseline M02 (~15 s)
+python motores/M16_confluencia_multitf/codigo/analise_001.py       # confluência multi-TF (~30 s)
 python ferramentas/indexar_hipoteses.py                             # índice de hipóteses
 ```

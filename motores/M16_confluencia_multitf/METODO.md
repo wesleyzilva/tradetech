@@ -1,4 +1,4 @@
-# M03 — Método (congelado em 2026-10-22, antes de rodar a análise)
+# M16 — Método (congelado em 2026-10-22, antes de rodar a análise)
 
 ## Cor (canônica do M01)
 
