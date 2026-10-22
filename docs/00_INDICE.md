@@ -23,7 +23,7 @@
 1. **Dados novos?** Colocar em `dados/candles/<lote>/` e rodar `python ferramentas/auditar_candles.py`.
 2. **Ideia nova?** Registrar como hipótese no `HIPOTESES.md` do motor (ou linha no catálogo de motores).
 3. **Mudança no robô?** `deltas/DELTA_###_*.md` (uma alavanca) → medir contra o baseline → decidir.
-4. **Fim do dia:** `python ferramentas/indexar_hipoteses.py` para atualizar o índice único.
+4. **Fim do dia:** `python ferramentas/indexar_hipoteses.py` para atualizar o índice único e `python ferramentas/gerar_painel.py` para atualizar o painel ([`painel/painel.html`](painel/painel.html), abrir no navegador; precisa de internet para o Plotly).
 
 ## Comandos úteis
 
@@ -33,5 +33,6 @@ python -m unittest discover tests                                   # testes
 python ferramentas/auditar_candles.py                               # auditoria de dados (~20 s)
 python motores/M02_microestrutura_barreiras/codigo/analise_001.py   # baseline M02 (~15 s)
 python motores/M16_confluencia_multitf/codigo/analise_001.py       # confluência multi-TF (~30 s)
+python ferramentas/gerar_painel.py                                # painel HTML interativo: docs/painel/painel.html (usa --refazer para recalcular o cache do M02)
 python ferramentas/indexar_hipoteses.py                             # índice de hipóteses
 ```

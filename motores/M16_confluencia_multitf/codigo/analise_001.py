@@ -4,6 +4,7 @@ Executa as hipóteses CF-H01..CF-H06 exatamente como congeladas em ``HIPOTESES.m
   * ``analises/ANALISE_001_confluencia.md``
   * ``analises/ANALISE_001_estrategias.csv`` (todas as 132 estratégias × conjuntos de dados)
   * ``analises/ANALISE_001_eventos.csv``     (estatísticas descritivas por conjunto/evento)
+  * ``analises/ANALISE_001_eventos_detalhe.csv.gz`` e ``ANALISE_001_pregoes.csv`` (insumos do painel HTML)
 
 Uso: python motores/M16_confluencia_multitf/codigo/analise_001.py
 """
@@ -205,6 +206,8 @@ def main() -> None:
         exp_rows.append({"base": base, "conjunto": conj, "nivel": nivel, "subset": sub, "n": len(g), "ratio_conf": g["ratio"].mean(), "ratio_unico": u["ratio"].mean(),
                          "dif": g["ratio"].mean() - u["ratio"].mean(), "t": (g["ratio"].mean() - u["ratio"].mean()) / se if se == se and se > 0 else np.nan})
     exp = pd.DataFrame(exp_rows)
+    eventos.to_csv(PASTA / "ANALISE_001_eventos_detalhe.csv.gz", index=False, sep=";", decimal=",", float_format="%.2f", compression="gzip")
+    pd.DataFrame([{"base": b, "subset": sb, "pregoes": len(v)} for (b, sb), v in universo.items()]).to_csv(PASTA / "ANALISE_001_pregoes.csv", index=False, sep=";")
     desc.to_csv(PASTA / "ANALISE_001_eventos.csv", index=False, sep=";", decimal=",", float_format="%.4f")
 
     # ------------------------------------------------------------------ relatório

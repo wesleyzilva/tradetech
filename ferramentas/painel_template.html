@@ -1,0 +1,339 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<title>TradeTech — painel de análises</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="https://cdn.plot.ly/plotly-2.35.2.min.js"></script>
+<style>
+  :root { --bg:#f6f7f9; --card:#fff; --tx:#1f2933; --mut:#667085; --bd:#e4e7ec; --ac:#2563eb; --ok:#16a34a; --ruim:#dc2626; }
+  * { box-sizing: border-box; }
+  body { margin:0; font:14px/1.45 -apple-system,Segoe UI,Roboto,sans-serif; background:var(--bg); color:var(--tx); }
+  header { background:#111827; color:#fff; padding:14px 22px; display:flex; align-items:baseline; gap:16px; flex-wrap:wrap; }
+  header h1 { font-size:18px; margin:0; }
+  header span { color:#9ca3af; font-size:12px; }
+  nav { display:flex; gap:2px; background:#1f2937; padding:0 14px; flex-wrap:wrap; position:sticky; top:0; z-index:10; }
+  nav button { background:none; border:0; color:#cbd5e1; padding:10px 14px; cursor:pointer; font-size:13px; border-bottom:3px solid transparent; }
+  nav button.on { color:#fff; border-bottom-color:#60a5fa; }
+  main { max-width:1400px; margin:0 auto; padding:18px; }
+  section { display:none; }
+  section.on { display:block; }
+  .card { background:var(--card); border:1px solid var(--bd); border-radius:10px; padding:14px 16px; margin-bottom:16px; }
+  .card h2 { font-size:15px; margin:0 0 4px; }
+  .card p.sub { color:var(--mut); margin:0 0 8px; font-size:12.5px; }
+  .grid { display:grid; gap:16px; }
+  .g2 { grid-template-columns: repeat(auto-fit, minmax(520px, 1fr)); }
+  .cards { display:grid; grid-template-columns: repeat(auto-fit, minmax(190px, 1fr)); gap:12px; margin-bottom:16px; }
+  .kpi { background:var(--card); border:1px solid var(--bd); border-radius:10px; padding:12px 14px; }
+  .kpi b { display:block; font-size:24px; }
+  .kpi small { color:var(--mut); }
+  .ctl { display:flex; gap:10px; align-items:center; flex-wrap:wrap; margin-bottom:8px; }
+  select, input[type=text], button.b { padding:5px 8px; border:1px solid var(--bd); border-radius:6px; background:#fff; font-size:13px; }
+  button.b { cursor:pointer; }
+  table { border-collapse:collapse; width:100%; font-size:12.5px; }
+  th, td { padding:5px 8px; border-bottom:1px solid var(--bd); text-align:left; white-space:nowrap; }
+  th { background:#f3f4f6; position:sticky; top:0; cursor:pointer; }
+  .scroll { max-height:520px; overflow:auto; }
+  .tag { padding:1px 7px; border-radius:10px; font-size:11px; color:#fff; }
+  .CONFIRMADA{background:#16a34a}.PARCIAL{background:#65a30d}.INCONCLUSIVA{background:#d97706}.REFUTADA{background:#dc2626}.PENDENTE{background:#6b7280}.NAO{background:#b45309}
+  .pos { color:var(--ok); font-weight:600 } .neg { color:var(--ruim); font-weight:600 }
+  ul.lista { margin:6px 0 0 18px; padding:0 } ul.lista li { margin:4px 0; }
+  .leg { display:inline-flex; gap:12px; font-size:12px; color:var(--mut); flex-wrap:wrap; }
+  .leg i { display:inline-block; width:11px; height:11px; margin-right:4px; vertical-align:-1px; border-radius:2px; }
+  code { background:#eef2f7; padding:1px 5px; border-radius:4px; font-size:12px; }
+</style>
+</head>
+<body>
+<header><h1>TradeTech — painel de análises</h1><span>WIN/WDO · motores M01, M02, M16 · gerado por <code>ferramentas/gerar_painel.py</code></span></header>
+<nav id="nav"></nav>
+<main>
+<section id="s-resumo">
+  <div class="cards" id="kpis"></div>
+  <div class="card"><h2>Leitura rápida</h2><ul class="lista" id="leitura"></ul></div>
+  <div class="card"><h2>Hipóteses por motor e veredito</h2><div id="ch-hip-resumo" style="height:320px"></div></div>
+</section>
+
+<section id="s-candles">
+  <div class="card">
+    <h2>Explorador de pregões: cores por timeframe e alarmes de confluência</h2>
+    <p class="sub">WINFUT, 5 / 15 / 30 / 60 min no mesmo dia. Cada candle usa a cor do M01 (F = m·a, z-score). Os triângulos são os alarmes de <b>confluência</b> (barras de 2+ TFs fecham juntas, mesma família, nível colorido): a marca fica na barra que fechou e o texto mostra o que aconteceu nos 60 min seguintes. Setas ← → trocam de dia.</p>
+    <div class="ctl">
+      <button class="b" id="prev">◀</button>
+      <select id="dia"></select>
+      <button class="b" id="next">▶</button>
+      <label><input type="checkbox" id="soAlarme"> só dias com alarme</label>
+      <label><input type="checkbox" id="mostraN2" checked> mostrar nível brilhante (N2)</label>
+      <span class="leg" id="leg-cores"></span>
+    </div>
+    <div id="ch-candles" style="height:860px"></div>
+    <div class="scroll" style="max-height:220px"><table id="tb-alarmes"></table></div>
+  </div>
+</section>
+
+<section id="s-m16">
+  <div class="grid g2">
+    <div class="card"><h2>1. Quantas vezes o alarme toca (por pregão)</h2><p class="sub">Eixo logarítmico. Modo A: as barras fecham juntas. Modo B: o TF maior fechou há no máximo 1 período. WINFUT, descoberta + hold-out 1.</p><div id="ch-freq" style="height:430px"></div></div>
+    <div class="card"><h2>2. Quantos pontos: MFE e MAE em 60 min</h2><p class="sub">Máximo a favor (verde) e contra (vermelho) da cor, a partir da abertura seguinte. Caixa = p25–p75, mediana, hastes = p10–p90. Se as caixas são parecidas, a cor não indica lado.</p>
+      <div class="ctl"><select id="unid"><option value="pts">pontos</option><option value="atr">múltiplos do ATR</option></select><select id="baseBox"><option value="5">base 5 min</option><option value="15">base 15 min</option><option value="30">base 30 min</option></select></div><div id="ch-box" style="height:380px"></div></div>
+    <div class="card"><h2>3. A cor aponta o lado? % de eventos com MFE &gt; MAE</h2><p class="sub">50% = cara ou coroa. Barras de erro = intervalo de 95% se fosse moeda justa (ignora autocorrelação, então é otimista).</p><div id="ch-pct" style="height:380px"></div></div>
+    <div class="card"><h2>4. Retorno alinhado ao sinal: t-stat por período</h2><p class="sub">Azul (positivo) = continuação, laranja (negativo) = fade. Uma vantagem real teria a <b>mesma cor</b> (mesmo sinal) em todas as colunas. Só conjuntos com ≥ 30 eventos na descoberta.</p><div id="ch-heat" style="height:560px"></div></div>
+    <div class="card"><h2>5. Descoberta × validação das estratégias</h2><p class="sub">Cada ponto é uma estratégia (conjunto × nível × lado × geometria). A zona verde seria o critério: t ≥ 3 na descoberta e t ≥ 2 na validação. Quem brilha à esquerda e some embaixo é ruído.</p>
+      <div class="ctl"><select id="yvalid"><option value="hold1">validação: hold-out 1 (WINFUT posterior)</option><option value="hold2">validação: hold-out 2 (WINM26/WINQ26)</option></select></div><div id="ch-scatter" style="height:460px"></div></div>
+    <div class="card"><h2>6. A confluência expande mais o range que a cor em 1 TF?</h2><p class="sub">Razão entre o range seguinte após confluência e após cor em TF único (mesma base e nível). 1,0 = igual.</p><div id="ch-exp" style="height:460px"></div></div>
+  </div>
+  <div class="card"><h2>7. Todas as estratégias testadas</h2><p class="sub">Líquido de 5 pts por trade (WIN). <code>t</code> = contra entrada aleatória com a mesma saída. WR = taxa de acerto; BE = acerto de equilíbrio da geometria. Clique no cabeçalho para ordenar.</p>
+    <div class="ctl"><select id="tbBase"><option value="">todas as bases</option><option>5</option><option>15</option><option>30</option></select>
+    <select id="tbLado"><option value="">continuação e fade</option><option>continuação</option><option>fade</option></select>
+    <label><input type="checkbox" id="tbN30" checked> só n ≥ 30 na descoberta</label><span id="tbInfo" style="color:var(--mut)"></span></div>
+    <div class="scroll"><table id="tb-estrat"></table></div></div>
+</section>
+
+<section id="s-m02">
+  <div class="grid g2">
+    <div class="card"><h2>Curva de capital do robô M02 (baseline)</h2><p class="sub">PnL acumulado líquido (pontos) por conjunto e perfil de execução. Clique na legenda para ligar/desligar.</p><div id="ch-equity" style="height:420px"></div></div>
+    <div class="card"><h2>Resultado médio por hora de entrada (WINFUT 1 min, perfil fiel)</h2><p class="sub">Pontos por trade e número de trades.</p><div id="ch-hora" style="height:420px"></div></div>
+    <div class="card"><h2>Esperança da geometria sozinha (entrada aleatória), por timeframe</h2><p class="sub">t-stat por pregão. Faixa de ruído = ±2. WIN em 30–60 min mostra efeito; WDO não replica.</p>
+      <div class="ctl"><select id="geo"></select></div><div id="ch-nulo" style="height:380px"></div></div>
+    <div class="card"><h2>A barra brilhante antecipa volatilidade?</h2><p class="sub">Range da barra seguinte ÷ média do mesmo horário, após barra brilhante (barras) contra controle (linha = 1).</p><div id="ch-expb" style="height:380px"></div></div>
+    <div class="card"><h2>Motivo de saída</h2><p class="sub">Quantidade e resultado médio por perfil (fiel = como o robô executa; ideal = stop na entrada).</p><div id="ch-motivo" style="height:380px"></div></div>
+  </div>
+</section>
+
+<section id="s-dados">
+  <div class="card"><h2>Cobertura dos arquivos de candles</h2><p class="sub">Cada barra é um arquivo. Passe o mouse para ver lote, linhas e sessões completas. Filtre por série e timeframe.</p>
+    <div class="ctl"><select id="cobSerie"></select><select id="cobTf"></select></div><div id="ch-cob" style="height:640px"></div></div>
+</section>
+
+<section id="s-hip">
+  <div class="card"><h2>Índice de hipóteses</h2>
+    <div class="ctl"><select id="hipMotor"></select><select id="hipVer"></select><input type="text" id="hipBusca" placeholder="buscar texto…" size="34"><span id="hipInfo" style="color:var(--mut)"></span></div>
+    <div class="scroll" style="max-height:640px"><table id="tb-hip"></table></div></div>
+</section>
+</main>
+
+<script>
+/*__DADOS__*/
+
+const $ = (id) => document.getElementById(id);
+const fmt = (x, d = 1) => (x === null || x === undefined || Number.isNaN(x)) ? '—' : Number(x).toLocaleString('pt-BR', { minimumFractionDigits: d, maximumFractionDigits: d });
+const CFG = { responsive: true, displaylogo: false };
+const LAY = (extra = {}) => Object.assign({ margin: { l: 55, r: 15, t: 20, b: 50 }, font: { size: 12 }, paper_bgcolor: '#fff', plot_bgcolor: '#fff', legend: { orientation: 'h', y: -0.2 } }, extra);
+const COR_EST = { '2': '#006d2c', '1': '#74c476', '0': '#9ca3af', '-1': '#fb6a4a', '-2': '#a50f15' };
+const NOME_EST = { '2': 'brilhante (alta)', '1': 'colorido (alta)', '0': 'neutro', '-1': 'colorido (baixa)', '-2': 'brilhante (baixa)' };
+
+// ---------- navegação
+const ABAS = [['resumo', 'Resumo'], ['candles', 'Explorador de pregões'], ['m16', 'M16 · Confluência de cor'], ['m02', 'M02 · Robô e timeframes'], ['dados', 'Dados'], ['hip', 'Hipóteses']];
+const rendidas = {};
+ABAS.forEach(([id, nome], i) => {
+  const b = document.createElement('button'); b.textContent = nome; b.dataset.id = id; b.onclick = () => abrir(id); $('nav').appendChild(b);
+});
+function abrir(id) {
+  document.querySelectorAll('nav button').forEach(b => b.classList.toggle('on', b.dataset.id === id));
+  document.querySelectorAll('section').forEach(s => s.classList.toggle('on', s.id === 's-' + id));
+  location.hash = id;
+  if (!rendidas[id]) { rendidas[id] = true; RENDER[id](); }
+  setTimeout(() => window.dispatchEvent(new Event('resize')), 50);
+}
+
+// ---------- resumo
+function resumo() {
+  const m16 = DADOS.m16, est = m16.estrategias;
+  const passaDesc = est.filter(e => e.n_descoberta >= 30 && e.t_nulo_descoberta >= 3).length;
+  const passa = est.filter(e => e.passa).length;
+  const dias = Object.keys(DADOS.candles).length;
+  const k = [[dias, 'pregões no explorador (WINFUT 5 min)'], [est.length, 'estratégias M16 testadas'], [passaDesc, 'passam na descoberta (t ≥ 3)'], [passa, 'passam com validação e WDO'],
+             [DADOS.alarmes.length, 'alarmes de confluência no período'], [Object.values(DADOS.hipoteses).reduce((a, b) => a + b.length, 0), 'hipóteses registradas']];
+  $('kpis').innerHTML = k.map(([v, t]) => `<div class="kpi"><b>${fmt(v, 0)}</b><small>${t}</small></div>`).join('');
+  const L = [
+    '<b>Cor em vários timeframes é rara:</b> a confluência de 2 TFs toca cerca de 0,4 a 0,8 vez por pregão; com 3 TFs, quase nunca.',
+    '<b>A cor mede amplitude, não direção:</b> em 60 min o máximo a favor e o máximo contra são quase iguais, e o lado certo ocorre em cerca de 50% dos casos (gráficos 2 e 3 do M16).',
+    '<b>Nenhuma estratégia replica:</b> o que parece vantagem na descoberta some na validação (gráfico 5 do M16) ou troca de sinal (gráfico 4).',
+    '<b>Geometria de saída (stop curto, alvo longo) em 30–60 min no WIN</b> tem esperança positiva mesmo com entrada aleatória, mas não replica no WDO (aba M02).',
+    '<b>Como usar:</b> o alarme serve para atenção; a entrada ainda precisa de um critério com evidência. Use o explorador de pregões para olhar os casos um a um.'];
+  $('leitura').innerHTML = L.map(x => `<li>${x}</li>`).join('');
+  const motores = Object.keys(DADOS.hipoteses), vers = ['CONFIRMADA', 'PARCIAL', 'INCONCLUSIVA', 'NÃO SUPORTADA', 'REFUTADA', 'PENDENTE'];
+  const cor = { 'CONFIRMADA': '#16a34a', 'PARCIAL': '#65a30d', 'INCONCLUSIVA': '#d97706', 'NÃO SUPORTADA': '#b45309', 'REFUTADA': '#dc2626', 'PENDENTE': '#9ca3af' };
+  const tr = vers.map(v => ({ type: 'bar', textposition: 'none', name: v, x: motores, y: motores.map(m => DADOS.hipoteses[m].filter(h => verKey(h.veredito) === v).length), marker: { color: cor[v] } }));
+  Plotly.newPlot('ch-hip-resumo', tr, LAY({ barmode: 'stack', yaxis: { title: 'hipóteses' } }), CFG);
+}
+function verKey(t) {
+  for (const v of ['CONFIRMADA', 'PARCIAL', 'INCONCLUSIVA', 'NÃO SUPORTADA', 'REFUTADA', 'PENDENTE']) if (t.includes(v)) return v;
+  return 'PENDENTE';
+}
+
+// ---------- explorador de pregões
+const DIAS = Object.keys(DADOS.candles).sort();
+const ALARMES = {};
+DADOS.alarmes.forEach(a => { (ALARMES[a[0]] = ALARMES[a[0]] || []).push(a); });
+function hh(t) { return String(Math.floor(t / 100)).padStart(2, '0') + ':' + String(t % 100).padStart(2, '0'); }
+function candles() {
+  $('leg-cores').innerHTML = Object.keys(COR_EST).reverse().map(k => `<span><i style="background:${COR_EST[k]}"></i>${NOME_EST[k]}</span>`).join('');
+  const sel = $('dia');
+  const refill = () => {
+    const so = $('soAlarme').checked, atual = sel.value;
+    sel.innerHTML = '';
+    DIAS.filter(d => !so || ALARMES[d]).forEach(d => { const o = document.createElement('option'); o.value = d; o.textContent = d + (ALARMES[d] ? `  (${ALARMES[d].length} alarmes)` : ''); sel.appendChild(o); });
+    if ([...sel.options].some(o => o.value === atual)) sel.value = atual;
+    desenhar();
+  };
+  const passo = (n) => { const i = sel.selectedIndex + n; if (i >= 0 && i < sel.options.length) { sel.selectedIndex = i; desenhar(); } };
+  $('prev').onclick = () => passo(-1); $('next').onclick = () => passo(1);
+  sel.onchange = desenhar; $('soAlarme').onchange = refill; $('mostraN2').onchange = desenhar;
+  document.addEventListener('keydown', e => { if ($('s-candles').classList.contains('on') && !['SELECT', 'INPUT'].includes(document.activeElement.tagName)) { if (e.key === 'ArrowLeft') passo(-1); if (e.key === 'ArrowRight') passo(1); } });
+  const primeiro = DIAS.find(d => ALARMES[d]) || DIAS[0]; refill(); sel.value = primeiro; desenhar();
+}
+function desenhar() {
+  const dia = $('dia').value; if (!dia) return;
+  const D = DADOS.candles[dia], tfs = ['5', '15', '30', '60'];
+  const dom = { '5': [0.6, 1], '15': [0.405, 0.585], '30': [0.21, 0.39], '60': [0, 0.195] };
+  const tr = [], lay = LAY({ showlegend: false, margin: { l: 55, r: 15, t: 10, b: 30 }, hovermode: 'closest' });
+  tfs.forEach((tf, i) => {
+    const ax = i === 0 ? '' : String(i + 1);
+    lay['xaxis' + ax] = { rangeslider: { visible: false }, anchor: 'y' + ax, matches: 'x', showgrid: true, range: [dia + ' 08:55', dia + ' 18:25'], tickformat: '%H:%M' };
+    lay['yaxis' + ax] = { domain: dom[tf], anchor: 'x' + ax, title: { text: tf + ' min', standoff: 4 } };
+    const c = D[tf]; if (!c) return;
+    ['2', '1', '0', '-1', '-2'].forEach(s => {
+      const idx = c.e.map((e, k) => String(e) === s ? k : -1).filter(k => k >= 0);
+      if (!idx.length) return;
+      tr.push({ type: 'candlestick', x: idx.map(k => dia + ' ' + hh(c.t[k])), open: idx.map(k => c.o[k]), high: idx.map(k => c.h[k]), low: idx.map(k => c.l[k]), close: idx.map(k => c.c[k]),
+        xaxis: 'x' + ax, yaxis: 'y' + ax, name: NOME_EST[s], increasing: { line: { color: COR_EST[s] }, fillcolor: COR_EST[s] }, decreasing: { line: { color: COR_EST[s] }, fillcolor: COR_EST[s] },
+        whiskerwidth: 0.4, text: idx.map(k => `${hh(c.t[k])} · ${NOME_EST[s]}`), hoverinfo: 'x+text+y' });
+    });
+  });
+  const mostraN2 = $('mostraN2').checked, lista = (ALARMES[dia] || []).filter(a => mostraN2 || a[4] === 1);
+  const rowDe = { 5: '', 15: '2', 30: '3' };
+  [5, 15, 30].forEach(b => {
+    const al = lista.filter(a => a[2] === b); if (!al.length) return;
+    const c = D[String(b)], ax = rowDe[b];
+    const alt = (a) => { const k = c.t.indexOf(a[1]); return k >= 0 ? c.h[k] : null; };
+    const grupos = {};
+    al.forEach(a => { (grupos[a[1]] = grupos[a[1]] || []).push(a); });
+    [1, -1].forEach(lado => {
+      const g = Object.values(grupos).filter(x => x[0][5] === lado); if (!g.length) return;
+      tr.push({ type: 'scatter', mode: 'markers', x: g.map(x => dia + ' ' + hh(x[0][1])), y: g.map(x => (alt(x[0]) || 0) + 25), xaxis: 'x' + ax, yaxis: 'y' + ax,
+        marker: { symbol: lado > 0 ? 'triangle-up' : 'triangle-down', size: g.map(x => 10 + 3 * x.length + (x.some(a => a[4] === 2) ? 5 : 0)), color: lado > 0 ? '#16a34a' : '#dc2626', line: { color: '#111', width: 1 } },
+        hovertext: g.map(x => `<b>cor de ${lado > 0 ? 'alta' : 'baixa'} em ${x.length} combinação(ões) — fechou ${hh(x[0][1])}</b><br>` + x.map(a => `${a[3]} N${a[4]}`).join(', ') +
+          `<br>60 min depois: ${fmt(x[0][6], 0)} pts a favor da cor<br>MFE ${fmt(x[0][7], 0)} · MAE ${fmt(x[0][8], 0)} pts`), hoverinfo: 'text', name: 'alarme' });
+    });
+  });
+  Plotly.react('ch-candles', tr, lay, CFG);
+  $('tb-alarmes').innerHTML = '<tr><th>hora</th><th>base</th><th>conjunto</th><th>nível</th><th>cor</th><th>retorno 60 min a favor da cor</th><th>MFE (pts)</th><th>MAE (pts)</th><th>ATR</th></tr>' +
+    (lista.length ? lista.sort((a, b) => a[1] - b[1]).map(a => `<tr><td>${hh(a[1])}</td><td>${a[2]} min</td><td>${a[3]}</td><td>N${a[4]}</td><td>${a[5] > 0 ? 'alta' : 'baixa'}</td><td class="${a[6] > 0 ? 'pos' : 'neg'}">${fmt(a[6], 0)}</td><td>${fmt(a[7], 0)}</td><td>${fmt(a[8], 0)}</td><td>${fmt(a[9], 0)}</td></tr>`).join('') : '<tr><td colspan="9">sem alarmes de confluência neste dia</td></tr>');
+}
+
+// ---------- M16
+function m16() {
+  const M = DADOS.m16;
+  // 1 frequência
+  const rots = [...new Set(M.freq.map(f => f.rot))].sort();
+  const mk = (modo, cor) => ({ type: 'bar', textposition: 'none', name: 'modo ' + modo, x: rots, y: rots.map(r => { const f = M.freq.find(x => x.rot === r && x.modo === modo); return f ? f.por_pregao : null; }), marker: { color: cor },
+    text: rots.map(r => { const f = M.freq.find(x => x.rot === r && x.modo === modo); return f ? `${f.n} eventos` : ''; }), hoverinfo: 'text+y' });
+  Plotly.newPlot('ch-freq', [mk('A', '#2563eb'), mk('B', '#93c5fd')], LAY({ yaxis: { type: 'log', title: 'alarmes por pregão' }, xaxis: { tickangle: -45 }, margin: { l: 55, r: 15, t: 10, b: 110 }, barmode: 'group',
+    shapes: [{ type: 'line', x0: 0, x1: 1, xref: 'paper', y0: 3, y1: 3, line: { color: '#dc2626', dash: 'dot' } }] }), CFG);
+  // 2 boxes
+  const desenhaBox = () => {
+    const u = $('unid').value, base = +$('baseBox').value, B = M.boxes.filter(b => b.base === base).sort((a, b) => a.rot.localeCompare(b.rot));
+    const f = (campo) => ({ type: 'box', x: B.map(b => b.rot), lowerfence: B.map(b => b[campo][0]), q1: B.map(b => b[campo][1]), median: B.map(b => b[campo][2]), q3: B.map(b => b[campo][3]), upperfence: B.map(b => b[campo][4]), boxpoints: false });
+    const mfe = f(u === 'pts' ? 'mfe' : 'mfe_atr'), mae = f(u === 'pts' ? 'mae' : 'mae_atr');
+    mfe.name = 'MFE (a favor da cor)'; mfe.marker = { color: '#16a34a' }; mae.name = 'MAE (contra a cor)'; mae.marker = { color: '#dc2626' };
+    Plotly.newPlot('ch-box', [mfe, mae], LAY({ boxmode: 'group', yaxis: { title: u === 'pts' ? 'pontos' : 'ATR' }, xaxis: { tickangle: -30 }, margin: { l: 55, r: 15, t: 10, b: 90 } }), CFG);
+  };
+  $('unid').onchange = desenhaBox; $('baseBox').onchange = desenhaBox; desenhaBox();
+  // 3 pct
+  const P = [...M.boxes].sort((a, b) => a.base - b.base || a.rot.localeCompare(b.rot));
+  Plotly.newPlot('ch-pct', [{ type: 'bar', textposition: 'none', x: P.map(p => `${p.rot}`), y: P.map(p => p.pct_mfe_maior), marker: { color: P.map(p => p.pct_mfe_maior > 50 ? '#16a34a' : '#dc2626') },
+    error_y: { type: 'data', array: P.map(p => 1.96 * Math.sqrt(0.25 / p.n) * 100), color: '#374151' }, text: P.map(p => 'n=' + p.n), hoverinfo: 'x+y+text' }],
+    LAY({ yaxis: { range: [30, 70], title: '% MFE > MAE' }, xaxis: { tickangle: -45 }, margin: { l: 55, r: 15, t: 10, b: 110 }, shapes: [{ type: 'line', x0: 0, x1: 1, xref: 'paper', y0: 50, y1: 50, line: { color: '#111', dash: 'dash' } }] }), CFG);
+  // 4 heatmap
+  const H = [...M.heat].sort((a, b) => a.base - b.base || a.rot.localeCompare(b.rot) || a.h - b.h), cols = ['descoberta', 'hold1', 'hold2', 'wdo'];
+  const rowsL = H.map(h => `${h.rot} · ${h.h} min`);
+  Plotly.newPlot('ch-heat', [{ type: 'heatmap', z: H.map(h => cols.map(c => h[c])), x: ['descoberta', 'hold-out 1', 'hold-out 2', 'WDO'], y: rowsL, zmin: -4, zmax: 4, colorscale: [[0, '#ea580c'], [0.5, '#f9fafb'], [1, '#2563eb']],
+    text: H.map(h => cols.map(c => h[c] === null ? '' : `t=${fmt(h[c], 1)} · ret ${fmt(h[c + '_ret'], 0)} pts · n=${h[c + '_n']}`)), hoverinfo: 'text+y+x', colorbar: { title: 't' } }],
+    LAY({ yaxis: { autorange: 'reversed', automargin: true }, margin: { l: 160, r: 15, t: 10, b: 40 } }), CFG);
+  // 5 scatter
+  const desenhaScatter = () => {
+    const v = $('yvalid').value, E = M.estrategias.filter(e => e.n_descoberta >= 30 && e['n_' + v] >= 10 && e.t_nulo_descoberta !== null && e['t_nulo_' + v] !== null);
+    const por = (lado, cor) => { const g = E.filter(e => e.lado === lado); return { type: 'scatter', mode: 'markers', name: lado, x: g.map(e => e.t_nulo_descoberta), y: g.map(e => e['t_nulo_' + v]),
+      marker: { size: g.map(e => 6 + Math.sqrt(e.n_descoberta) / 2.5), color: cor, opacity: 0.65, line: { color: '#111', width: 0.5 } },
+      text: g.map(e => `<b>${e.rot}</b> · base ${e.base} min · ${e.lado} · SL/SG ${e.geom}<br>descoberta: n=${e.n_descoberta}, ${fmt(e.medio_descoberta, 1)} pts<br>validação: n=${e['n_' + v]}, ${fmt(e['medio_' + v], 1)} pts`), hoverinfo: 'text' }; };
+    Plotly.react('ch-scatter', [por('continuação', '#2563eb'), por('fade', '#f59e0b')], LAY({ xaxis: { title: 't na descoberta (vs entrada aleatória)', zeroline: true, range: [-4, 5] }, yaxis: { title: 't na validação', zeroline: true, range: [-4, 4] },
+      shapes: [{ type: 'rect', x0: 3, x1: 10, y0: 2, y1: 10, fillcolor: 'rgba(22,163,74,.12)', line: { width: 0 } }, { type: 'line', x0: 3, x1: 3, y0: -10, y1: 10, line: { dash: 'dot', color: '#16a34a' } }, { type: 'line', x0: -10, x1: 10, y0: 2, y1: 2, line: { dash: 'dot', color: '#16a34a' } }] }), CFG);
+  };
+  $('yvalid').onchange = desenhaScatter; desenhaScatter();
+  // 6 expansão
+  const subs = [['descoberta', '#2563eb'], ['hold1', '#60a5fa'], ['hold2', '#f59e0b'], ['wdo', '#6b7280']], rr = [...new Set(M.exp.map(e => e.rot))].sort();
+  Plotly.newPlot('ch-exp', subs.map(([s, c]) => ({ type: 'bar', textposition: 'none', name: s, marker: { color: c }, x: rr, y: rr.map(r => { const e = M.exp.find(x => x.rot === r && x.subset === s); return e ? e.rel : null; }),
+    text: rr.map(r => { const e = M.exp.find(x => x.rot === r && x.subset === s); return e ? 'n=' + e.n : ''; }), hoverinfo: 'text+y' })), LAY({ barmode: 'group', yaxis: { title: 'range após confluência ÷ range após TF único', range: [0.6, 1.6] },
+    xaxis: { tickangle: -45 }, margin: { l: 55, r: 15, t: 10, b: 110 }, shapes: [{ type: 'line', x0: 0, x1: 1, xref: 'paper', y0: 1, y1: 1, line: { color: '#111', dash: 'dash' } }] }), CFG);
+  // 7 tabela
+  const cabec = [['base', 'base'], ['rot', 'conjunto'], ['lado', 'lado'], ['geom', 'SL/SG (×ATR)'], ['n_descoberta', 'n desc.'], ['medio_descoberta', 'pts/trade desc.'], ['t_nulo_descoberta', 't desc.'], ['wr_descoberta', 'WR desc.'],
+    ['wr_be_descoberta', 'WR equilíbrio'], ['medio_hold1', 'pts hold1'], ['t_nulo_hold1', 't hold1'], ['medio_hold2', 'pts hold2'], ['t_nulo_hold2', 't hold2'], ['medio_R_wdo', 'WDO (R)'], ['passa', 'passa?']];
+  let ord = ['t_nulo_descoberta', -1];
+  const tabela = () => {
+    const b = $('tbBase').value, l = $('tbLado').value, so = $('tbN30').checked;
+    let E = M.estrategias.filter(e => (!b || String(e.base) === b) && (!l || e.lado === l) && (!so || e.n_descoberta >= 30));
+    E.sort((x, y) => ((x[ord[0]] ?? -1e9) < (y[ord[0]] ?? -1e9) ? 1 : -1) * ord[1] * -1);
+    const cl = (v) => v === null ? '' : (v > 0 ? 'pos' : 'neg');
+    $('tb-estrat').innerHTML = '<tr>' + cabec.map(([k, n]) => `<th data-k="${k}">${n}</th>`).join('') + '</tr>' + E.map(e => '<tr>' + cabec.map(([k]) => {
+      const v = e[k]; if (k === 'passa') return `<td>${v ? 'sim' : 'não'}</td>`;
+      if (['medio_descoberta', 'medio_hold1', 'medio_hold2', 't_nulo_descoberta', 't_nulo_hold1', 't_nulo_hold2', 'medio_R_wdo'].includes(k)) return `<td class="${cl(v)}">${fmt(v, k === 'medio_R_wdo' ? 2 : 1)}</td>`;
+      if (k.startsWith('wr')) return `<td>${v === null ? '—' : fmt(v * 100, 0) + '%'}</td>`; if (k === 'n_descoberta') return `<td>${v === null ? '—' : v}</td>`; return `<td>${v}</td>`; }).join('') + '</tr>').join('');
+    $('tbInfo').textContent = E.length + ' estratégias';
+    document.querySelectorAll('#tb-estrat th').forEach(th => th.onclick = () => { const k = th.dataset.k; ord = [k, ord[0] === k ? -ord[1] : -1]; tabela(); });
+  };
+  ['tbBase', 'tbLado', 'tbN30'].forEach(i => $(i).onchange = tabela); tabela();
+}
+
+// ---------- M02
+function m02() {
+  const M = DADOS.m02;
+  Plotly.newPlot('ch-equity', M.equity.map(e => ({ type: 'scatter', mode: 'lines', name: `${e.nome} (n=${e.n}, ${fmt(e.medio, 1)} pts/trade)`, x: e.x, y: e.y, line: { width: 1.4 } })), LAY({ yaxis: { title: 'pontos acumulados' }, legend: { orientation: 'h', y: -0.25 } }), CFG);
+  Plotly.newPlot('ch-hora', [{ type: 'bar', textposition: 'none', x: M.hora.map(h => h.h + 'h'), y: M.hora.map(h => h.mean), marker: { color: M.hora.map(h => h.mean > 0 ? '#16a34a' : '#dc2626') }, text: M.hora.map(h => 'n=' + h.count), hoverinfo: 'x+y+text' }], LAY({ yaxis: { title: 'pts por trade' } }), CFG);
+  const geos = [...new Set(M.nulo.map(n => `${n.sl}/${n.sg}`))]; $('geo').innerHTML = geos.map(g => `<option>${g}</option>`).join('');
+  const nulo = () => {
+    const g = $('geo').value, tfs = [...new Set(M.nulo.map(n => n.tf))].sort((a, b) => a - b);
+    const t = (serie, cor) => ({ type: 'bar', textposition: 'none', name: serie, marker: { color: cor }, x: tfs.map(x => x + ' min'), y: tfs.map(tf => { const r = M.nulo.find(n => n.serie === serie && n.tf === tf && `${n.sl}/${n.sg}` === g); return r ? r.t : null; }),
+      text: tfs.map(tf => { const r = M.nulo.find(n => n.serie === serie && n.tf === tf && `${n.sl}/${n.sg}` === g); return r ? `bruto ${fmt(r.bruto, 1)} pts · anos+ ${r.anos}` : ''; }), hoverinfo: 'text+y' });
+    Plotly.react('ch-nulo', [t('WINFUT', '#2563eb'), t('WDOFUT', '#9ca3af')], LAY({ barmode: 'group', yaxis: { title: 't por pregão' }, shapes: [-2, 2].map(y => ({ type: 'line', x0: 0, x1: 1, xref: 'paper', y0: y, y1: y, line: { dash: 'dot', color: '#dc2626' } })) }), CFG);
+  };
+  $('geo').onchange = nulo; nulo();
+  Plotly.newPlot('ch-expb', [{ type: 'bar', textposition: 'none', x: M.expansao.map(e => e.tf + ' min'), y: M.expansao.map(e => e.razao), name: 'após barra brilhante', marker: { color: '#2563eb' }, text: M.expansao.map(e => `n=${e.eventos} · t=${fmt(e.t, 1)}`), hoverinfo: 'text+y' },
+    { type: 'scatter', mode: 'lines+markers', x: M.expansao.map(e => e.tf + ' min'), y: M.expansao.map(e => e.controle), name: 'controle', line: { color: '#111', dash: 'dash' } }], LAY({ yaxis: { title: 'range seguinte ÷ média do horário', range: [0.8, 1.5] } }), CFG);
+  const perfis = ['fiel', 'ideal'], mot = [...new Set(M.motivos.map(m => m.motivo))];
+  Plotly.newPlot('ch-motivo', perfis.map((p, i) => ({ type: 'bar', textposition: 'none', name: p, x: mot, y: mot.map(m => { const r = M.motivos.find(x => x.perfil === p && x.motivo === m); return r ? r['count'] : 0; }), marker: { color: i ? '#93c5fd' : '#1d4ed8' },
+    text: mot.map(m => { const r = M.motivos.find(x => x.perfil === p && x.motivo === m); return r ? `média ${fmt(r.mean, 1)} pts` : ''; }), hoverinfo: 'text+y' })), LAY({ barmode: 'group', yaxis: { title: 'trades', type: 'log' } }), CFG);
+}
+
+// ---------- dados
+function dados() {
+  const C = DADOS.cobertura, series = ['todas', ...[...new Set(C.map(c => c.serie))].sort()], tfs = ['todos', ...[...new Set(C.map(c => c.tf))].sort((a, b) => parseInt(a) - parseInt(b))];
+  $('cobSerie').innerHTML = series.map(s => `<option>${s}</option>`).join(''); $('cobTf').innerHTML = tfs.map(s => `<option>${s}</option>`).join('');
+  const desenha = () => {
+    const s = $('cobSerie').value, t = $('cobTf').value, F = C.filter(c => (s === 'todas' || c.serie === s) && (t === 'todos' || c.tf === t)).sort((a, b) => (a.serie + a.tf).localeCompare(b.serie + b.tf));
+    const lab = F.map(c => `${c.serie} ${c.tf} · ${c.lote}`), cor = { padrao: '#2563eb', alt: '#f59e0b' };
+    Plotly.react('ch-cob', [{ type: 'bar', textposition: 'none', orientation: 'h', y: lab, base: F.map(c => c.inicio), x: F.map(c => new Date(c.fim) - new Date(c.inicio)), marker: { color: F.map(c => cor[c.variante] || '#6b7280') },
+      text: F.map(c => `${c.arquivo}<br>${c.inicio} → ${c.fim}<br>${c.linhas} linhas · ${c.sessoes_completas} sessões completas<br>${c.natureza} · ${c.variante}`), hoverinfo: 'text' }],
+      LAY({ xaxis: { type: 'date' }, yaxis: { autorange: 'reversed', automargin: true, tickfont: { size: 10 } }, margin: { l: 220, r: 15, t: 10, b: 40 }, height: Math.max(500, 16 * F.length + 80) }), CFG);
+  };
+  $('cobSerie').onchange = desenha; $('cobTf').onchange = desenha; desenha();
+}
+
+// ---------- hipóteses
+function hip() {
+  const H = DADOS.hipoteses, motores = ['todos', ...Object.keys(H)], vers = ['todos', 'CONFIRMADA', 'PARCIAL', 'INCONCLUSIVA', 'NÃO SUPORTADA', 'REFUTADA', 'PENDENTE'];
+  $('hipMotor').innerHTML = motores.map(m => `<option>${m}</option>`).join(''); $('hipVer').innerHTML = vers.map(m => `<option>${m}</option>`).join('');
+  const r = () => {
+    const m = $('hipMotor').value, v = $('hipVer').value, q = $('hipBusca').value.toLowerCase();
+    const R = []; Object.entries(H).forEach(([mot, L]) => L.forEach(h => R.push({ mot, ...h, v: verKey(h.veredito) })));
+    const F = R.filter(h => (m === 'todos' || h.mot === m) && (v === 'todos' || h.v === v) && (!q || (h.id + h.grupo + h.texto).toLowerCase().includes(q)));
+    $('tb-hip').innerHTML = '<tr><th>motor</th><th>id</th><th>grupo</th><th>hipótese</th><th>veredito</th></tr>' + F.map(h => `<tr><td>${h.mot}</td><td>${h.id}</td><td>${h.grupo}</td><td style="white-space:normal;min-width:420px">${h.texto}</td><td><span class="tag ${h.v === 'NÃO SUPORTADA' ? 'NAO' : h.v}">${h.v}</span></td></tr>`).join('');
+    $('hipInfo').textContent = F.length + ' hipóteses';
+  };
+  ['hipMotor', 'hipVer'].forEach(i => $(i).onchange = r); $('hipBusca').oninput = r; r();
+}
+
+const RENDER = { resumo, candles, m16, m02, dados, hip };
+abrir(ABAS.some(([i]) => i === location.hash.slice(1)) ? location.hash.slice(1) : 'resumo');
+</script>
+</body>
+</html>
